@@ -15,7 +15,9 @@ To facilitate and standardize data collection across different groups and countr
 
 Kobotoolbox is a free and open source tool for data collection. It allows to easily develop digital data collection forms that work on both mobile devices and web browsers. Data can be collected from different devices and people, and is accessible through the KoboToolbox interface. This data can then be downloaded into multiple formats for use in applications such as Excel, R, Phyton or GIS software.
 
-The file [kobo_form.xlsx](https://github.com/AliciaMstt/GeneticIndicators/raw/main/kobo_form.xlsx) is the .xlsx version of the Kobo form we built for collecting the needed raw data to estimate de Genetic Diversity Indicators mentioned above, as well as . This can be deployed as a form in Kobotoolbox as follows:
+The file [kobo_form.xlsx](https://github.com/AliciaMstt/GeneticIndicators/raw/main/kobo_form.xlsx) is the .xlsx version of the Kobo form we built for collecting the needed raw data to estimate de Genetic Diversity Indicators mentioned above, as well as species taxonomic information and assesor's and country ifnromation. 
+
+If you want to use this form to collect data for your country or desired species, the form can be deployed in Kobotoolbox as follows:
 
 1. Download the file [kobo_form.xlsx](https://github.com/AliciaMstt/GeneticIndicators/raw/main/kobo_form.xlsx) from this repository.
 2. Import it to Kobotoolbox following [these instructions](https://support.kobotoolbox.org/new_form.html).
@@ -26,6 +28,10 @@ You can see a **dummy example** of how the online form looks once it is deployed
 
 
 ### Population information template:
+
+If information of more than 20 populations will be used to collect data for indicator 2 (Section 5 of the Kobo form) it is possible to use the following template to upload data instead of using the kobo form. **This is only encouraged in cases when data is extracted programatically from extant databases,** otherwise we recommend using the Kobo form to avoid mistakes. The form allows to manually fill the information of up to 100 populations. 
+
+**Template:** pop_template.txt
 
 
 
