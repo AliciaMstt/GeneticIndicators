@@ -15,9 +15,9 @@ To facilitate and standardize data collection across different groups and countr
 
 Kobotoolbox is a free and open source tool for data collection. It allows to easily develop digital data collection forms that work on both mobile devices and web browsers. Data can be collected from different devices and people, and is accessible through the KoboToolbox interface. This data can then be downloaded into multiple formats for use in applications such as Excel, R, Phyton or GIS software.
 
-The file [kobo_form.xlsx](kobo_form.xlsx) is the .xlsx version of the Kobo form we built for collecting the needed raw data to estimate de Genetic Diversity Indicators mentioned above, as well as . This can be deployed as a form in Kobotoolbox as follows:
+The file [kobo_form.xlsx](https://github.com/AliciaMstt/GeneticIndicators/raw/main/kobo_form.xlsx) is the .xlsx version of the Kobo form we built for collecting the needed raw data to estimate de Genetic Diversity Indicators mentioned above, as well as . This can be deployed as a form in Kobotoolbox as follows:
 
-1. Download the file [kobo_form.xlsx](kobo_form.xlsx) from this repository.
+1. Download the file [kobo_form.xlsx](https://github.com/AliciaMstt/GeneticIndicators/raw/main/kobo_form.xlsx) from this repository.
 2. Import it to Kobotoolbox following [these instructions](https://support.kobotoolbox.org/new_form.html).
 
 Check [Kobotoolbox documentation](https://support.kobotoolbox.org/welcome.html) for further details on how to deploy and use it to estimate 
@@ -27,9 +27,15 @@ You can see a **dummy example** of how the online form looks once it is deployed
 
 ### Population information template:
 
+
+
 ### Guidance document:
 
+
+
 ### Scripts to process the kobo output and estimate the indicators:
+
+
 
 ## References
 
