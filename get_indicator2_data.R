@@ -54,5 +54,3 @@ indicator2_data<-kobo_output %>%
                 # End of function
                            }
                 
-
-
