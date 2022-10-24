@@ -41,6 +41,52 @@ If information of more than 20 populations will be used to collect data for indi
 
 ### Scripts to process the kobo output and estimate the indicators:
 
+#### Extract the data for each indicator from the kobo output:
+
+The following R functions take as input the output of the Kobo form "International Genetic Indicator testing" and reformat it in order to have the data in a data frame useful for estimating each of the Genetic Diversity Indicators.
+ 
+* [`get_indicator1_data.R`](get_indicator1_data.R): outputs a data frame with the data needed to estimate indicator 1. 
+
+* [`get_indicator2_data.R`](get_indicator2_data.R): outputs a data frame with the data needed to estimate indicator 2. 
+
+
+##### Usage:
+
+* Input for the 3 functions is the same `.csv` file resulting from exporting the Kobotoolbox data from the form "International Genetic Indicator testing" with the following settings:
+
+![export_instructions.png](export_instructions.png)
+
+* Arguments:
+
+`file` = path to the .csv file with kobo output. 
+
+* Example:
+
+```
+# Needed libraries
+library(tidyr)
+library(dplyr)
+library(utile.tools)
+
+
+# load functions
+source("get_indicator1_data.R")
+source("get_indicator2_data.R")
+
+# Get data for each indicator:
+ind1_data<-get_indicator1_data(file="kobo_output.csv")
+ind2_data<-get_indicator2_data(file="kobo_output.csv")
+
+```
+
+##### Dependencies:
+
+Functions were developed and tested using:
+
+* R version 4.2.1 
+* utile.tools_0.2.7 
+* dplyr_1.0.9 
+* tidyr_1.2.0   
 
 
 ## References
