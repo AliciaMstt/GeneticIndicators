@@ -1,0 +1,33 @@
+# Row 6 of this template specifies the type of variable that each column should be.
+# Row 7 explains if the variable is mandatory.
+# Row 8 explains format details, if any, for character variables.
+# Row 9-13 list the options that can be use in select_one variables.	
+# variable (column) names start in line 14. Add your data from line 15 onwards. Save your data as UTF-8 tab delimited text file.
+# character	character	character	character	character	character	character	character	select_one	character	decimal	decimal	decimal	character	select_one	character	select_one	character	select_one	character	select_one	select_one	character	integer	decimal	decimal	character	character		
+# "mandatory unless at least one _taxonID (GBIF, NCBI or national) is provided"	"mandatory unless at least one _taxonID (GBIF, NCBI or national) is provided"					mandatory	mandatory	mandatory	mandatory if Origin = introduced					mandatory if Ne was answered	mandatory if GeneticMarkers = other	mandatory if Ne was answered	mandatory if Nc was answered	mandatory	mandatory	mandatory						mandatory if Nc was answered			
+#						"populationIDs should be pop1, pop2.. popn"											"Separate references by "";"""									"Separate references by "";"""			
+#								introduced						whole_genome_sequence_data		LD		Nc_range		Nc_method_count	less_5000_bymuch								
+#								translocated						snps		Hexcess		Nc_point		Nc_method_areadensity	less_5000								
+#								natural						microsatellites		temporal_allele				Nc_method_unknown	more_5000								
+#														chloroplast_mitodondrial_dna		genetic_relatedness					more_5000_bymuch								
+#														other		ABC					range_includes_5000								
+genus	species	subspecies_variety	GBIF_taxonID	NCBI_taxonID	national_taxonID	populationID	Name	Origin	IntroductionYear	Ne	NeLower	NeUpper	NeYear	GeneticMarkers	GeneticMarkersOther	MethodNe	SourceNe	NcType	NcYear	NcMethod	NcRange	NcRangeDetails	NcPoint	NcLower	NcUpper	SourceNc	Comments		
+																													
+																													
+																													
+																													
+																													
+																													
+																													
+																													
+																													
+																													
+																													
+																													
+																													
+																													
+																													
+																													
+																													
+																													
+																													
