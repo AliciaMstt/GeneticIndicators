@@ -30,8 +30,11 @@ Check [Kobotoolbox documentation](https://support.kobotoolbox.org/welcome.html) 
 
 If information of more than 20 populations will be used to collect data for indicator 2 (Section 5 of the Kobo form) it is possible to use the following template to upload data instead of using the kobo form. **This is only encouraged in cases when data is extracted programatically from extant databases,** otherwise we recommend using the Kobo form to avoid mistakes. The form allows to manually fill the information of up to 100 populations, but you can add as many populations as needed in a text file following this template.
 
-**Template:** [populations\_data_template.txt](populations_data_template.txt). Notice that the first lines starting with `#` are comments to guide you in how the data of each variable (column) should be formatted. You can keep or delete these lines in your data file, but if you keep them do not delete the `#` at te beginning of each line.
+**Template text version:** [populations\_data_template.txt](populations_data_template.txt). Notice that the first lines starting with `#` are comments to guide you in how the data of each variable (column) should be formatted. You can keep or delete these lines in your data file, but if you keep them do not delete the `#` at te beginning of each line.
 
+**Template Excel version:** [populations\_data_template.xlsx](populations_data_template.xlsx). This is an Excel spreadsheet that contains validation for text variables where controlled vocabularies are available. The tab “Input” is where the data should be entered. Cells that are YELLOW contain validation. For multiple rows, please copy the first data entry row (row 2) so that the validation is applied. The tab “Validation” are the validation options. Do not change these options. The tab “Guide” is a copy of the formating instructions available at [populations\_data_template.txt](populations_data_template.txt).
+
+Regardless of which template you used, save your data as .txt tab delimited file in UTF-8 encoding.
 
 
 ### Guidance document:
