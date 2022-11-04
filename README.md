@@ -13,25 +13,24 @@ To facilitate and standardize data collection across different groups and countr
 
 ### Koboform: 
 
-Kobotoolbox is a free and open source tool for data collection. It allows to easily develop digital data collection forms that work on both mobile devices and web browsers. Data can be collected from different devices and people, and is accessible through the KoboToolbox interface. This data can then be downloaded into multiple formats for use in applications such as Excel, R, Phyton or GIS software.
+Kobotoolbox is a free and open source tool for data collection. It allows to easily develop digital data collection forms that work on both mobile devices and web browsers. Data can be collected from different devices and people, and is accessible through the KoboToolbox interface. This data can then be downloaded into multiple formats for use in applications such as Excel, R, Phyton or GIS software. We built a Kobo form for collecting the needed raw data to estimate de Genetic Diversity Indicators mentioned above, as well as species taxonomic information and assessor's and country information. 
 
-The file [kobo_form.xlsx](https://github.com/AliciaMstt/GeneticIndicators/raw/main/kobo_form.xlsx) is the .xlsx version of the Kobo form we built for collecting the needed raw data to estimate de Genetic Diversity Indicators mentioned above, as well as species taxonomic information and assesor's and country ifnromation. 
+You can see a **dummy example** of how the online form looks once it is deployed in Kobo here: [https://ee.kobotoolbox.org/preview/2KDHEWrb](https://ee.kobotoolbox.org/preview/2KDHEWrb). **Notice that this form is just an example and it can NOT be used to collect real data.** 
 
-If you want to use this form to collect data for your country or desired species, the form can be deployed in Kobotoolbox as follows:
+If you want to use this form to collect data for your country or desired species, you can contact Alicia Mastretta-Yanes (amastretta@conabio.gob.mx) to get access to the data-collection form where other teams are collecting data. Alternatively **you can deploy your own version of the form** in Kobotoolbox as follows:
 
-1. Download the file [kobo_form.xlsx](https://github.com/AliciaMstt/GeneticIndicators/raw/main/kobo_form.xlsx) from this repository.
+1. Download the file [kobo_form.xlsx](https://github.com/AliciaMstt/GeneticIndicators/raw/main/kobo_form.xlsx) from this repository, which is the .xlsx version of the Kobo form.
 2. Import it to Kobotoolbox following [these instructions](https://support.kobotoolbox.org/new_form.html).
 
 Check [Kobotoolbox documentation](https://support.kobotoolbox.org/welcome.html) for further details on how to deploy and use it. You can also use our scripts (see below) to process the output in order to estimate the indicators.
 
-You can see a **dummy example** of how the online form looks once it is deployed in Kobo here: XXXXXX. **Notice that this form is just an example and it should NOT be used to collect real data** 
 
 
 ### Population information template:
 
 If information of more than 20 populations will be used to collect data for indicator 2 (Section 5 of the Kobo form) it is possible to use the following template to upload data instead of using the kobo form. **This is only encouraged in cases when data is extracted programatically from extant databases,** otherwise we recommend using the Kobo form to avoid mistakes. The form allows to manually fill the information of up to 100 populations, but you can add as many populations as needed in a text file following this template.
 
-**Template:** [populations_data_template.txt](populations_data_template.txt). Notice that the first lines starting with `#` are comments to guide you in how the data of each variable (column) should be formatted. You can keep or delete these lines in your data file, but if you keep them do not delete the `#` at te beginning of each line.
+**Template:** [populations\_data_template.txt](populations_data_template.txt). Notice that the first lines starting with `#` are comments to guide you in how the data of each variable (column) should be formatted. You can keep or delete these lines in your data file, but if you keep them do not delete the `#` at te beginning of each line.
 
 
 
