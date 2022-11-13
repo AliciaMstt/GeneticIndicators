@@ -1,4 +1,4 @@
-# README
+# Resources to estimate Genetic Diversity Indicators
 
 In 2020, three genetic diversity indicators were proposed and discussed[1-4]:
 
