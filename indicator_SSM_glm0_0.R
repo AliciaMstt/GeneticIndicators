@@ -14,11 +14,13 @@
 # 3. randomization by using package biomod2 (see https://rdrr.io/rforge/biomod2/man/variables_importance.html)
 #
 # required future improvements;
-# need codes to cleanup data especially in SSM
+# need codes to clean up data especially in SSM
 # consider to include interaction terms between explanatory variables in the model 
-#
-#2023.03.17 
-#Fumiko Ishihama; ishihama@nies.go.jp
+# consider that the dependent variable (indicator) takes values from 0 - 1 and can be zero-inflated
+# (gamma distribution with glm or censored data model with negative binomial, etc. need performance comparison)
+# 
+# 2023.03.17 
+# Fumiko Ishihama; ishihama@nies.go.jp
 
 if(!require(usdm)){install.packages(usdm)} # for calculating VIF to check colinearity among explanatory 
 if(!require(MASS)){install.packages(MASS)} # use stepAIC function for model (variable) selection
