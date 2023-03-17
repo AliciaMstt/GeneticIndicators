@@ -22,10 +22,9 @@
 
 if(!require(usdm)){install.packages(usdm)} # for calculating VIF to check colinearity among explanatory 
 if(!require(MASS)){install.packages(MASS)} # use stepAIC function for model (variable) selection
-if(!require(biomod2)){install.packages(biomod2)} 
-	# for calculating variable contributions; it may take some time to install
+if(!require(biomod2)){install.packages(biomod2)} # for calculating variable contributions; it may take some time to install
 
-filename_SSM <- "test_ssm.csv""filename_of_SSM.csv"
+filename_SSM <- "filename_of_SSM.csv"
 filename_indicator <- "filename_of_indicator_values.csv"
 # be sure to save the files in csv format with encoding=utf8,comma delimited,
 # and headers are only in the first line
@@ -35,7 +34,7 @@ filename_indicator <- "filename_of_indicator_values.csv"
 
 ## read the data
 SSM <- read.csv(filename_SSM, header=T,stringsAsFactors = T, fileEncoding="utf8")
-#note that all columns with strings are read as "factor"
+#　note that all columns with strings are read as "factor"
 # because even quantitative characteristics in SSM (e.g. longevity, fecundity)
 # include strings in the data (e.g. "less than 0.01"), 
 # they are treated as categorical varialbes ignoring the order (i.e."0.01-0.1"<"0.1-1"<"1-10") among categories
