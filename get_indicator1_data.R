@@ -58,9 +58,7 @@ get_indicator1_data<-function(file=file){
                  names_to=c(".value", "population"),
                  names_sep = "_",
                  values_drop_na = TRUE)
-                  
-  # print data
-  print(indicator1_data)
+
   
   # End of function
 }
