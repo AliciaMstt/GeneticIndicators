@@ -1,9 +1,9 @@
 ---
 title: "Data exploration and cleaning"
 output:
-  word_document: default
   html_document:
     df_print: paged
+  word_document: default
   pdf_document: default
 ---
 
@@ -18,6 +18,7 @@ library(tidyr)
 library(dplyr)
 library(utile.tools)
 library(ggplot2)
+library(ggsankey)
 ```
 
 Load required functions. These custom fuctions are available at: https://github.com/AliciaMstt/GeneticIndicators
@@ -69,7 +70,7 @@ kobo_output<-kobo_output %>%
 Records by country
 
 ```{r}
-ggplot(ind2_data, aes(x=country_assessment)) + 
+ggplot(kobo_output, aes(x=country_assessment)) + 
   geom_bar(stat = "count")
 
 ```
@@ -77,11 +78,66 @@ ggplot(ind2_data, aes(x=country_assessment)) +
 Records by taxonomic groups
 
 ```{r}
-ggplot(ind2_data, aes(x=taxonomic_group)) + 
+ggplot(kobo_output, aes(x=taxonomic_group)) + 
   geom_bar(stat = "count") +
   theme(axis.text.x = element_text(angle = 45))
 
 ```
+
+Which taxonomic groups are countries assesing?
+
+```{r}
+library(ggsankey)
+
+# transform data to how ggsankey wants it
+df <- kobo_output %>%
+  make_long(country_assessment, taxonomic_group)
+df
+
+# Sankey plot
+ggplot(df, aes(x = x,
+               next_x = next_x,
+               node = node,
+               next_node = next_node,
+               fill = factor(node),
+               label = node)) +
+  geom_sankey(flow.alpha = 0.6, 
+              node.color = NA,
+              show.legend = FALSE) +
+  geom_sankey_label(size = 2, color = 1, fill = "white") +
+  # colour by country
+  scale_fill_manual(values=c(scales::hue_pal()(length(unique(ind2_data$country_assessment))),  # a nice  color for each of the n countries
+                             rep("darkgrey", length(unique(ind2_data$taxonomic_group)))), # grey for the n taxonomic groups
+                    breaks=c(unique(ind2_data$country_assessment), 
+                             unique(ind2_data$taxonomic_group))) +
+  theme_sankey(base_size = 10) +
+  xlab("")
+  
+```
+
+Is there Ne / Nc  data?
+```{r}
+# transform data to how ggsankey wants it
+df <- kobo_output %>%
+  make_long(country_assessment, taxonomic_group, popsize_data, ne_pops_exists)
+df
+
+# Sankey
+ggplot(df, aes(x = x,
+               next_x = next_x,
+               node = node,
+               next_node = next_node,
+               fill = factor(node),
+               label = node)) +
+  geom_sankey(flow.alpha = 0.6, 
+              node.color = NA,
+              show.legend = FALSE) +
+  geom_sankey_label(size = 2, color = 1, fill = "white") +
+ # scale_fill_viridis_d() +
+  xlab("")
+
+```
+
 
 
 ## Check for common data capture errors
@@ -130,5 +186,11 @@ ind2_data %>%
       select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
 ```
 
+
+Session Info for reproducibility purposes:
+
+```{r}
+sessionInfo()
+```
 
 
