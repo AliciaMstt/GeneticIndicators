@@ -44,7 +44,9 @@ indicator2_data<-kobo_output %>%
                  dplyr::select(country_assessment, taxonomic_group, taxon, scientific_authority,
                                genus, taxon, year_assesment, name_assessor, email_assessor,
                  # indicator 2 data               
-                               n_extant_populations, n_extint_populations, other_populations, time_populations) %>%
+                               n_extant_populations, n_extint_populations, other_populations, time_populations,
+                 # kobo validation status
+                               X_validation_status) %>%
                  # change -999 to Na
                          mutate(n_extint_populations=na_if(n_extint_populations, -999), 
                                 n_extant_populations=na_if(n_extant_populations, -999))
