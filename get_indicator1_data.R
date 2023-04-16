@@ -43,7 +43,7 @@ get_indicator1_data<-function(file=file){
     dplyr::select(country_assessment, taxonomic_group, taxon, scientific_authority,
                   genus, taxon, year_assesment, name_assessor, email_assessor,
                   # indicator 1 data               
-                  time_populations, Name_pop1:Comments_pop100) %>% 
+                  time_populations, Name_pop1:Comments_pop25) %>% 
                   
   ### Get population data as single variables               
     pivot_longer(cols = matches("_pop[0-9]"),
