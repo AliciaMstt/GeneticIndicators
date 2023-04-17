@@ -106,16 +106,48 @@ ggplot(df, aes(x = x,
               show.legend = FALSE) +
   geom_sankey_label(size = 2, color = 1, fill = "white") +
   # colour by country
-  scale_fill_manual(values=c(scales::hue_pal()(length(unique(ind2_data$country_assessment))),  # a nice  color for each of the n countries
-                             rep("darkgrey", length(unique(ind2_data$taxonomic_group)))), # grey for the n taxonomic groups
-                    breaks=c(unique(ind2_data$country_assessment), 
-                             unique(ind2_data$taxonomic_group))) +
+  scale_fill_manual(values=c(scales::hue_pal()(length(unique(kobo_output$country_assessment))),  # a nice  color for each of the n countries
+                             rep("darkgrey", length(unique(kobo_output$taxonomic_group)))), # grey for the n taxonomic groups
+                    breaks=c(unique(kobo_output$country_assessment), 
+                             unique(kobo_output$taxonomic_group))) +
   theme_sankey(base_size = 10) +
   xlab("")
   
 ```
 
-Is there Ne / Nc  data?
+
+How is the distribution of Ne / Nc data across countries?
+```{r}
+# transform data to how ggsankey wants it
+df <- kobo_output %>%
+  make_long(country_assessment, popsize_data)
+df
+
+# Sankey plot
+ggplot(df, aes(x = x,
+               next_x = next_x,
+               node = node,
+               next_node = next_node,
+               fill = factor(node),
+               label = node)) +
+  geom_sankey(flow.alpha = 0.6, 
+              node.color = NA,
+              show.legend = FALSE) +
+  geom_sankey_label(size = 2, color = 1, fill = "white") +
+  # colour by country
+  scale_fill_manual(values=c(scales::hue_pal()(length(unique(kobo_output$country_assessment))),  # a nice  color for each of the n countries
+                             rep("darkgrey", length(unique(kobo_output$popsize_data)))), # grey for the n taxonomic groups
+                    breaks=c(unique(kobo_output$country_assessment), 
+                             unique(kobo_output$popsize_data))) +
+  theme_sankey(base_size = 10) +
+  xlab("")
+  
+```
+
+
+
+
+How is Ne / Nc  data distributred across countries and speices?
 ```{r}
 # transform data to how ggsankey wants it
 df <- kobo_output %>%
@@ -133,11 +165,10 @@ ggplot(df, aes(x = x,
               node.color = NA,
               show.legend = FALSE) +
   geom_sankey_label(size = 2, color = 1, fill = "white") +
- # scale_fill_viridis_d() +
+  theme_sankey(base_size = 10) +
   xlab("")
 
 ```
-
 
 
 ## Check for common data capture errors
