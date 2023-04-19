@@ -7,7 +7,7 @@ output:
   pdf_document: default
 ---
 
-This notebook performs a basic overview of the data, checking for common sources of error to make sure it is ready for data analyses.
+This notebook performs a basic overview of the data. It uses as input the "clean kobo output" that was first cleaned by `1_quality_check_and_cleaning.Rmd`.
 
 ## Get data
 
@@ -28,19 +28,14 @@ source("get_indicator1_data.R")
 source("get_indicator2_data.R")
 ```
 
-Get Kobo raw output data:
-```{r}
-kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv", sep=";", header=TRUE)
-```
 
-
-Get indicator 1 and indicator 2 data from kobo output
+Get indicator 1 and indicator 2 data from clean kobo output
 ```{r}
 # Get data for each indicator:
-ind1_data<-get_indicator1_data(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv")
+ind1_data<-get_indicator1_data(file="")
 head(ind1_data)
 
-ind2_data<-get_indicator2_data(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv")
+ind2_data<-get_indicator2_data(file="")
 head(ind2_data)
 
 ```
@@ -168,60 +163,6 @@ ggplot(df, aes(x = x,
   theme_sankey(base_size = 10) +
   xlab("")
 
-```
-
-
-## Check for common data capture errors
-
-How many populations per species are still extant (still existing! NOT extinct!)?
-
-```{r}
-summary(ind2_data$n_extant_populations)
-table(ind2_data$n_extant_populations)
-```
-
-Plot histogram
-```{r}
-ggplot(ind2_data, aes(x=n_extant_populations))+
-      geom_histogram()
-```
-
-Zoom Plot histogram
-```{r}
-ind2_data %>%
-    filter(n_extant_populations<25) %>%
-
-ggplot(., aes(x=n_extant_populations))+
-      geom_histogram()
-```
-
-
-Show which species (if any) have 0 (zero) extant populations. **Is this correct?**
-```{r}
-ind2_data %>%
-      filter(n_extant_populations==0) %>%
-      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
-```
-
-Show which species (if any) have 999 extant populations. **Should this be -999? OR n_extinct pops??**
-```{r}
-ind2_data %>%
-      filter(n_extant_populations==999) %>%
-      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
-```
-
-Show which species (if any) have 999 EXTINCT populations. **Should this be -999?**
-```{r}
-ind2_data %>%
-      filter(n_extint_populations==999) %>%
-      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
-```
-
-
-Session Info for reproducibility purposes:
-
-```{r}
-sessionInfo()
 ```
 
 

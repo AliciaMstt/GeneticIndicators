@@ -1,0 +1,255 @@
+---
+title: "Data exploration and cleaning"
+output:
+  html_document:
+    df_print: paged
+  word_document: default
+  pdf_document: default
+---
+
+This notebook performs a basic overview of the data, checking for common sources of error to make sure it is ready for data analyses.
+
+## Get data
+
+Load required libraries:
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyr)
+library(dplyr)
+library(utile.tools)
+library(ggplot2)
+library(ggsankey)
+```
+
+Load required functions. These custom fuctions are available at: https://github.com/AliciaMstt/GeneticIndicators
+
+```{r}
+source("get_indicator1_data.R")
+source("get_indicator2_data.R")
+```
+
+Get Kobo raw output data:
+```{r}
+kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv", sep=";", header=TRUE)
+
+# create a variable with the full taxon name
+kobo_output<- kobo_output %>%
+                 # create a variable with the full taxon name
+                 mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE)))
+```
+
+
+Get indicator 1 and indicator 2 data from kobo output
+```{r}
+# Get data for each indicator:
+ind1_data<-get_indicator1_data(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv")
+head(ind1_data)
+
+ind2_data<-get_indicator2_data(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv")
+head(ind2_data)
+
+```
+
+Filter out records which were marked as "not_approved" in the manual Kobo validation interface (this means country assessors determined the is something wrong with that particular record).
+
+```{r}
+# check if any species is flagged as "validation_status_not_approved"
+ind2_data %>%
+      filter(X_validation_status=="validation_status_not_approved")
+
+# omit those records from data:
+ind2_data<- ind2_data %>%
+            filter(X_validation_status!="validation_status_not_approved")
+
+ind1_data<- ind1_data %>%
+            filter(X_validation_status!="validation_status_not_approved")
+
+kobo_output<-kobo_output %>%
+            filter(X_validation_status!="validation_status_not_approved")
+```
+
+
+
+## General description of the dataset
+
+Records by country
+
+```{r}
+ggplot(kobo_output, aes(x=country_assessment)) + 
+  geom_bar(stat = "count")
+
+```
+
+Records by taxonomic groups
+
+```{r}
+ggplot(kobo_output, aes(x=taxonomic_group)) + 
+  geom_bar(stat = "count") +
+  theme(axis.text.x = element_text(angle = 45))
+
+```
+
+Which taxonomic groups are countries assesing?
+
+```{r}
+library(ggsankey)
+
+# transform data to how ggsankey wants it
+df <- kobo_output %>%
+  make_long(country_assessment, taxonomic_group)
+df
+
+# Sankey plot
+ggplot(df, aes(x = x,
+               next_x = next_x,
+               node = node,
+               next_node = next_node,
+               fill = factor(node),
+               label = node)) +
+  geom_sankey(flow.alpha = 0.6, 
+              node.color = NA,
+              show.legend = FALSE) +
+  geom_sankey_label(size = 2, color = 1, fill = "white") +
+  # colour by country
+  scale_fill_manual(values=c(scales::hue_pal()(length(unique(kobo_output$country_assessment))),  # a nice  color for each of the n countries
+                             rep("darkgrey", length(unique(kobo_output$taxonomic_group)))), # grey for the n taxonomic groups
+                    breaks=c(unique(kobo_output$country_assessment), 
+                             unique(kobo_output$taxonomic_group))) +
+  theme_sankey(base_size = 10) +
+  xlab("")
+  
+```
+
+
+How is the distribution of Ne / Nc data across countries?
+```{r}
+# transform data to how ggsankey wants it
+df <- kobo_output %>%
+  make_long(country_assessment, popsize_data)
+df
+
+# Sankey plot
+ggplot(df, aes(x = x,
+               next_x = next_x,
+               node = node,
+               next_node = next_node,
+               fill = factor(node),
+               label = node)) +
+  geom_sankey(flow.alpha = 0.6, 
+              node.color = NA,
+              show.legend = FALSE) +
+  geom_sankey_label(size = 2, color = 1, fill = "white") +
+  # colour by country
+  scale_fill_manual(values=c(scales::hue_pal()(length(unique(kobo_output$country_assessment))),  # a nice  color for each of the n countries
+                             rep("darkgrey", length(unique(kobo_output$popsize_data)))), # grey for the n taxonomic groups
+                    breaks=c(unique(kobo_output$country_assessment), 
+                             unique(kobo_output$popsize_data))) +
+  theme_sankey(base_size = 10) +
+  xlab("")
+  
+```
+
+
+
+
+How is Ne / Nc  data distributred across countries and speices?
+```{r}
+# transform data to how ggsankey wants it
+df <- kobo_output %>%
+  make_long(country_assessment, taxonomic_group, popsize_data, ne_pops_exists)
+df
+
+# Sankey
+ggplot(df, aes(x = x,
+               next_x = next_x,
+               node = node,
+               next_node = next_node,
+               fill = factor(node),
+               label = node)) +
+  geom_sankey(flow.alpha = 0.6, 
+              node.color = NA,
+              show.legend = FALSE) +
+  geom_sankey_label(size = 2, color = 1, fill = "white") +
+  theme_sankey(base_size = 10) +
+  xlab("")
+
+```
+
+
+## Check for common data capture errors
+
+### Number of populations
+How many populations per species are still extant (still existing! NOT extinct!)?
+
+```{r}
+summary(ind2_data$n_extant_populations)
+table(ind2_data$n_extant_populations)
+```
+
+Plot histogram
+```{r}
+ggplot(ind2_data, aes(x=n_extant_populations))+
+      geom_histogram()
+```
+
+Zoom Plot histogram
+```{r}
+ind2_data %>%
+    filter(n_extant_populations<25) %>%
+
+ggplot(., aes(x=n_extant_populations))+
+      geom_histogram()
+```
+
+
+Show which species (if any) have 0 (zero) extant populations. **Is this correct?**
+```{r}
+ind2_data %>%
+      filter(n_extant_populations==0) %>%
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
+```
+
+Show which species (if any) have 999 extant populations. **Should this be -999? OR n_extinct pops??**
+```{r}
+ind2_data %>%
+      filter(n_extant_populations==999) %>%
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
+```
+
+Show which species (if any) have 999 EXTINCT populations. **Should this be -999?**
+```{r}
+ind2_data %>%
+      filter(n_extint_populations==999) %>%
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
+```
+### Are there any tests?
+```{r}
+kobo_output[kobo_output$genus=="test", 5:8]
+
+```
+
+
+### Taxon ID codes
+Check GBIF and NCBI codes.
+```{r}
+# check IDs
+kobo_output$GBIF_taxonID
+kobo_output$NCBI_taxonID
+```
+
+In which taxa are the mistakes?
+```{r}
+# check IDs
+rbind(kobo_output[kobo_output$GBIF_taxonID=="GBIF taxon ID", 5:8], 
+kobo_output[kobo_output$GBIF_taxonID=="-999", 5:8],
+kobo_output[kobo_output$GBIF_taxonID=="test", 5:8])
+
+```
+
+Session Info for reproducibility purposes:
+
+```{r}
+sessionInfo()
+```
+
+
