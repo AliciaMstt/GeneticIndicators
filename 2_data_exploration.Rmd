@@ -32,11 +32,18 @@ source("get_indicator2_data.R")
 Get indicator 1 and indicator 2 data from clean kobo output
 ```{r}
 # Get data for each indicator:
-ind1_data<-get_indicator1_data(file="")
+ind1_data<-get_indicator1_data(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv")
 head(ind1_data)
 
-ind2_data<-get_indicator2_data(file="")
+ind2_data<-get_indicator2_data(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv")
 head(ind2_data)
+
+kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv", sep=";", header=TRUE)
+
+# create a variable with the full taxon name
+kobo_output<- kobo_output %>%
+                 # create a variable with the full taxon name
+                 mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE)))
 
 ```
 
@@ -80,7 +87,6 @@ ggplot(kobo_output, aes(x=taxonomic_group)) +
 ```
 
 Which taxonomic groups are countries assesing?
-
 ```{r}
 library(ggsankey)
 
@@ -88,6 +94,7 @@ library(ggsankey)
 df <- kobo_output %>%
   make_long(country_assessment, taxonomic_group)
 df
+
 
 # Sankey plot
 ggplot(df, aes(x = x,
@@ -108,6 +115,7 @@ ggplot(df, aes(x = x,
   theme_sankey(base_size = 10) +
   xlab("")
   
+
 ```
 
 
@@ -146,7 +154,7 @@ How is Ne / Nc  data distributred across countries and speices?
 ```{r}
 # transform data to how ggsankey wants it
 df <- kobo_output %>%
-  make_long(country_assessment, taxonomic_group, popsize_data, ne_pops_exists)
+  make_long(country_assessment, taxonomic_group, popsize_data)
 df
 
 # Sankey
