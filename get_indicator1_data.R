@@ -21,6 +21,7 @@ get_indicator1_data<-function(file=file){
   #  library(tidyr)
   #  library(dplyr)
   #  library(utile.tools)
+  #  library(stringr)
   
   ###
   ### Function  
@@ -34,6 +35,9 @@ get_indicator1_data<-function(file=file){
   indicator1_data<-kobo_output %>%
     # create a variable with the full taxon name
     mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE))) %>%
+    
+    # remove white space at the end of the name
+    mutate(taxon=str_trim(taxon, "right")) %>%
     
     # create variable with year in which assessment was done (based on date the form was completed)
     mutate(year_assesment=substr(end,1,4)) %>%
