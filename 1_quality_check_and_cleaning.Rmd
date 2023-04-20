@@ -7,7 +7,9 @@ output:
   pdf_document: default
 ---
 
-This notebook performs a basic overview of the data, checking for common sources of error to make sure it is ready for data analyses.
+This notebook looks for common sources of error to make sure it is ready for data analyses. Typos and small errors are corrected in a reproducible way, other error that need manual revision are flagged so that assessors can review them. 
+
+The output is a clean kobo file that can be used for analyses.
 
 ## Get data
 
@@ -17,161 +19,26 @@ Load required libraries:
 library(tidyr)
 library(dplyr)
 library(utile.tools)
+library(stringr)
 library(ggplot2)
 library(ggsankey)
-```
-
-Load required functions. These custom fuctions are available at: https://github.com/AliciaMstt/GeneticIndicators
-
-```{r}
-source("get_indicator1_data.R")
-source("get_indicator2_data.R")
 ```
 
 Get Kobo raw output data:
 ```{r}
 kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv", sep=";", header=TRUE)
-
-# create a variable with the full taxon name
-kobo_output<- kobo_output %>%
-                 # create a variable with the full taxon name
-                 mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE)))
-```
-
-
-Get indicator 1 and indicator 2 data from kobo output
-```{r}
-# Get data for each indicator:
-ind1_data<-get_indicator1_data(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv")
-head(ind1_data)
-
-ind2_data<-get_indicator2_data(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv")
-head(ind2_data)
-
 ```
 
 Filter out records which were marked as "not_approved" in the manual Kobo validation interface (this means country assessors determined the is something wrong with that particular record).
 
 ```{r}
 # check if any species is flagged as "validation_status_not_approved"
-ind2_data %>%
+kobo_output %>%
       filter(X_validation_status=="validation_status_not_approved")
 
 # omit those records from data:
-ind2_data<- ind2_data %>%
+kobo_output<- ind2_data %>%
             filter(X_validation_status!="validation_status_not_approved")
-
-ind1_data<- ind1_data %>%
-            filter(X_validation_status!="validation_status_not_approved")
-
-kobo_output<-kobo_output %>%
-            filter(X_validation_status!="validation_status_not_approved")
-```
-
-
-
-## General description of the dataset
-
-Records by country
-
-```{r}
-ggplot(kobo_output, aes(x=country_assessment)) + 
-  geom_bar(stat = "count")
-
-```
-
-Records by taxonomic groups
-
-```{r}
-ggplot(kobo_output, aes(x=taxonomic_group)) + 
-  geom_bar(stat = "count") +
-  theme(axis.text.x = element_text(angle = 45))
-
-```
-
-Which taxonomic groups are countries assesing?
-
-```{r}
-library(ggsankey)
-
-# transform data to how ggsankey wants it
-df <- kobo_output %>%
-  make_long(country_assessment, taxonomic_group)
-df
-
-# Sankey plot
-ggplot(df, aes(x = x,
-               next_x = next_x,
-               node = node,
-               next_node = next_node,
-               fill = factor(node),
-               label = node)) +
-  geom_sankey(flow.alpha = 0.6, 
-              node.color = NA,
-              show.legend = FALSE) +
-  geom_sankey_label(size = 2, color = 1, fill = "white") +
-  # colour by country
-  scale_fill_manual(values=c(scales::hue_pal()(length(unique(kobo_output$country_assessment))),  # a nice  color for each of the n countries
-                             rep("darkgrey", length(unique(kobo_output$taxonomic_group)))), # grey for the n taxonomic groups
-                    breaks=c(unique(kobo_output$country_assessment), 
-                             unique(kobo_output$taxonomic_group))) +
-  theme_sankey(base_size = 10) +
-  xlab("")
-  
-```
-
-
-How is the distribution of Ne / Nc data across countries?
-```{r}
-# transform data to how ggsankey wants it
-df <- kobo_output %>%
-  make_long(country_assessment, popsize_data)
-df
-
-# Sankey plot
-ggplot(df, aes(x = x,
-               next_x = next_x,
-               node = node,
-               next_node = next_node,
-               fill = factor(node),
-               label = node)) +
-  geom_sankey(flow.alpha = 0.6, 
-              node.color = NA,
-              show.legend = FALSE) +
-  geom_sankey_label(size = 2, color = 1, fill = "white") +
-  # colour by country
-  scale_fill_manual(values=c(scales::hue_pal()(length(unique(kobo_output$country_assessment))),  # a nice  color for each of the n countries
-                             rep("darkgrey", length(unique(kobo_output$popsize_data)))), # grey for the n taxonomic groups
-                    breaks=c(unique(kobo_output$country_assessment), 
-                             unique(kobo_output$popsize_data))) +
-  theme_sankey(base_size = 10) +
-  xlab("")
-  
-```
-
-
-
-
-How is Ne / Nc  data distributred across countries and speices?
-```{r}
-# transform data to how ggsankey wants it
-df <- kobo_output %>%
-  make_long(country_assessment, taxonomic_group, popsize_data, ne_pops_exists)
-df
-
-# Sankey
-ggplot(df, aes(x = x,
-               next_x = next_x,
-               node = node,
-               next_node = next_node,
-               fill = factor(node),
-               label = node)) +
-  geom_sankey(flow.alpha = 0.6, 
-              node.color = NA,
-              show.legend = FALSE) +
-  geom_sankey_label(size = 2, color = 1, fill = "white") +
-  theme_sankey(base_size = 10) +
-  xlab("")
 
 ```
 
@@ -229,22 +96,23 @@ kobo_output[kobo_output$genus=="test", 5:8]
 ```
 
 
-### Taxon ID codes
-Check GBIF and NCBI codes.
+### GBIF ID codes
+
+Check GBIF 
 ```{r}
 # check IDs
-kobo_output$GBIF_taxonID
-kobo_output$NCBI_taxonID
+head(kobo_output$GBIF_taxonID)
 ```
 
-In which taxa are the mistakes?
+GBIF IDs tend to be 7 characters long. Some can be larger or shorter, but these seems to be exceptions. Therefore let's flag any records where the GBIF Id is =/= 7 to manually check if it is correct.
+
 ```{r}
-# check IDs
-rbind(kobo_output[kobo_output$GBIF_taxonID=="GBIF taxon ID", 5:8], 
-kobo_output[kobo_output$GBIF_taxonID=="-999", 5:8],
-kobo_output[kobo_output$GBIF_taxonID=="test", 5:8])
-
+kobo_output %>%
+            filter(nchar(GBIF_taxonID)>0, nchar(GBIF_taxonID)!=7) %>%
+  # show only relevant columns
+            select(name_assessor, country_assessment, genus, species, GBIF_taxonID)
 ```
+
 
 Session Info for reproducibility purposes:
 
