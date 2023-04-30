@@ -48,7 +48,7 @@ kobo_output<- kobo_output %>%
 
 ```
 
-## Filter out any sort of tests
+### Filter out any sort of tests
 
 ```{r}
 # select likely columns to say "test"
@@ -127,7 +127,7 @@ kobo_output %>%
 
 Show which species (if any) have 999 EXTINCT populations. **Should this be -999?**
 ```{r}
-ind2_data %>%
+kobo_output %>%
       filter(n_extint_populations==999) %>%
       select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations)
 ```
