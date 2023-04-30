@@ -24,12 +24,17 @@ library(dplyr)
 library(utile.tools)
 library(stringr)
 library(ggplot2)
-library(ggsankey)
 ```
 
 Get Kobo raw output data:
 ```{r}
-kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv", sep=";", header=TRUE)
+kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-30-07-43-42.csv", sep=";", header=TRUE) %>%
+
+## add  taxon column
+mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE))) %>%
+    # remove white space at the end of the name
+    mutate(taxon=str_trim(taxon, "right"))
+
 ```
 
 Filter out records which were marked as "not_approved" in the manual Kobo validation interface (this means country assessors determined the is something wrong with that particular record).
@@ -40,7 +45,7 @@ kobo_output %>%
       filter(X_validation_status=="validation_status_not_approved")
 
 # omit those records from data:
-kobo_output<- ind2_data %>%
+kobo_output<- kobo_output %>%
             filter(X_validation_status!="validation_status_not_approved")
 
 ```
@@ -49,41 +54,60 @@ kobo_output<- ind2_data %>%
 ## Check for common data capture errors
 
 ### Number of populations
-How many populations per species are still extant (still existing! NOT extinct!)?
+
+In the form, -999 was used to mark taxa with unknown number of extant populations. This was used because answering the question was mandatory, so leaving it blank wasn't possible. We have to change -999 to NA.
 
 ```{r}
-summary(ind2_data$n_extant_populations)
-table(ind2_data$n_extant_populations)
+kobo_output<-kobo_output %>%
+             mutate(n_extant_populations= na_if(n_extant_populations, -999))
+```
+
+
+We can now explore how many populations per species are still extant (still existing! NOT extinct!)?
+
+```{r}
+summary(kobo_output$n_extant_populations)
+table(kobo_output$n_extant_populations)
 ```
 
 Plot histogram
 ```{r}
-ggplot(ind2_data, aes(x=n_extant_populations))+
+ggplot(kobo_output, aes(x=n_extant_populations))+
       geom_histogram()
 ```
 
 Zoom Plot histogram
 ```{r}
-ind2_data %>%
-    filter(n_extant_populations<25) %>%
+kobo_output %>%
+    filter(n_extant_populations>=0, n_extant_populations<25) %>%
 
 ggplot(., aes(x=n_extant_populations))+
       geom_histogram()
 ```
 
-
-Show which species (if any) have 0 (zero) extant populations. **Is this correct?**
+Once -999 was replaced by NA there should be no negative number of populations (if they are, they are typos that need to be corrected).
 ```{r}
-ind2_data %>%
+kobo_output %>%
+      filter(n_extant_populations<0) %>%
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
+```
+
+Show which taxa (if any) have 0 (zero) extant populations. **Is this correct? needs to be manually checked**
+```{r}
+kobo_output %>%
       filter(n_extant_populations==0) %>%
       select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
+
+
 ```
 
 Show which species (if any) have 999 extant populations. **Should this be -999? OR n_extinct pops??**
 ```{r}
-ind2_data %>%
+kobo_output %>%
       filter(n_extant_populations==999) %>%
       select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
+
+
 ```
 
 Show which species (if any) have 999 EXTINCT populations. **Should this be -999?**
@@ -92,6 +116,23 @@ ind2_data %>%
       filter(n_extint_populations==999) %>%
       select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
 ```
+Put all taxa with weird number of populatins that need to be checked together:
+
+```{r}
+check_n_pops <- kobo_output %>% 
+      # variables of interest
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations) %>%
+
+      # same filters that discussed above
+      filter(n_extant_populations<0 |
+            n_extant_populations==0 | 
+            n_extant_populations==999 | 
+            n_extint_populations==999) 
+
+```
+
+
+
 ### Are there any tests?
 ```{r}
 kobo_output[kobo_output$genus=="test", 5:8]
