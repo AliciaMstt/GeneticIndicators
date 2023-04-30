@@ -9,7 +9,10 @@ output:
 
 This notebook looks for common sources of error to make sure it is ready for data analyses. Typos and small errors are corrected in a reproducible way, other error that need manual revision are flagged so that assessors can review them. 
 
-The output is a clean kobo file that can be used for analyses.
+The output are:
+
+* a file showing the records that need manual review or corrections, if any
+* a clean kobo file that can be used for analyses.
 
 ## Get data
 
@@ -95,7 +98,6 @@ kobo_output[kobo_output$genus=="test", 5:8]
 
 ```
 
-
 ### GBIF ID codes
 
 Check GBIF 
@@ -111,6 +113,19 @@ kobo_output %>%
             filter(nchar(GBIF_taxonID)>0, nchar(GBIF_taxonID)!=7) %>%
   # show only relevant columns
             select(name_assessor, country_assessment, genus, species, GBIF_taxonID)
+```
+
+
+### Species names
+
+Genus, species and subspecies should be a single word, check if there are cases where it isn't:
+
+```{r}
+kobo_output %>% 
+  filter(grepl(" ", subspecies_variety))
+
+
+
 ```
 
 
