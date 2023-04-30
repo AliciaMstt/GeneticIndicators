@@ -50,6 +50,24 @@ kobo_output<- kobo_output %>%
 
 ```
 
+## Filter out any sort of tests
+
+```{r}
+# select likely columns to say "test"
+cols= c("name_assessor", "email_assessor", "genus", "species", "subspecies_variety",
+         "scientific_authority", "common_name", "GBIF_taxonID", "NCBI_taxonID", "time_populations")
+
+# check for "test" on any of them
+kobo_output %>% 
+  filter(if_any(all_of(cols), ~ grepl("test", .)))  %>% 
+  select(country_assessment, name_assessor, genus, species)
+
+# filter them out of dataset
+kobo_output<- kobo_output %>% 
+              filter(if_any(all_of(cols), ~ !grepl("test", .)))
+
+```
+
 
 ## Check for common data capture errors
 
@@ -61,7 +79,6 @@ In the form, -999 was used to mark taxa with unknown number of extant population
 kobo_output<-kobo_output %>%
              mutate(n_extant_populations= na_if(n_extant_populations, -999))
 ```
-
 
 We can now explore how many populations per species are still extant (still existing! NOT extinct!)?
 
@@ -89,14 +106,14 @@ Once -999 was replaced by NA there should be no negative number of populations (
 ```{r}
 kobo_output %>%
       filter(n_extant_populations<0) %>%
-      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations)
 ```
 
 Show which taxa (if any) have 0 (zero) extant populations. **Is this correct? needs to be manually checked**
 ```{r}
 kobo_output %>%
       filter(n_extant_populations==0) %>%
-      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations)
 
 
 ```
@@ -105,7 +122,7 @@ Show which species (if any) have 999 extant populations. **Should this be -999? 
 ```{r}
 kobo_output %>%
       filter(n_extant_populations==999) %>%
-      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations)
 
 
 ```
@@ -114,30 +131,28 @@ Show which species (if any) have 999 EXTINCT populations. **Should this be -999?
 ```{r}
 ind2_data %>%
       filter(n_extint_populations==999) %>%
-      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations)
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations)
 ```
-Put all taxa with weird number of populatins that need to be checked together:
+Put all taxa with weird number of populations that need to be checked together:
 
 ```{r}
 check_n_pops <- kobo_output %>% 
       # variables of interest
-      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, other_populations) %>%
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations) %>%
 
       # same filters that discussed above
       filter(n_extant_populations<0 |
             n_extant_populations==0 | 
             n_extant_populations==999 | 
-            n_extint_populations==999) 
+            n_extint_populations==999) %>% 
+
+# add a column stating what needs to be checked:
+
+       mutate(need_to_check="check number of extant or extint populations. Are 0 correct? should 999 be -999? are extant/extint confused?")
+
 
 ```
 
-
-
-### Are there any tests?
-```{r}
-kobo_output[kobo_output$genus=="test", 5:8]
-
-```
 
 ### GBIF ID codes
 
