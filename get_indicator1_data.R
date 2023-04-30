@@ -42,10 +42,13 @@ get_indicator1_data<-function(file=file){
     # create variable with year in which assessment was done (based on date the form was completed)
     mutate(year_assesment=substr(end,1,4)) %>%
     
-    # make sure IntroductionYear, NeYear and NcYear are character (there may be character and integer values depending on how data was written)
+    # make sure some variables that seem numbers are actually character,
+    # because there may be character and integer values depending on how data was written)
+    # for example in IntroductionYear, NeYear and NcYear...
     mutate(across(starts_with("IntroductionYear"), as.character)) %>%
     mutate(across(starts_with("NeYear"), as.character)) %>%
     mutate(across(starts_with("NcYear"), as.character)) %>%
+    mutate(across(starts_with("NcRangeDetails"), as.character)) %>%
     
     ## select relevant columns 
     # taxon and assessment info
