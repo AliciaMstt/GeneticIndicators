@@ -1,9 +1,9 @@
 ---
 title: "Data exploration and cleaning"
 output:
+  word_document: default
   html_document:
     df_print: paged
-  word_document: default
   pdf_document: default
 ---
 
@@ -40,7 +40,8 @@ Filter out records which were marked as "not_approved" in the manual Kobo valida
 ```{r}
 # check if any species is flagged as "validation_status_not_approved"
 kobo_output %>%
-      filter(X_validation_status=="validation_status_not_approved")
+      filter(X_validation_status=="validation_status_not_approved")  %>%
+            select(country_assessment, name_assessor, taxon)
 
 # omit those records from data:
 kobo_output<- kobo_output %>%
@@ -224,7 +225,7 @@ select(country_assessment, name_assessor, taxon, need_to_check, n_extant_populat
 
 # save file:
 
-write.csv(to_check, "kobo_output_tocheck.csv", row.names = FALSE, fileEncoding = "UTF-8")
+write.csv(to_check, "kobo_output_tocheck_30april.csv", row.names = FALSE, fileEncoding = "UTF-8")
 
 ```
 
