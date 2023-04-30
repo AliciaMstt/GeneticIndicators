@@ -136,7 +136,7 @@ Put all taxa with weird number of populations that need to be checked together:
 ```{r}
 check_n_pops <- kobo_output %>% 
       # variables of interest
-      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations) %>%
+      select(country_assessment, name_assessor, taxon, n_extant_populations, n_extint_populations) %>%
 
       # same filters that discussed above
       filter(n_extant_populations<0 |
@@ -166,7 +166,7 @@ GBIF IDs tend to be 7 characters long. Some can be larger or shorter, but these 
 kobo_output %>%
             filter(nchar(GBIF_taxonID)>0, nchar(GBIF_taxonID)!=7) %>%
   # show only relevant columns
-            select(name_assessor, country_assessment, genus, species, GBIF_taxonID)
+            select(country_assessment, name_assessor, taxon, GBIF_taxonID)
 ```
 
 Put them in their own happy df with a column stating what is the likely problem:
@@ -175,12 +175,11 @@ Put them in their own happy df with a column stating what is the likely problem:
 check_GBIF <- kobo_output %>%
               filter(nchar(GBIF_taxonID)>0, nchar(GBIF_taxonID)!=7) %>%
   # show only relevant columns
-            select(name_assessor, country_assessment, taxon, GBIF_taxonID) %>%
+            select(country_assessment, name_assessor, taxon,, GBIF_taxonID) %>%
 # add a column stating what needs to be checked:
 
        mutate(need_to_check="check the GBIF taxonID. Either it looks plain different, or has more or less than 7 digits (most ids are 7 digits long, and this isn't, it could be an exception, or a mistake).")
 ```
-
 
 
 ### Species names
@@ -190,8 +189,6 @@ Genus, species and subspecies should be a single word, check if there are cases 
 ```{r}
 kobo_output %>% 
   filter(grepl(" ", subspecies_variety))
-
-
 
 ```
 
