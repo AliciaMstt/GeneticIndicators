@@ -56,14 +56,16 @@ kobo_output<- kobo_output %>%
 cols= c("name_assessor", "email_assessor", "genus", "species", "subspecies_variety",
          "scientific_authority", "common_name", "GBIF_taxonID", "NCBI_taxonID", "time_populations")
 
-# check for "test" on any of them
+# check for "test" or "template" on any of them
 kobo_output %>% 
-  filter(if_any(all_of(cols), ~ grepl("test", .)))  %>% 
+  filter(if_any(all_of(cols), ~ grepl("test", .)) |
+         if_any(all_of(cols), ~ grepl("Template", .)))  %>% 
   select(country_assessment, name_assessor, genus, species)
 
 # filter them out of dataset
 kobo_output<- kobo_output %>% 
-              filter(if_any(all_of(cols), ~ !grepl("test", .)))
+              filter(if_any(all_of(cols), ~ !grepl("test", .))) %>% 
+              filter(genus!="Template")
 
 ```
 
