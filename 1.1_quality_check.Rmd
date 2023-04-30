@@ -160,7 +160,7 @@ Check GBIF
 head(kobo_output$GBIF_taxonID)
 ```
 
-GBIF IDs tend to be 7 characters long. Some can be larger or shorter, but these seems to be exceptions. Therefore let's flag any records where the GBIF Id is =/= 7 to manually check if it is correct.
+GBIF IDs tend to be 7 characters long. Some can be larger or shorter, but these seem to be exceptions. Therefore let's flag any records where the GBIF Id is =/= 7 to manually check if it is correct.
 
 ```{r}
 kobo_output %>%
@@ -168,6 +168,19 @@ kobo_output %>%
   # show only relevant columns
             select(name_assessor, country_assessment, genus, species, GBIF_taxonID)
 ```
+
+Put them in their own happy df with a column stating what is the likely problem:
+
+```{r}
+check_GBIF <- kobo_output %>%
+              filter(nchar(GBIF_taxonID)>0, nchar(GBIF_taxonID)!=7) %>%
+  # show only relevant columns
+            select(name_assessor, country_assessment, taxon, GBIF_taxonID) %>%
+# add a column stating what needs to be checked:
+
+       mutate(need_to_check="check the GBIF taxonID. Either it looks plain different, or has more or less than 7 digits (most ids are 7 digits long, and this isn't, it could be an exception, or a mistake).")
+```
+
 
 
 ### Species names
