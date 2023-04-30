@@ -64,7 +64,10 @@ get_indicator1_data<-function(file=file){
     pivot_longer(cols = matches("_pop[0-9]"),
                  names_to=c(".value", "population"),
                  names_sep = "_",
-                 values_drop_na = TRUE)
+                 values_drop_na = TRUE) %>%
+  
+  # omit populations w/data (empty because they were not filled, this is ok)  
+  filter(Origin!="") #origin is a mandatory question, so it should be answered, if not, the pop doesn't exist
 
   
   # End of function
