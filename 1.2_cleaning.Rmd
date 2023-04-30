@@ -1,0 +1,76 @@
+---
+title: "Data exploration and cleaning"
+output:
+  html_document:
+    df_print: paged
+  word_document: default
+  pdf_document: default
+---
+
+This notebook corrects the sources of error detected by [1.1_quality_check.Rmd](1.1_quality_check.Rmd), based on the feed back from the people who collected the data. Corrections are done within this script to ensure reproducibility.
+
+The output is a clean kobo file that can be used for analyses.
+
+## Get data
+
+Load required libraries:
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyr)
+library(dplyr)
+library(utile.tools)
+library(stringr)
+library(ggplot2)
+```
+
+Get Kobo raw output data:
+```{r}
+kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-30-07-43-42.csv", sep=";", header=TRUE) %>%
+
+## add  taxon column
+mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE))) %>%
+    # remove white space at the end of the name
+    mutate(taxon=str_trim(taxon, "right"))
+
+```
+
+Filter out records which were marked as "not_approved" in the manual Kobo validation interface (this means country assessors determined the is something wrong with that particular record).
+
+```{r}
+# check if any species is flagged as "validation_status_not_approved"
+kobo_output %>%
+      filter(X_validation_status=="validation_status_not_approved")
+
+# omit those records from data:
+kobo_output<- kobo_output %>%
+            filter(X_validation_status!="validation_status_not_approved")
+
+```
+
+## Filter out any sort of tests
+
+```{r}
+# select likely columns to say "test"
+cols= c("name_assessor", "email_assessor", "genus", "species", "subspecies_variety",
+         "scientific_authority", "common_name", "GBIF_taxonID", "NCBI_taxonID", "time_populations")
+
+# check for "test" on any of them
+kobo_output %>% 
+  filter(if_any(all_of(cols), ~ grepl("test", .)))  %>% 
+  select(country_assessment, name_assessor, genus, species)
+
+# filter them out of dataset
+kobo_output<- kobo_output %>% 
+              filter(if_any(all_of(cols), ~ !grepl("test", .)))
+
+```
+
+
+
+Session Info for reproducibility purposes:
+
+```{r}
+sessionInfo()
+```
+
+

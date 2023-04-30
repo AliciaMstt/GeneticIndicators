@@ -7,12 +7,10 @@ output:
   pdf_document: default
 ---
 
-This notebook looks for common sources of error to make sure it is ready for data analyses. Typos and small errors are corrected in a reproducible way, other error that need manual revision are flagged so that assessors can review them. 
+This notebook looks for common sources of error and flags those records manual revision by the assessors who capture data from each country.
 
-The output are:
+The output is a file showing the records that need manual review or corrections, if any
 
-* a file showing the records that need manual review or corrections, if any
-* a clean kobo file that can be used for analyses.
 
 ## Get data
 
