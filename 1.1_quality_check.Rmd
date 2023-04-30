@@ -175,7 +175,7 @@ Put them in their own happy df with a column stating what is the likely problem:
 check_GBIF <- kobo_output %>%
               filter(nchar(GBIF_taxonID)>0, nchar(GBIF_taxonID)!=7) %>%
   # show only relevant columns
-            select(country_assessment, name_assessor, taxon,, GBIF_taxonID) %>%
+            select(country_assessment, name_assessor, taxon, GBIF_taxonID) %>%
 # add a column stating what needs to be checked:
 
        mutate(need_to_check="check the GBIF taxonID. Either it looks plain different, or has more or less than 7 digits (most ids are 7 digits long, and this isn't, it could be an exception, or a mistake).")
@@ -184,11 +184,47 @@ check_GBIF <- kobo_output %>%
 
 ### Species names
 
-Genus, species and subspecies should be a single word, check if there are cases where it isn't:
+Genus, species and subspecies should be a single word, check if there are cases where it isn't. Only exception would be "var." or "subsp." in the subspecies_variety field: 
 
 ```{r}
 kobo_output %>% 
-  filter(grepl(" ", subspecies_variety))
+  filter(grepl(" ", genus) | 
+         grepl(" ", species) | 
+         grepl(" ", subspecies_variety)) %>%
+   filter(!grepl("var.", subspecies_variety)) %>%
+   filter(!grepl("subsp.", subspecies_variety)) %>%
+  # show only relevant columns
+  # show only relevant columns
+            select(country_assessment, name_assessor, taxon, genus, species, subspecies_variety)
+
+```
+
+Put them in their own happy df with a column stating what is the likely problem:
+
+```{r}
+check_taxon_names <- kobo_output %>% 
+  filter(grepl(" ", genus) | 
+         grepl(" ", species) | 
+         grepl(" ", subspecies_variety)) %>%
+   filter(!grepl("var.", subspecies_variety)) %>%
+   filter(!grepl("subsp.", subspecies_variety)) %>%
+  # show only relevant columns
+            select(country_assessment, name_assessor, taxon, genus, species, subspecies_variety) %>%
+       mutate(need_to_check="check genus, species or subspecies_variety, we are targeting to have single words in each field, except in the ifraspecific names, where 'var.' and 'subsp.' (only) would be accepted. Other details or taxonomic notes should be added in the comments.")
+```
+
+
+## Create a single file for assessors review:
+
+```{r}
+to_check<-full_join(check_n_pops, check_GBIF) %>% full_join(check_taxon_names) %>%
+  # show columns in desired order:
+select(country_assessment, name_assessor, taxon, need_to_check, n_extant_populations,
+         n_extint_populations, GBIF_taxonID, genus, species, subspecies_variety)
+
+# save file:
+
+write.csv(to_check, "kobo_output_tocheck.csv", row.names = FALSE, fileEncoding = "UTF-8")
 
 ```
 
