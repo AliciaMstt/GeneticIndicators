@@ -33,4 +33,17 @@ names(neighbor_Nes) <- points$pop_name
 
 print(neighbor_Nes)
 
+# Calculate the neighbor Ne 
+
+neighbor_Ne <- colSums(points_df$Ne * dist_weight)
+names(neighbor_Ne) <- points_df$rec_name
+
+print(neighbor_Ne) 
+
+# Calcurate the Ne fragmentation index
+
+NFI <- sum(neighbor_Ne>500)/length(neighbor_Ne)
+# it should be > 5000 when the population size is Nc
+print(NFI)
+
  
