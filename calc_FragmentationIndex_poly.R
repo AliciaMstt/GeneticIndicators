@@ -5,7 +5,7 @@ library(sf)
 #here, original data given in table and convert to GIS object (st_points)
 #instead, you can import GIS files like .shp by st_read function
 
-points_df <- data.frame(rec_name = paste("record", c(1:4), sep=""), Ne = c(100, 200, 150, 250), 
+points_df <- data.frame(rec_name = paste("record", c(1:4), sep=""), Ne = c(100, 200, 350, 250), 
 			x = c(1, 2, 3, 4), y = c(1, 3, 2, 4)) 
 print(points_df)
 
@@ -22,9 +22,9 @@ record2 <- st_polygon(list(rbind(c(2, 0), c(2, 1), c(3, 1), c(3, 0), c(2, 0))))
 record3 <- st_polygon(list(rbind(c(1, 2), c(1, 3), c(2, 3), c(2, 2), c(1, 2)))) 
 record4 <- st_polygon(list(rbind(c(3, 2), c(3, 3), c(4, 3), c(4, 2), c(3, 2)))) 
 polys <- st_sf(geometry = st_sfc(record1, record2, record3, record4), 
-			rec_name = paste("record", c(1:4), sep=""), Ne = c(100, 200, 150, 250)) 
+			rec_name = paste("record", c(1:4), sep=""), Ne = c(100, 200, 350, 250)) 
 
-plot(polys)
+plot(polys[,"Ne"])
 
 ##### Set the parameter
 
@@ -32,7 +32,7 @@ dist_thre <- 2  #threshold for dispersal distance
 
 param_decay <- 0.7 
 #if you prefer distance decay instead of simple thresholding
-#param_decay = 0.7 results in distance decay of ca. 0.5 for a unit distance (dist=1) 
+#param_decay = 0.7 results in distance decay of ca. 0.5 at a unit distance (dist=1) 
 
 ###### 
 # Function to calculate distance-dependent weight (default is threshold function by dispersal distance) 
