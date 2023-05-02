@@ -1,0 +1,36 @@
+# create example data 
+
+points <- data.frame(rec_name = paste("record", c(1:4), sep=""), 
+			x = c(1, 2, 3, 4), y = c(1, 3, 2, 4), Ne = c(10, 20, 15, 25)) 
+print(points)
+ 
+coord_col <- c("x","y")
+
+# Set threshold (dispersal distance) 
+
+disp_dist <- 2 
+
+
+# Calculate differences between coordinates
+
+n_points <- dim(points)[1]
+dim_coord <- length(coord_col)
+
+mat1 <- matrix(rep(t(points[ , coord_col]),dim(points)[1]),n_points*dim_coord)
+mat2 <- t(matrix(rep(as.matrix(points[ , coord_col]),n_points),n_points))
+
+diffs <- mat1-mat2 
+
+# Calculate distance between points
+
+dists <- sqrt(colSums(matrix(diffs,2)^2)) 
+dists <- matrix(dists, dim(points)[1])
+
+# Calculate neighborhood Ne 
+
+neighbor_Nes <- colSums(points$Ne * (dists < disp_dist)) 
+names(neighbor_Nes) <- points$pop_name
+
+print(neighbor_Nes)
+
+ 
