@@ -80,7 +80,10 @@ print(neighbor_Ne)
 
 ##### Calcurate the Ne fragmentation index
 
-sum(neighbor_Ne>500)/length(neighbor_Ne)
+NFI <- sum(neighbor_Ne>500)/length(neighbor_Ne)
 # it should be > 5000 when the population size is Nc
+
+print(NFI)
+
 
 
