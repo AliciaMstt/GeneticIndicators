@@ -7,11 +7,11 @@ output:
   pdf_document: default
 ---
 
-This notebook corrects the sources of error detected by [1.1_quality_check.Rmd](1.1_quality_check.Rmd), based on the feed back from the people who collected the data. Corrections are done within this script to ensure reproducibility.
+This notebook corrects the errors detected by [1.1_quality_check.Rmd](1.1_quality_check.Rmd), based on the feed back from the people who collected the data. Corrections are done within this script to ensure reproducibility.
 
 The output is a clean kobo file that can be used for analyses.
 
-## Get data
+## Get data, libraries and functions
 
 Load required libraries:
 
@@ -23,9 +23,16 @@ library(stringr)
 library(ggplot2)
 ```
 
+Useful functions
+```{r}
+# not in
+"%!in%" <- function(x, y)!('%in%'(x,y))
+```
+
+
 Get Kobo raw output data:
 ```{r}
-kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-30-07-43-42.csv", sep=";", header=TRUE) %>%
+kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-05-21-19-53-50.csv", sep=";", header=TRUE) %>%
 
 ## add  taxon column
 mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE))) %>%
@@ -33,6 +40,9 @@ mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE)
     mutate(taxon=str_trim(taxon, "right"))
 
 ```
+
+
+## Filter tests and records marked as not approved
 
 Filter out records which were marked as "not_approved" in the manual Kobo validation interface (this means country assessors determined the is something wrong with that particular record).
 
@@ -42,12 +52,12 @@ kobo_output %>%
       filter(X_validation_status=="validation_status_not_approved")
 
 # omit those records from data:
-kobo_output<- kobo_output %>%
+kobo_clean<- kobo_output %>%
             filter(X_validation_status!="validation_status_not_approved")
 
 ```
 
-## Filter out any sort of tests
+Filter out any sort of tests
 
 ```{r}
 # select likely columns to say "test"
@@ -55,14 +65,249 @@ cols= c("name_assessor", "email_assessor", "genus", "species", "subspecies_varie
          "scientific_authority", "common_name", "GBIF_taxonID", "NCBI_taxonID", "time_populations")
 
 # check for "test" on any of them
-kobo_output %>% 
+kobo_clean %>% 
   filter(if_any(all_of(cols), ~ grepl("test", .)))  %>% 
   select(country_assessment, name_assessor, genus, species)
 
 # filter them out of dataset
-kobo_output<- kobo_output %>% 
+kobo_clean<- kobo_clean %>% 
               filter(if_any(all_of(cols), ~ !grepl("test", .)))
 
+```
+
+## Number of populations
+
+
+### Change -999 to NA
+In the form, -999 was used to mark taxa with unknown number of extant populations. This was used because answering the question was mandatory, so leaving it blank wasn't possible. We have to change -999 to NA.
+
+For n extant populations:
+
+```{r}
+kobo_clean<- kobo_clean %>%
+             mutate(n_extant_populations= na_if(n_extant_populations, -999))
+```
+
+For n extinct populations:
+
+```{r}
+kobo_clean<- kobo_clean %>%
+             mutate(n_extint_populations= na_if(n_extint_populations, -999))
+```
+
+
+### Correct "negative populations"
+Once -999 was replaced by NA there should be no negative number of populations (if they are, they are typos that need to be corrected).
+
+Check for extant populations:
+
+```{r}
+kobo_clean %>%
+      filter(n_extant_populations<0) %>%
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations)
+```
+
+Check for extinct populations:
+
+```{r}
+kobo_clean %>%
+      filter(n_extint_populations<0) %>%
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations)
+```
+
+### Correct 999 populations
+
+Show which species (if any) have 999 EXTINCT populations. **Should this be -999?**
+
+Check for extinct populations:
+```{r}
+kobo_clean %>%
+      filter(n_extint_populations==999) %>%
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, end)
+```
+
+Check for extant populations:
+```{r}
+kobo_clean %>%
+      filter(n_extant_populations==999) %>%
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, end)
+```
+
+### Double check 0 (zero) extant populations
+
+Show which taxa (if any) have 0 (zero) extant populations. **Is this correct? needs to be manually checked**
+```{r}
+kobo_clean %>%
+      filter(n_extant_populations==0) %>%
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, end)
+
+```
+
+According to the assessors feedback the data of the following taxa is correct. For example, there are 0 extant populations because it is regionally extinct:
+
+```{r}
+ok_0_extant<-c("Hieracium sandozianum",
+               "Charadrius alexandrinus",
+               "Planorbella magnifica")
+```
+
+Filtering out those taxa that are correct we should have an empity object, is not, the remaining taxa still need to be verified:
+
+```{r}
+kobo_clean %>%
+      filter(n_extant_populations==0) %>%
+      filter(taxon %!in% ok_0_extant) %>%
+      select(country_assessment, taxon, name_assessor, n_extant_populations, n_extint_populations, end)
+
+```
+
+
+### and object with all "n pops" issues together
+
+If there are any remaining taxa with weird number of populations put them together in a single object.
+
+If everything is correct now, the object should be empity.
+
+```{r}
+check_n_pops <- kobo_clean %>% 
+      # variables of interest
+      select(country_assessment, name_assessor, taxon, n_extant_populations, n_extint_populations, end) %>%
+
+      # same filters that discussed above
+      filter(n_extant_populations<0 |
+            n_extant_populations==0 | 
+            n_extant_populations==999 | 
+            n_extint_populations==999) %>%
+      filter(taxon %!in% ok_0_extant) %>%
+
+# add a column stating what needs to be checked:
+
+       mutate(need_to_check="check number of extant or extint populations. Are 0 correct? should 999 be -999? are extant/extint confused?")
+check_n_pops
+```
+
+
+## Correct GBIF ids
+
+The quality check script flagged any records where the GBIF Id is =/= 7, because that is the most common length. Changes after the assessors checked their data:
+
+Corrections requested:
+
+```{r}
+# Gymnobelideus leadbeateri 
+
+kobo_clean[kobo_clean$taxon=="Gymnobelideus leadbeateri", "GBIF_taxonID"] 
+kobo_clean[kobo_clean$taxon=="Gymnobelideus leadbeateri", "GBIF_taxonID"] <-2440054
+kobo_clean[kobo_clean$taxon=="Gymnobelideus leadbeateri", "GBIF_taxonID"]  
+
+# Zingel asper
+kobo_clean[kobo_clean$taxon=="Zingel asper", "GBIF_taxonID"]  
+kobo_clean[kobo_clean$taxon=="Zingel asper", "GBIF_taxonID"]  <- 2382117
+kobo_clean[kobo_clean$taxon=="Zingel asper", "GBIF_taxonID"]  
+
+# Miniopterus schreibersii
+kobo_clean[kobo_clean$taxon=="Miniopterus schreibersii", "GBIF_taxonID"]  
+kobo_clean[kobo_clean$taxon=="Miniopterus schreibersii", "GBIF_taxonID"]  <- 9796816
+kobo_clean[kobo_clean$taxon=="Miniopterus schreibersii", "GBIF_taxonID"]  
+
+# Toxolasma lividum
+kobo_clean[kobo_clean$taxon=="Toxolasma lividum", "GBIF_taxonID"]  
+kobo_clean[kobo_clean$taxon=="Toxolasma lividum", "GBIF_taxonID"]  <-157572593
+kobo_clean[kobo_clean$taxon=="Toxolasma lividum", "GBIF_taxonID"]  
+
+```
+
+Correct GBIF ids even if they look weird:
+
+```{r}
+ok_GBIF<-c("Caladenia woolcockiorum",
+          "Leucopatus anophthalmus", 
+          "Phyllurus kabikabi",
+          "Phonotimpus talquian")
+
+## add the manually corrected too, in case they are != 7
+
+ok_GBIF<-c(ok_GBIF,
+           "Gymnobelideus leadbeateri",
+           "Zingel asper",
+           "Miniopterus schreibersii",
+           "Toxolasma lividum")
+
+```
+
+
+### and object with all GBIF issues together
+
+If there are any remaining taxa with weird GBIF ids put them together in a single object.
+
+```{r}
+check_GBIF <- kobo_clean %>%
+              filter(nchar(GBIF_taxonID)>0, nchar(GBIF_taxonID)!=7) %>%
+              filter(taxon %!in% ok_GBIF) %>%
+  # show only relevant columns
+            select(country_assessment, name_assessor, taxon, GBIF_taxonID, end) %>%
+# add a column stating what needs to be checked:
+
+       mutate(need_to_check="check the GBIF taxonID. Either it looks plain different, or has more or less than 7 digits (most ids are 7 digits long, and this isn't, it could be an exception, or a mistake).")
+check_GBIF
+```
+
+## Species names
+
+Genus, species and subspecies should be a single word, check if there are cases where it isn't. Only exception would be "var." or "subsp." in the subspecies_variety field: 
+
+```{r}
+kobo_clean %>% 
+  filter(grepl(" ", genus) | 
+         grepl(" ", species) | 
+         grepl(" ", subspecies_variety)) %>%
+   filter(!grepl("var.", subspecies_variety)) %>%
+   filter(!grepl("subsp.", subspecies_variety)) %>%
+  # show only relevant columns
+  # show only relevant columns
+            select(country_assessment, name_assessor, taxon, genus, species, subspecies_variety, end)
+
+```
+
+Homogenize "subspecies" "ssp" etc to "subsp. Same for variety to var.
+
+ALICIA PENDING HERE.
+
+Corrections requested:
+
+```{r}
+# Gypaetus Gypaetus barbatus
+kobo_clean[kobo_clean$taxon=="Gypaetus Gypaetus barbatus", "species"]
+kobo_clean[kobo_clean$taxon=="Gypaetus Gypaetus barbatus", "species"] <-"barbatus"
+kobo_clean[kobo_clean$taxon=="Gypaetus Gypaetus barbatus", "taxon"] <-"Gypaetus barbatus"
+kobo_clean[kobo_clean$taxon=="Gypaetus barbatus", c("species", "taxon")] 
+
+# Gyps Gyps coprotheres
+kobo_clean[kobo_clean$taxon=="Gyps Gyps coprotheres", "species"]
+kobo_clean[kobo_clean$taxon=="Gyps Gyps coprotheres", "species"] <-"coprotheres"
+kobo_clean[kobo_clean$taxon=="Gypaetus Gypaetus barbatus", "taxon"] <-"Gypaetus barbatus"
+kobo_clean[kobo_clean$taxon=="Gypaetus barbatus", c("species", "taxon")] 
+
+
+# Hippocampus Hippocampus capensis
+kobo_clean[kobo_clean$taxon=="Hippocampus Hippocampus capensis", "species"]
+kobo_clean[kobo_clean$taxon=="Hippocampus Hippocampus capensis", "species"] <-"capensis"
+kobo_clean[kobo_clean$taxon=="Hippocampus Hippocampus capensis", "taxon"] <-"Hippocampus capensis"
+kobo_clean[kobo_clean$taxon=="Hippocampus capensis", c("species", "taxon")] 
+
+
+# Poicephalus Poicephalus robustus
+kobo_clean[kobo_clean$taxon=="Poicephalus Poicephalus robustus", "species"]
+kobo_clean[kobo_clean$taxon=="Poicephalus Poicephalus robustus", "species"] <-"robustus"
+kobo_clean[kobo_clean$taxon=="Poicephalus Poicephalus robustus", "taxon"] <-"Poicephalus robustus"
+kobo_clean[kobo_clean$taxon=="Poicephalus robustus", c("species", "taxon")] 
+```
+
+Correct:
+
+```{r}
+ok_taxon_name<-c("Coregonus albula morphotype trybomi",
+                 "Glyptemys muhlenbergii Northern Population")
 ```
 
 
