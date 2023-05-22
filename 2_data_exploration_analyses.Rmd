@@ -17,6 +17,7 @@ Load required libraries:
 library(tidyr)
 library(dplyr)
 library(utile.tools)
+library(stringr)
 library(ggplot2)
 library(ggsankey)
 ```
@@ -26,45 +27,33 @@ Load required functions. These custom fuctions are available at: https://github.
 ```{r}
 source("get_indicator1_data.R")
 source("get_indicator2_data.R")
+source("get_indicator3_data.R")
+source("get_metadata.R")
 ```
 
 
 Get indicator 1 and indicator 2 data from clean kobo output
 ```{r}
-# Get data for each indicator:
-ind1_data<-get_indicator1_data(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv")
+# Get data:
+kobo_clean<-read.csv(file="kobo_output_clean.csv", header=TRUE)
+
+# Extract indicator 1 data from kobo output
+ind1_data<-get_indicator1_data(kobo_output=kobo_clean)
 head(ind1_data)
 
-ind2_data<-get_indicator2_data(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv")
+# Extract indicator 2 data from kobo output
+ind2_data<-get_indicator2_data(kobo_output=kobo_clean)
 head(ind2_data)
 
-kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-16-15-48-12.csv", sep=";", header=TRUE)
+# Extract indicator 3 data from kobo output
+ind3_data<-get_indicator3_data(kobo_output=kobo_clean)
+head(ind3_data)
 
-# create a variable with the full taxon name
-kobo_output<- kobo_output %>%
-                 # create a variable with the full taxon name
-                 mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE)))
+# extract metadata
+metadata<-get_metadata(kobo_output=kobo_clean)
+head(metadata)
 
 ```
-
-Filter out records which were marked as "not_approved" in the manual Kobo validation interface (this means country assessors determined the is something wrong with that particular record).
-
-```{r}
-# check if any species is flagged as "validation_status_not_approved"
-ind2_data %>%
-      filter(X_validation_status=="validation_status_not_approved")
-
-# omit those records from data:
-ind2_data<- ind2_data %>%
-            filter(X_validation_status!="validation_status_not_approved")
-
-ind1_data<- ind1_data %>%
-            filter(X_validation_status!="validation_status_not_approved")
-
-kobo_output<-kobo_output %>%
-            filter(X_validation_status!="validation_status_not_approved")
-```
-
 
 
 ## General description of the dataset
@@ -72,7 +61,7 @@ kobo_output<-kobo_output %>%
 Records by country
 
 ```{r}
-ggplot(kobo_output, aes(x=country_assessment)) + 
+ggplot(metadata, aes(x=country_assessment)) + 
   geom_bar(stat = "count")
 
 ```
@@ -80,7 +69,7 @@ ggplot(kobo_output, aes(x=country_assessment)) +
 Records by taxonomic groups
 
 ```{r}
-ggplot(kobo_output, aes(x=taxonomic_group)) + 
+ggplot(metadata, aes(x=taxonomic_group)) + 
   geom_bar(stat = "count") +
   theme(axis.text.x = element_text(angle = 45))
 
@@ -91,7 +80,7 @@ Which taxonomic groups are countries assesing?
 library(ggsankey)
 
 # transform data to how ggsankey wants it
-df <- kobo_output %>%
+df <- metadata %>%
   make_long(country_assessment, taxonomic_group)
 df
 
@@ -108,10 +97,10 @@ ggplot(df, aes(x = x,
               show.legend = FALSE) +
   geom_sankey_label(size = 2, color = 1, fill = "white") +
   # colour by country
-  scale_fill_manual(values=c(scales::hue_pal()(length(unique(kobo_output$country_assessment))),  # a nice  color for each of the n countries
-                             rep("darkgrey", length(unique(kobo_output$taxonomic_group)))), # grey for the n taxonomic groups
-                    breaks=c(unique(kobo_output$country_assessment), 
-                             unique(kobo_output$taxonomic_group))) +
+  scale_fill_manual(values=c(scales::hue_pal()(length(unique(metadata$country_assessment))),  # a nice  color for each of the n countries
+                             rep("darkgrey", length(unique(metadata$taxonomic_group)))), # grey for the n taxonomic groups
+                    breaks=c(unique(metadata$country_assessment), 
+                             unique(metadata$taxonomic_group))) +
   theme_sankey(base_size = 10) +
   xlab("")
   
@@ -122,7 +111,7 @@ ggplot(df, aes(x = x,
 How is the distribution of Ne / Nc data across countries?
 ```{r}
 # transform data to how ggsankey wants it
-df <- kobo_output %>%
+df <- metadata %>%
   make_long(country_assessment, popsize_data)
 df
 
@@ -138,22 +127,20 @@ ggplot(df, aes(x = x,
               show.legend = FALSE) +
   geom_sankey_label(size = 2, color = 1, fill = "white") +
   # colour by country
-  scale_fill_manual(values=c(scales::hue_pal()(length(unique(kobo_output$country_assessment))),  # a nice  color for each of the n countries
-                             rep("darkgrey", length(unique(kobo_output$popsize_data)))), # grey for the n taxonomic groups
-                    breaks=c(unique(kobo_output$country_assessment), 
-                             unique(kobo_output$popsize_data))) +
+  scale_fill_manual(values=c(scales::hue_pal()(length(unique(metadata$country_assessment))),  # a nice  color for each of the n countries
+                             rep("darkgrey", length(unique(metadata$popsize_data)))), # grey for the n taxonomic groups
+                    breaks=c(unique(metadata$country_assessment), 
+                             unique(metadata$popsize_data))) +
   theme_sankey(base_size = 10) +
   xlab("")
   
 ```
 
 
-
-
 How is Ne / Nc  data distributred across countries and speices?
 ```{r}
 # transform data to how ggsankey wants it
-df <- kobo_output %>%
+df <- metadata %>%
   make_long(country_assessment, taxonomic_group, popsize_data)
 df
 
@@ -172,5 +159,35 @@ ggplot(df, aes(x = x,
   xlab("")
 
 ```
+Taxonomic groups and IUCN status
 
+
+```{r}
+# transform data to how ggsankey wants it
+df <- metadata %>%
+  make_long(taxonomic_group, global_IUCN, popsize_data)
+df
+
+# Sankey
+ggplot(df, aes(x = x,
+               next_x = next_x,
+               node = node,
+               next_node = next_node,
+               fill = factor(node),
+               label = node)) +
+  geom_sankey(flow.alpha = 0.6, 
+              node.color = NA,
+              show.legend = FALSE) +
+  geom_sankey_label(size = 2, color = 1, fill = "white") +
+  theme_sankey(base_size = 10) +
+  xlab("")
+```
+
+## 
+
+## Session Info for reproducibility purposes:
+
+```{r}
+sessionInfo()
+```
 
