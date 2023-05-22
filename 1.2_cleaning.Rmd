@@ -252,7 +252,7 @@ check_GBIF <- kobo_clean %>%
 check_GBIF
 ```
 
-## Species names
+## Taxon names
 
 Genus, species and subspecies should be a single word, check if there are cases where it isn't. Only exception would be "var." or "subsp." in the subspecies_variety field: 
 
@@ -269,9 +269,6 @@ kobo_clean %>%
 
 ```
 
-Homogenize "subspecies" "ssp" etc to "subsp. Same for variety to var.
-
-ALICIA PENDING HERE.
 
 Corrections requested:
 
@@ -301,6 +298,34 @@ kobo_clean[kobo_clean$taxon=="Poicephalus Poicephalus robustus", "species"]
 kobo_clean[kobo_clean$taxon=="Poicephalus Poicephalus robustus", "species"] <-"robustus"
 kobo_clean[kobo_clean$taxon=="Poicephalus Poicephalus robustus", "taxon"] <-"Poicephalus robustus"
 kobo_clean[kobo_clean$taxon=="Poicephalus robustus", c("species", "taxon")] 
+
+# Campylorhynchus rufinucha humilis, rufinucha, nigricaudatus, xerophilus, nicaraguae, castaneus, capistratus
+kobo_clean[kobo_clean$taxon=="Campylorhynchus rufinucha humilis, rufinucha, nigricaudatus, xerophilus, nicaraguae, castaneus, capistratus", "subspecies_variety"]
+kobo_clean[kobo_clean$taxon=="Campylorhynchus rufinucha humilis, rufinucha, nigricaudatus, xerophilus, nicaraguae, castaneus, capistratus", "subspecies_variety"] <-""
+kobo_clean[kobo_clean$taxon=="Campylorhynchus rufinucha humilis, rufinucha, nigricaudatus, xerophilus, nicaraguae, castaneus, capistratus", "taxon"] <- "Campylorhynchus rufinucha"
+kobo_clean[kobo_clean$taxon=="Campylorhynchus rufinucha", c("subspecies_variety", "species", "taxon")] 
+
+# Icterus Icterus gularis gularis, tamaulipensis, yucatanensis, flavescens, troglodytes,  gigas
+kobo_clean[kobo_clean$taxon=="Icterus Icterus gularis gularis, tamaulipensis, yucatanensis, flavescens, troglodytes,  gigas", "subspecies_variety"]
+kobo_clean[kobo_clean$taxon=="Icterus Icterus gularis gularis, tamaulipensis, yucatanensis, flavescens, troglodytes,  gigas", "subspecies_variety"] <-""
+kobo_clean[kobo_clean$taxon=="Icterus Icterus gularis gularis, tamaulipensis, yucatanensis, flavescens, troglodytes,  gigas", "species"]
+kobo_clean[kobo_clean$taxon=="Icterus Icterus gularis gularis, tamaulipensis, yucatanensis, flavescens, troglodytes,  gigas", "species"] <-"gularis"
+kobo_clean[kobo_clean$taxon=="Icterus Icterus gularis gularis, tamaulipensis, yucatanensis, flavescens, troglodytes,  gigas", "taxon"] <- "Icterus gularis"
+kobo_clean[kobo_clean$taxon=="Icterus gularis", c("subspecies_variety", "species", "taxon")] 
+
+
+# Melanerpes santacruzi grateloupensis, dubius, santacruzi, hughlandi, leei, turneffensis, pauper, insulanus, canescens
+kobo_clean[kobo_clean$taxon=="Melanerpes santacruzi grateloupensis, dubius, santacruzi, hughlandi, leei, turneffensis, pauper, insulanus, canescens", "subspecies_variety"]
+kobo_clean[kobo_clean$taxon=="Melanerpes santacruzi grateloupensis, dubius, santacruzi, hughlandi, leei, turneffensis, pauper, insulanus, canescens", "subspecies_variety"] <-""
+kobo_clean[kobo_clean$taxon=="Melanerpes santacruzi grateloupensis, dubius, santacruzi, hughlandi, leei, turneffensis, pauper, insulanus, canescens", "taxon"] <- "Melanerpes santacruzi"
+kobo_clean[kobo_clean$taxon=="Melanerpes santacruzi", c("subspecies_variety", "species", "taxon")] 
+
+# Saltator atriceps atriceps, suffuscus, flavicrissus, peeti, raptor, lacertosus
+kobo_clean[kobo_clean$taxon=="Saltator atriceps atriceps, suffuscus, flavicrissus, peeti, raptor, lacertosus", "subspecies_variety"]
+kobo_clean[kobo_clean$taxon=="Saltator atriceps atriceps, suffuscus, flavicrissus, peeti, raptor, lacertosus", "subspecies_variety"] <-""
+kobo_clean[kobo_clean$taxon=="Saltator atriceps atriceps, suffuscus, flavicrissus, peeti, raptor, lacertosus", "taxon"] <- "Saltator atriceps"
+kobo_clean[kobo_clean$taxon=="Saltator atriceps", c("subspecies_variety", "species", "taxon")] 
+
 ```
 
 Correct:
@@ -310,7 +335,47 @@ ok_taxon_name<-c("Coregonus albula morphotype trybomi",
                  "Glyptemys muhlenbergii Northern Population")
 ```
 
+### and object with all taxon names issues together
 
+If there are any remaining taxa with weird taxon names put them together in a single object.
+
+```{r}
+check_taxon_names <- kobo_clean %>% 
+  filter(grepl(" ", genus) | 
+         grepl(" ", species) | 
+         grepl(" ", subspecies_variety)) %>%
+   filter(!grepl("var.", subspecies_variety)) %>%
+   filter(!grepl("subsp.", subspecies_variety)) %>%
+   filter(taxon %!in% ok_taxon_name) %>%
+  # show only relevant columns
+            select(country_assessment, name_assessor, taxon, genus, species, subspecies_variety, end) %>%
+       mutate(need_to_check="check genus, species or subspecies_variety, we are targeting to have single words in each field, except in the ifraspecific names, where 'var.' and 'subsp.' (only) would be accepted. Other details or taxonomic notes should be added in the comments.")
+check_taxon_names
+```
+
+## Create a single file for assessors review:
+
+If there are still taxa that need to be checked for whatever reason, write a file enlisting them
+
+```{r}
+to_check<-full_join(check_n_pops, check_GBIF) %>% full_join(check_taxon_names) %>%
+  # show columns in desired order:
+select(country_assessment, name_assessor, taxon, need_to_check, n_extant_populations,
+         n_extint_populations, GBIF_taxonID, genus, species, subspecies_variety, end)
+
+to_check
+
+# save file with a list of taxa if there are remaining issues, or with a message saying that all is done if not):
+
+if(nrow(to_check)>0) {
+
+write.csv(to_check, "kobo_output_tocheck_remaining_issues.csv", row.names = FALSE, fileEncoding = "UTF-8")
+} else {
+happy_message<-"congratulations! there are no more taxa with issues to be corrected. :)"
+ write.csv(happy_message, "kobo_output_tocheck_remaining_issues.csv", row.names = FALSE, fileEncoding = "UTF-8")
+}
+
+```
 
 Session Info for reproducibility purposes:
 
