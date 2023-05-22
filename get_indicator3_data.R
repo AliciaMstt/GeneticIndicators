@@ -8,7 +8,7 @@
 ### for citation guidelines
 
 
-get_indicator2_data<-function(kobo_output=kobo_output){
+get_indicator3_data<-function(kobo_output=kobo_output){
   
   ### Arguments:
   
