@@ -52,7 +52,7 @@ Check [Kobotoolbox documentation](https://support.kobotoolbox.org/welcome.html) 
 
 #### Population information template:
 
-If information of more than 20 populations will be used to collect data for indicator 2 (Section 5 of the Kobo form) it is possible to use the following template to upload data instead of using the kobo form. **This is only encouraged in cases when data is extracted programatically from extant databases,** otherwise we recommend using the Kobo form to avoid mistakes. The form allows to manually fill the information of up to 100 populations, but you can add as many populations as needed in a text file following this template.
+If information of more than 25 populations will be used to collect data for indicator 2 (Section 5 of the Kobo form) it is possible to use the following template to upload data instead of using the kobo form. **This is only encouraged in cases when data is extracted programatically from extant databases,** otherwise we recommend using the Kobo form to avoid mistakes. The form allows to manually fill the information of up to 25 populations, but you can add as many populations as needed in a text file following this template.
 
 **Template text version:** [populations\_data_template.txt](populations_data_template.txt). Notice that the first lines starting with `#` are comments to guide you in how the data of each variable (column) should be formatted. You can keep or delete these lines in your data file, but if you keep them do not delete the `#` at te beginning of each line.
 
@@ -65,22 +65,24 @@ Regardless of which template you used, save your data as .txt tab delimited file
 
 #### Extract the data for each indicator from the kobo output:
 
-The following R functions take as input the output of the Kobo form "International Genetic Indicator testing" and reformat it in order to have the data in a data frame useful for estimating each of the Genetic Diversity Indicators.
+The following R functions take as input a data frame with the output of the Kobo form "International Genetic Indicator testing" and reformat it in order to have the data in a data frame useful for estimating each of the Genetic Diversity Indicators.
  
-* [`get_indicator1_data.R`](get_indicator1_data.R): outputs a data frame with the data needed to estimate indicator 1. 
+* [`get_indicator1_data.R`](get_indicator1_data.R): outputs a data frame with the data needed to estimate indicator 1. In the kobo output, population data is in different columns, this function transforms it so that population data is in rows. This is useful for downstream R analyses.
 
 * [`get_indicator2_data.R`](get_indicator2_data.R): outputs a data frame with the data needed to estimate indicator 2. 
 
 
 ##### Usage:
 
-* Input for the 3 functions is the same `.csv` file resulting from exporting the Kobotoolbox data from the form "International Genetic Indicator testing" with the following settings:
+* Input for the 3 functions is a data frame object read into R from the `.csv` file resulting from exporting the Kobotoolbox data from the form "International Genetic Indicator testing" with the following settings:
 
 ![export_instructions.png](export_instructions.png)
 
 * Arguments:
 
-`file` = path to the .csv file with kobo output. 
+`kobo_output` = a data frame object read into R from the `.csv` file 
+resulting from exporting the Kobotoolbox data as explained above.
+  
 
 * Example:
 
@@ -89,16 +91,23 @@ The following R functions take as input the output of the Kobo form "Internation
 library(tidyr)
 library(dplyr)
 library(utile.tools)
+library(stringr)
 
 
 # load functions
 source("get_indicator1_data.R")
 source("get_indicator2_data.R")
 
-# Get data for each indicator:
-ind1_data<-get_indicator1_data(file="kobo_output.csv")
-ind2_data<-get_indicator2_data(file="kobo_output.csv")
+# Get data:
+kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-05-21-19-53-50.csv", sep=";", header=TRUE)
 
+# Extract indicator 1 data from kobo output
+ind1_data<-get_indicator1_data(kobo_output=kobo_output)
+head(ind1_data)
+
+# Extract indicator 2 data from kobo output
+ind2_data<-get_indicator2_data(kobo_output=kobo_output)
+head(ind2_data)
 ```
 
 ##### Dependencies:

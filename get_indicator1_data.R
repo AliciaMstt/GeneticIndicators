@@ -5,16 +5,18 @@
 ###                                a genetically effective size, Ne, greater than 500.)
 ### 
 
-### If you use this script, please cite XXXXXXXX
+### If you use this script, please check https://github.com/AliciaMstt/GeneticIndicators 
+### for citation guidelines
 
-get_indicator1_data<-function(file=file){
+get_indicator1_data<-function(kobo_output=kobo_output){
   ###
   ### Arguments:
   ###
   
-  # file = path to the .csv file with kobo output. This input data should had been exported 
-  # from Kobotoolbox and saved as .csv
-  # as detailed in the README at: XXX UPDATE URL TO FINAL GITHUB REPO HERE".
+  # kobo_output = a data frame object read into R from the `.csv` file 
+  # resulting from exporting the Kobotoolbox data from the form 
+  # "International Genetic Indicator testing" wit the settings explaiend at
+  # https://github.com/AliciaMstt/GeneticIndicators
   
   ### Needed libraries:  
   
@@ -27,18 +29,29 @@ get_indicator1_data<-function(file=file){
   ### Function  
   ### 
   
-  ### Read data
-  kobo_output<-read.csv(file, sep=";", header=TRUE)
+  ### Get data
+  kobo_output<-kobo_output
   
   ### Separate data 
   
-  indicator1_data<-kobo_output %>%
-    # create a variable with the full taxon name
-    mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE))) %>%
+    # create a variable with the full taxon name if this variable doesn't exist already
+    # (raw kobo output doesn't include it, but it may exists in a "clean" version of the 
+    # output if ran through the quality check pipeline)
     
-    # remove white space at the end of the name
-    mutate(taxon=str_trim(taxon, "right")) %>%
+    if("taxon" %in% colnames(kobo_output)){
+       print("the data already contained a taxon column, that was used instead of creating a new one")
+        
+    }else {
+    kobo_output<-kobo_output %>% 
+      mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE))) %>%
+        # remove white space at the end of the name
+        mutate(taxon=str_trim(taxon, "right"))
+    } 
+  
+   # Process data already including taxon column
     
+    indicator1_data <- kobo_output %>% 
+      
     # create variable with year in which assessment was done (based on date the form was completed)
     mutate(year_assesment=substr(end,1,4)) %>%
     
