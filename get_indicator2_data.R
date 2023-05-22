@@ -69,7 +69,11 @@ indicator2_data <- kobo_output %>%
 
                  # change -999 to Na
                          mutate(n_extint_populations=na_if(n_extint_populations, -999), 
-                                n_extant_populations=na_if(n_extant_populations, -999))
+                                n_extant_populations=na_if(n_extant_populations, -999)) %>%
+  
+                  # change all "" (empty) cells to NA
+                  
+                  mutate_all(list(~na_if(.,"")))
                 
                 # End of function
                            }
