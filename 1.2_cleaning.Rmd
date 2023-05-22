@@ -353,7 +353,7 @@ check_taxon_names <- kobo_clean %>%
 check_taxon_names
 ```
 
-## Create a single file for assessors review:
+## Create a single file of pending issues for assessors review:
 
 If there are still taxa that need to be checked for whatever reason, write a file enlisting them
 
@@ -377,7 +377,23 @@ happy_message<-"congratulations! there are no more taxa with issues to be correc
 
 ```
 
-Session Info for reproducibility purposes:
+## Save the clean koboutput version:
+
+Remove from the clean version any remaining taxa with issues
+
+```{r}
+kobo_clean<-kobo_clean %>%
+            filter(taxon %!in% to_check$taxon)
+```
+
+Export clean version
+
+```{r}
+write.csv(kobo_clean, "kobo_output_clean.csv", row.names = FALSE, fileEncoding = "UTF-8")
+```
+
+
+## Session Info for reproducibility purposes:
 
 ```{r}
 sessionInfo()
