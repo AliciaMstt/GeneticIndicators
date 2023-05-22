@@ -1,7 +1,3 @@
-# mac ghosts
-.DS_Store
+# ignore knitted version of scripts done during review and intereaction with colleagues
 
-# input /output files should not be part of the repo
-indicator1_data.txt
-kobo_output.csv
-output.txt
+/knitr_outputs
