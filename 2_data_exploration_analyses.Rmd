@@ -20,6 +20,7 @@ library(utile.tools)
 library(stringr)
 library(ggplot2)
 library(ggsankey)
+library(alluvial)
 ```
 
 Load required functions. These custom fuctions are available at: https://github.com/AliciaMstt/GeneticIndicators
@@ -58,11 +59,14 @@ head(metadata[,c(1:3, 12, 25,26)])
 
 ## General description of the dataset
 
-Records by country
+### Total number of taxa and taxa assessed more than once.
+
+Records by country, including taxa assessed more than once (see below for details on this)
 
 ```{r}
 ggplot(metadata, aes(x=country_assessment)) + 
-  geom_bar(stat = "count")
+  geom_bar(stat = "count") +
+  ggtitle("Number of taxa assessedd by country, including duplicated taxa")
 
 ```
 
@@ -71,9 +75,69 @@ Records by taxonomic groups
 ```{r}
 ggplot(metadata, aes(x=taxonomic_group)) + 
   geom_bar(stat = "count") +
-  theme(axis.text.x = element_text(angle = 45))
+  theme(axis.text.x = element_text(angle = 45)) +
+  ggtitle("Number of taxa assessedd by taxonomic group, including duplicated taxa")
 
 ```
+
+Some taxa were assessed twice, for example to account for uncertainty on how to divide populations.
+
+Check how many taxa were analysed twice:
+
+```{r}
+# object with duplicated taxa
+metadata_duplicates<-metadata[duplicated(metadata$taxon), ]
+
+# how many?
+nrow(metadata_duplicates)
+```
+
+How many unique?
+
+```{r}
+# object with unique taxa
+metadata_unique<-metadata[!duplicated(metadata$taxon), ]
+
+# how many?
+nrow(metadata_unique)
+```
+
+
+Of which countries and taxonomic groups are the taxa that were assessed more than once?
+```{r}
+ggplot(metadata_duplicates, aes(x=country_assessment)) + 
+  geom_bar(stat = "count") +
+  ggtitle("Number of taxa assessed more than once, by country")
+
+```
+
+```{r}
+ggplot(metadata_duplicates, aes(x=taxonomic_group, fill=country_assessment)) + 
+  geom_bar(stat = "count") +
+  theme(axis.text.x = element_text(angle = 45)) +
+  ggtitle("Number of taxa assessed more than once")
+
+```
+
+**Now check taxa assessed excluding duplicates, i.e. the real number of taxa assessed. This will be used in downstream analyses**
+
+```{r}
+ggplot(metadata_unique, aes(x=country_assessment)) + 
+  geom_bar(stat = "count") +
+  ggtitle("Number of taxa assessed by country")
+
+```
+
+```{r}
+ggplot(metadata_unique, aes(x=taxonomic_group)) + 
+  geom_bar(stat = "count") +
+  theme(axis.text.x = element_text(angle = 45)) +
+  ggtitle("Number of taxa assessed by taxonomic group")
+
+```
+
+
+### Sankey fun
 
 Which taxonomic groups are countries assesing?
 ```{r}
