@@ -307,7 +307,7 @@ ggplot(df, aes(x = x,
                              # traffic light for pop data
                              c("darkolivegreen", "darkgoldenrod1", "brown3")), 
                     breaks=c(unique(metadata_unique$country_assessment), 
-                             unique(metadata_unique$taxonomic_group),
+                             levels(as.factor(metadata_unique$taxonomic_group)),
                              unique(metadata_unique$popsize_data))) +
 
   geom_sankey_label(size = 2.5, color = "black", fill = "white") +
@@ -382,7 +382,7 @@ ggplot(df, aes(x = x,
                            c("brown2", "darkgrey", "darkorange", "darkgreen", "azure2", "green", "bisque1", "yellow"),
                      # traffic light for pop data
                            c("darkolivegreen", "darkgoldenrod1", "brown3")), 
-                    breaks=c(unique(metadata_unique$taxonomic_group), 
+                    breaks=c(levels(as.factor(metadata_unique$taxonomic_group)), 
                              levels(as.factor(metadata_unique$global_IUCN)),
                              unique(metadata_unique$popsize_data))) +
 
