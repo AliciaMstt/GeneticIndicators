@@ -493,19 +493,138 @@ ind2_data %>%
 
 **QUESTION: should we manually check that NA are correct in both extinct or extant pops?**
 
+### Number of extanct populations.
+
+See the distribution of the number of extant populations:
+
+```{r}
+ind2_data %>% 
+  ggplot(aes(x=n_extant_populations)) +
+  geom_density() + 
+  ggtitle("histogram of extant populations")
+
+```
+
+Which taxa have more than 100 populations?
+```{r}
+ind2_data %>% 
+  filter(n_extant_populations>100) %>%
+  select(taxon, country_assessment, n_extant_populations)
+```
+
+Exclude outliers (>300 populations)
+```{r}
+ind2_data %>% 
+  filter(n_extant_populations<300) %>%
+  ggplot(aes(x=n_extant_populations)) +
+  geom_density() + 
+  ggtitle("Distribution of extant populations \nexcluding outliers (>300 pops)")
+
+```
+
+How does the number of populations vary by country?
+
+```{r}
+ind2_data %>% 
+  filter(n_extant_populations<300) %>%
+  ggplot(aes(x=country_assessment, y=n_extant_populations)) +
+          geom_boxplot(aes(color=country_assessment)) +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank(), legend.position="none")
+
+
+```
+
+And by method to define populations?
+
+```{r}
+ind2_data %>% 
+  filter(n_extant_populations<300) %>%
+  ggplot(aes(x=defined_populations, y=n_extant_populations)) +
+          geom_boxplot() +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank())
+
+```
+
+
 ### Distribution of multiassessments and single assesments
 Some taxa were assessed more than once to account for, for example, different ways in how to delimit populations. Create a subset of them, excluding those records with missing data in indicator2 (due to missing data in n_pops). 
 
 ```{r}
 #subset only with taxa assessed multiple times:
 ind2_data_multi<-ind2_data %>% 
-                          filter(multiassessment=="multiassessment") %>% 
-                          filter(!is.na(indicator2))
+                          filter(multiassessment=="multiassessment") 
 ```
 
-In total there are `r nrow(ind2_data_multi)` multiassessed records, of `r length(unique(ind2_data_multi$taxon))` taxa. Notice that without filtering missing data in the number of populations, we would have `r sum(ind2_data$multiassessment=="multiassessment")` records of `r nrow(multi_taxa)` taxa.
+In total there are `r nrow(ind2_data_multi)` multiassessed records, of `r length(unique(ind2_data_multi$taxon))` taxa. Notice that this can include missing data in the number of populations, hence not allowing to estimate indicator 2.
 
-This is how much the values vary within mutliassessed taxa, excluding missing data:
+To be able to visualize the missing data, the following plot changes NA to -1.
+Variation in the number of extant populations by assessment
+
+```{r}
+# plot
+ind2_data_multi %>% 
+  mutate(n_extant_populations=ifelse(is.na(n_extant_populations), -1, n_extant_populations)) %>%
+  ggplot(aes(x=taxon, y=n_extant_populations)) +
+          geom_line(colour="darkgrey") + 
+          geom_point(aes(color=country_assessment)) +
+  xlab("") +
+  coord_flip() +
+  ggtitle("Variation in the number of extant populations, \nfor multiassessed taxa") +
+  theme_bw()
+```
+
+Same plot, but excluding Bombus terricola massive variation:
+
+```{r}
+# plot
+ind2_data_multi %>% 
+  filter(taxon!="Bombus terricola") %>% 
+  mutate(n_extant_populations=ifelse(is.na(n_extant_populations), -1, n_extant_populations)) %>%
+  ggplot(aes(x=taxon, y=n_extant_populations)) +
+          geom_line(colour="darkgrey") + 
+          geom_point(aes(color=country_assessment)) +
+  xlab("") +
+  coord_flip() +
+  ggtitle("Variation in the number of extant populations, \nfor multiassessed taxa") +
+  theme_bw()
+```
+
+Now for extinct populations (NA transformed as -1 for visualization purposes):
+
+```{r}
+# plot
+ind2_data_multi %>% 
+  mutate(n_extint_populations=ifelse(is.na(n_extint_populations), -1, n_extint_populations)) %>%
+  ggplot(aes(x=taxon, y=n_extint_populations)) +
+          geom_line(colour="darkgrey") + 
+          geom_point(aes(color=country_assessment)) +
+  xlab("") +
+  coord_flip() +
+  ggtitle("Variation in the number of extinct populations, \nfor multiassessed taxa") +
+  theme_bw()
+```
+
+See you later, Bombus terricola
+
+```{r}
+# plot
+ind2_data_multi %>% 
+  filter(taxon!="Bombus terricola") %>%
+  mutate(n_extint_populations=ifelse(is.na(n_extint_populations), -1, n_extint_populations)) %>%
+  ggplot(aes(x=taxon, y=n_extint_populations)) +
+          geom_line(colour="darkgrey") + 
+          geom_point(aes(color=country_assessment)) +
+  xlab("") +
+  coord_flip() +
+  ggtitle("Variation in the number of extinct populations, \nfor multiassessed taxa") +
+  theme_bw()
+```
+
+This is how much the values of indicator2 vary within mutliassessed taxa (taxa names with no shown values mean they have missing data in the number of populations and hence indicator 2 can't be estimated):
 
 ```{r}
 
@@ -516,7 +635,7 @@ ind2_data_multi %>%
           geom_point(aes(color=country_assessment)) +
   xlab("") +
   coord_flip() +
-#  theme(axis.text=element_text(country_assessment)) +
+  ggtitle("Variation in indicator 2, \nfor multiassessed taxa") +
   theme_bw()
 
 ```
@@ -530,7 +649,10 @@ ind2_data_firstmulti<-ind2_data[!duplicated(cbind(ind2_data$taxon, ind2_data$cou
 ```
 
 
-### Plots for indicator 2 values distribution
+### Indicator 2 values distribution
+
+Remember, for exploratory purposes, unless otherwise stated differently, the analyses below will use a subset of the data including only taxa assessed a single time, plus the first record of those assessed multiple times.
+
 
 For the taxa that do have data, this is how the values of indicator2 are distributed: 
 
