@@ -49,7 +49,7 @@ gg_color_hue <- function(n) {
 ```
 
 
-Get indicator 1 and indicator 2 data from clean kobo output
+Get indicators data from clean kobo output
 ```{r, echo=TRUE}
 # Get data:
 kobo_clean<-read.csv(file="kobo_output_clean.csv", header=TRUE)
@@ -138,20 +138,20 @@ nrow(single_taxa)
 To explore what kind of taxa countries assessed regardless of if they assessed them once or more, lets create a dataset keeping all single assessed taxa, plus only the first assessment for taxa assessed multiple times. 
 
 ```{r}
-# object with unique taxa
-metadata_unique<-metadata[!duplicated(cbind(metadata$taxon, metadata$country_assessment)), ]
+# object with single assessed taxa, plus only the first assessment for taxa assessed multiple times
+metadata_firstmulti<-metadata[!duplicated(cbind(metadata$taxon, metadata$country_assessment)), ]
 
 ```
 
 How many records?
 ```{r}
 # how many?
-nrow(metadata_unique)
+nrow(metadata_firstmulti)
 ```
 
 Of which countries and taxonomic groups are the taxa that were assessed more than once?
 ```{r}
-metadata_unique %>% # we use the _unique dataset so that multiassesed records are counted only once
+metadata_firstmulti %>% # we use the _firstmulti dataset so that multiassesed records are counted only once
         filter(multiassessment=="multiassessment") %>%
       ggplot(aes(x=country_assessment)) + 
         geom_bar(stat = "count") +
@@ -160,7 +160,7 @@ metadata_unique %>% # we use the _unique dataset so that multiassesed records ar
 ```
 
 ```{r}
-metadata_unique %>% # we use the _unique dataset so that multiassesed records are counted only once
+metadata_firstmulti %>% # we use the _unique dataset so that multiassesed records are counted only once
         filter(multiassessment=="multiassessment") %>%
 
 ggplot(aes(x=taxonomic_group, fill=country_assessment)) + 
@@ -173,14 +173,14 @@ ggplot(aes(x=taxonomic_group, fill=country_assessment)) +
 **Now check taxa assessed excluding duplicates, i.e. the real number of taxa assessed. This will be used in downstream analyses**
 
 ```{r}
-ggplot(metadata_unique, aes(x=country_assessment)) + 
+ggplot(metadata_firstmulti, aes(x=country_assessment)) + 
   geom_bar(stat = "count") +
   ggtitle("Number of taxa assessed by country")
 
 ```
 
 ```{r}
-ggplot(metadata_unique, aes(x=taxonomic_group)) + 
+ggplot(metadata_firstmulti, aes(x=taxonomic_group)) + 
   geom_bar(stat = "count") +
   theme(axis.text.x = element_text(angle = 45)) +
   ggtitle("Number of taxa assessed by taxonomic group")
@@ -190,7 +190,7 @@ ggplot(metadata_unique, aes(x=taxonomic_group)) +
 
 ### Sankey and alluvial fun
 
-Note: The following plots in this section consider only one record of the taxa that were assessed more than once. That is a total of `r nrow(metadata_unique)` taxa.
+Note: The following plots in this section consider only one record of the taxa that were assessed more than once. That is a total of `r nrow(metadata_firstmulti)` taxa.
 
 #### Which taxonomic groups are countries assessing?
 
@@ -200,7 +200,7 @@ Using alluvial:
 ```{r}
 library(alluvial)
 # estimate frequencies for alluvial plot
-foralluvial_1<-metadata_unique %>% group_by(country_assessment, taxonomic_group) %>%
+foralluvial_1<-metadata_firstmulti %>% group_by(country_assessment, taxonomic_group) %>%
              summarise(n=n())
 head(foralluvial_1)
 
@@ -231,7 +231,7 @@ Using ggsankey
 library(ggsankey)
 
 # transform data to how ggsankey wants it
-df <- metadata_unique %>%
+df <- metadata_firstmulti %>%
   make_long(country_assessment, taxonomic_group)
 df
 
@@ -265,7 +265,7 @@ Using alluvial:
 ```{r}
 library(alluvial)
 # estimate frequencies for alluvial plot
-foralluvial_1<-metadata_unique %>% group_by(country_assessment, taxonomic_group, popsize_data) %>%
+foralluvial_1<-metadata_firstmulti %>% group_by(country_assessment, taxonomic_group, popsize_data) %>%
              summarise(n=n())
 head(foralluvial_1)
 
@@ -294,7 +294,7 @@ alluvial(foralluvial_1[,1:3], freq = foralluvial_1$n,
 Using ggsankey option 1
 ```{r}
 # transform data to how ggsankey wants it
-df <- metadata_unique %>%
+df <- metadata_firstmulti %>%
   make_long(country_assessment, taxonomic_group, popsize_data)
 df
 
@@ -309,14 +309,14 @@ ggplot(df, aes(x = x,
               show.legend = FALSE) +
   # manually set flow fill according to countries and popsize 
                       # a nice  color for each of the n countries for the first (left) part
-  scale_fill_manual(values=c(scales::hue_pal()(length(unique(metadata_unique$country_assessment))),  
+  scale_fill_manual(values=c(scales::hue_pal()(length(unique(metadata_firstmulti$country_assessment))),  
                              # grey for the taxonomic groups
-                              rep("darkgrey", length(unique(metadata_unique$taxonomic_group))),
+                              rep("darkgrey", length(unique(metadata_firstmulti$taxonomic_group))),
                              # three colors for popsize_data
                              c("darkolivegreen", "darkgoldenrod1", "brown3")), 
-                    breaks=c(unique(metadata_unique$country_assessment), 
-                             unique(metadata_unique$taxonomic_group),
-                             unique(metadata_unique$popsize_data))) +
+                    breaks=c(unique(metadata_firstmulti$country_assessment), 
+                             unique(metadata_firstmulti$taxonomic_group),
+                             unique(metadata_firstmulti$popsize_data))) +
 
   geom_sankey_label(size = 2, color = 1, fill = "white") +
   theme_sankey(base_size = 10) +
@@ -327,7 +327,7 @@ ggplot(df, aes(x = x,
 Using ggsankey option 2
 ```{r}
 # transform data to how ggsankey wants it
-df <- metadata_unique %>%
+df <- metadata_firstmulti %>%
   make_long(country_assessment, taxonomic_group, popsize_data)
 df
 
@@ -342,14 +342,14 @@ ggplot(df, aes(x = x,
               show.legend = FALSE) +
   # manually set flow fill according to countries and popsize 
                       # a nice  color for each of the n countries for the first (left) part
-  scale_fill_manual(values=c(scales::hue_pal()(length(unique(metadata_unique$country_assessment))),  
+  scale_fill_manual(values=c(scales::hue_pal()(length(unique(metadata_firstmulti$country_assessment))),  
                              # gradient of soft colors for taxonomic groups
-                              cividis(length(unique(metadata_unique$taxonomic_group))),
+                              cividis(length(unique(metadata_firstmulti$taxonomic_group))),
                              # traffic light for pop data
                              c("darkolivegreen", "darkgoldenrod1", "brown3")), 
-                    breaks=c(unique(metadata_unique$country_assessment), 
-                             levels(as.factor(metadata_unique$taxonomic_group)),
-                             unique(metadata_unique$popsize_data))) +
+                    breaks=c(unique(metadata_firstmulti$country_assessment), 
+                             levels(as.factor(metadata_firstmulti$taxonomic_group)),
+                             unique(metadata_firstmulti$popsize_data))) +
 
   geom_sankey_label(size = 2.5, color = "black", fill = "white") +
   theme_sankey(base_size = 10) +
@@ -365,14 +365,14 @@ Using alluvial:
 ```{r}
 library(alluvial)
 # estimate frequencies for alluvial plot
-foralluvial_1<-metadata_unique %>% group_by(taxonomic_group, global_IUCN, popsize_data) %>%
+foralluvial_1<-metadata_firstmulti %>% group_by(taxonomic_group, global_IUCN, popsize_data) %>%
              summarise(n=n())
 head(foralluvial_1)
 
 ## plot
 # define colors according to IUCN categories
 # check order of categories:
-levels(as.factor(metadata_unique$global_IUCN))
+levels(as.factor(metadata_firstmulti$global_IUCN))
 
 # create vector of colors accordingly:
 my_cols<-c("brown2", "darkgrey", "darkorange", "darkgreen", "azure2", "green", "bisque1", "yellow")
@@ -418,14 +418,14 @@ ggplot(df, aes(x = x,
   
     # manually set flow fill 
                        # gradient of soft colors for taxonomic groups
-  scale_fill_manual(values= c(cividis(length(unique(metadata_unique$taxonomic_group))),
+  scale_fill_manual(values= c(cividis(length(unique(metadata_firstmulti$taxonomic_group))),
                        # iucn color codes
                            c("brown2", "darkgrey", "darkorange", "darkgreen", "azure2", "green", "bisque1", "yellow"),
                      # traffic light for pop data
                            c("darkolivegreen", "darkgoldenrod1", "brown3")), 
-                    breaks=c(levels(as.factor(metadata_unique$taxonomic_group)), 
-                             levels(as.factor(metadata_unique$global_IUCN)),
-                             unique(metadata_unique$popsize_data))) +
+                    breaks=c(levels(as.factor(metadata_firstmulti$taxonomic_group)), 
+                             levels(as.factor(metadata_firstmulti$global_IUCN)),
+                             unique(metadata_firstmulti$popsize_data))) +
 
   geom_sankey_label(size = 2, color = 1, fill = "white") +
   theme_sankey(base_size = 10) +
@@ -444,7 +444,7 @@ ind2_data$indicator2<- ind2_data$n_extant_populations / (ind2_data$n_extant_popu
 head(ind2_data$indicator2)
 ```
 
-PENDIENTE ¿QUÉ HACER CON MULTIASSESMENTS?
+
 
 ### Distribution of NA in indicator 2
 
@@ -493,13 +493,49 @@ ind2_data %>%
 
 **QUESTION: should we manually check that NA are correct in both extinct or extant pops?**
 
+### Distribution of multiassessments and single assesments
+Some taxa were assessed more than once to account for, for example, different ways in how to delimit populations. Create a subset of them, excluding those records with missing data in indicator2 (due to missing data in n_pops). 
+
+```{r}
+#subset only with taxa assessed multiple times:
+ind2_data_multi<-ind2_data %>% 
+                          filter(multiassessment=="multiassessment") %>% 
+                          filter(!is.na(indicator2))
+```
+
+In total there are `r nrow(ind2_data_multi)` multiassessed records, of `r length(unique(ind2_data_multi$taxon))` taxa. Notice that without filtering missing data in the number of populations, we would have `r sum(ind2_data$multiassessment=="multiassessment")` records of `r nrow(multi_taxa)` taxa.
+
+This is how much the values vary within mutliassessed taxa, excluding missing data:
+
+```{r}
+
+# plot
+ind2_data_multi %>% 
+  ggplot(aes(x=taxon, y=indicator2)) +
+          geom_line(colour="darkgrey") + 
+          geom_point(aes(color=country_assessment)) +
+  xlab("") +
+  coord_flip() +
+#  theme(axis.text=element_text(country_assessment)) +
+  theme_bw()
+
+```
+
+For exploratory purposes, unless otherwise stated differently, the analyses below will use a subset of the data including only taxa assessed a single time, plus the first record of those assessed multiple times.
+
+```{r}
+#subset keeping only taxa assessed a single time, plust the first record of those assessed multiple times.
+ind2_data_firstmulti<-ind2_data[!duplicated(cbind(ind2_data$taxon, ind2_data$country_assessment)), ]
+
+```
+
 
 ### Plots for indicator 2 values distribution
 
 For the taxa that do have data, this is how the values of indicator2 are distributed: 
 
 ```{r}
-hist(ind2_data$indicator2)
+hist(ind2_data_firstmulti$indicator2)
 ```
 
 Visualizing by country
@@ -507,12 +543,12 @@ Visualizing by country
 ```{r}
 # get sample size by desired category
 
-sample_size <- ind2_data %>%
+sample_size <- ind2_data_firstmulti %>%
                     filter(!is.na(indicator2)) %>% 
                     group_by(country_assessment) %>% summarize(num=n())
 
 # plot
-ind2_data %>% 
+ind2_data_firstmulti %>% 
   # add sampling size 
   left_join(sample_size) %>%
   mutate(myaxis = paste0(country_assessment, " (n= ", num, ")")) %>%
@@ -533,12 +569,12 @@ Visualizing by taxonomic group:
 ```{r}
 # get sample size by desired category
 
-sample_size <- ind2_data %>%
+sample_size <- ind2_data_firstmulti %>%
                     filter(!is.na(indicator2)) %>% 
                     group_by(taxonomic_group) %>% summarize(num=n())
 
 # plot
-ind2_data %>% 
+ind2_data_firstmulti %>% 
   # add sampling size 
   left_join(sample_size) %>%
   mutate(myaxis = paste0(taxonomic_group, " (n= ", num, ")")) %>%
@@ -549,8 +585,8 @@ ggplot(aes(x=myaxis, y=indicator2, fill=taxonomic_group), color=NA) +
       geom_jitter(size=.5, width = 0.1) +
       xlab("") +
       coord_flip() +
-      scale_fill_manual(values= c(cividis(length(unique(ind2_data$taxonomic_group)))),
-                    breaks=c(levels(as.factor(ind2_data$taxonomic_group)))) +
+      scale_fill_manual(values= c(cividis(length(unique(ind2_data_firstmulti$taxonomic_group)))),
+                    breaks=c(levels(as.factor(ind2_data_firstmulti$taxonomic_group)))) +
       theme_bw() +
       theme(panel.border = element_blank(), legend.position="none")
       
@@ -561,15 +597,15 @@ Visualizing by IUCN:
 ```{r}
 
 # add IUCN data form metadata to ind2
-ind2_data$global_IUCN <- metadata$global_IUCN
+ind2_data_firstmulti$global_IUCN <- metadata_firstmulti$global_IUCN
 
 # get sample size by desired category
-sample_size <- ind2_data %>%
+sample_size <- ind2_data_firstmulti %>%
                     filter(!is.na(indicator2)) %>% 
                     group_by(global_IUCN) %>% summarize(num=n())
 
 # plot
-ind2_data %>% 
+ind2_data_firstmulti %>% 
   # add sampling size 
   left_join(sample_size) %>%
   mutate(myaxis = paste0(global_IUCN, " (n= ", num, ")")) %>%
@@ -581,7 +617,7 @@ ind2_data %>%
       xlab("") +
       coord_flip() +
       scale_fill_manual(values= c("brown2", "darkgrey", "darkorange", "darkgreen", "azure2", "green", "bisque1", "yellow"), # iucn color codes
-                    breaks=c(levels(as.factor(ind2_data$global_IUCN)))) +
+                    breaks=c(levels(as.factor(ind2_data_firstmulti$global_IUCN)))) +
       theme_bw() +
       theme(panel.border = element_blank(), legend.position="none")
       
