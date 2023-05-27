@@ -1,7 +1,9 @@
 ###
 ### This R function takes as input the output of the Kobo form "International Genetic Indicator testing" 
 ### and reformat its in order to have the data in a dataframe useful for estimating 
-### Genetic Diversity Indicator 2 (the proportion of populations within species which are maintained)
+### Genetic Diversity Indicator 3 (the number of taxa with genetic monitoring)
+### the function also creates new useful variables, 
+### like taxon name and if the taxon was assessed only a single time or multiple times
 ### 
 
 ### If you use this script, please check https://github.com/AliciaMstt/GeneticIndicators 
@@ -70,6 +72,18 @@ get_indicator3_data<-function(kobo_output=kobo_output){
   # change all "" (empty) cells to NA
   
   mutate_all(list(~na_if(.,"")))
+  
+  ## Add a variable to the metadata stating if the taxon was assessed multiple times or only a single time
+  
+  # object with duplicated taxa within a single country
+  indicator3_duplicates<-indicator3_data[duplicated(cbind(indicator3_data$taxon, indicator3_data$country_assessment)), ]
+  
+  # if it is a duplicate then tag it as multi_assessment, if it is not duplicated then single
+  indicator3_data <- indicator3_data %>% 
+    mutate(multiassessment= if_else(
+      taxon %in% indicator3_duplicates$taxon, "multiassessment", "single_assessment"))
+  
+  
   
   # End of function
 }
