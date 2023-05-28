@@ -76,7 +76,8 @@ get_indicator1_data<-function(kobo_output=kobo_output){
     ## select relevant columns 
     # taxon and assessment info
     dplyr::select(country_assessment, taxonomic_group, taxon, scientific_authority,
-                  genus, taxon, year_assesment, name_assessor, email_assessor,
+                  genus, taxon, year_assesment, name_assessor, email_assessor, kobo_tabular,
+                  
                   # indicator 1 data               
                   time_populations, Name_pop1:Comments_pop25,
                   
