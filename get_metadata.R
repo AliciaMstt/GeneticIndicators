@@ -80,18 +80,21 @@ metadata <- kobo_output %>%
                   fecundity, semelparous_offpring, reproductive_strategy, reproductive_strategy_other, 
                   adult_age_data, other_reproductive_strategy, longevity_max, longevity_median, longevity_maturity, 
                   longevity_age, life_history_based_on, life_history_sp_basedon, sources_life_history) %>%
-    
+
      # change all "" (empty) cells to NA
           
-       mutate_all(list(~na_if(.,"")))
+       mutate_all(list(~na_if(.,""))) %>%
+
+    # change "" in kobo_tabular to "kobo" ("" means that question was not answered because the taxon had less populations that the min to trigger tabular)
+    mutate(kobo_tabular=ifelse(is.na(kobo_tabular), "kobo", kobo_tabular)) 
   
 ## Add a variable to the metadata stating if the taxon was assessed multiple times or only a single time
        
   # object with duplicated taxa within a single country
-metadata_duplicates<-metadata[duplicated(cbind(metadata$taxon, metadata$country_assessment)), ]
+  metadata_duplicates<-metadata[duplicated(cbind(metadata$taxon, metadata$country_assessment)), ]
   
-   # if it is a duplicate then tag it as multi_assessment, if it is not duplicated then single
-metadata <- metadata %>% 
+  # if it is a duplicate then tag it as multi_assessment, if it is not duplicated then single
+  metadata <- metadata %>% 
   mutate(multiassessment= if_else(
     taxon %in% metadata_duplicates$taxon, "multiassessment", "single_assessment"))
   

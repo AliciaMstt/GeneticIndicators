@@ -101,7 +101,11 @@ get_indicator1_data<-function(kobo_output=kobo_output){
 
   # change all "" (empty) cells to NA
   
-  mutate_all(list(~na_if(.,"")))
+  mutate_all(list(~na_if(.,""))) %>%
+      
+  # change "" in kobo_tabular to "kobo" ("" means that question was not answered because the taxon had less populations that the min to trigger tabular)
+  mutate(kobo_tabular=ifelse(is.na(kobo_tabular), "kobo", kobo_tabular)) 
+    
   
   # End of function
 }
