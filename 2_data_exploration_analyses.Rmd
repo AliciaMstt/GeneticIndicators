@@ -86,6 +86,15 @@ ggplot(metadata, aes(x=country_assessment)) +
 
 ```
 
+Did countries used kobo or tabular?
+
+```{r}
+ggplot(metadata, aes(x=country_assessment, fill=kobo_tabular)) + 
+  geom_bar(stat = "count") +
+  ggtitle("Number of taxa assessedd by country, \nincluding duplicated taxa")
+
+```
+
 Records by taxonomic groups
 
 ```{r}
@@ -548,7 +557,7 @@ ind2_data %>%
   theme(panel.border = element_blank())
 
 ```
-
+**QUESTION: How to account for different methods to deffine populations, and their combinations?**
 
 ### Distribution of multiassessments and single assesments
 Some taxa were assessed more than once to account for, for example, different ways in how to delimit populations. Create a subset of them, excluding those records with missing data in indicator2 (due to missing data in n_pops). 
