@@ -754,7 +754,29 @@ ind2_data_firstmulti %>%
       
 ```
 
-## Estimate indicator 3
+## Estimate indicator 3 (number of taxa with genetic monitoring squemes)
+
+Indicator 3 refers to the number (count) of taxa by country in which genetic monitoring is occurring. This is stored in the variable `temp_gen_monitoring` as a "yes/no" answer for each taxon, so to estimate the indicator, we only need to count how many said "yes", keeping only one of the records when the taxon was analysed more than once:
+
+```{r}
+indicator3<-ind3_data %>%
+                 # keep only one record if the taxon was assessed more than once within the country
+                 select(country_assessment, taxon, temp_gen_monitoring) %>%
+                 filter(!duplicated(.)) %>%
+
+                 # count "yes" in tem_gen_monitoring by country
+                 filter(temp_gen_monitoring=="yes") %>%
+                 group_by(country_assessment) %>%
+                 summarise(n_taxon_gen_monitoring= n())
+```
+
+Plot indicator 3 by country
+
+```{r}
+indicator3 %>%
+  ggplot(aes(x=country_assessment, y=n_taxon_gen_monitoring)) +
+  geom_bar(stat="identity")
+```
 
 
 ## Session Info for reproducibility purposes:
