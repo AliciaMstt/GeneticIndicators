@@ -81,9 +81,6 @@ get_indicator1_data<-function(kobo_output=kobo_output){
                   # indicator 1 data               
                   time_populations, Name_pop1:Comments_pop25,
                   
-                  # number of populations (from indicator 2)
-                  n_extint_populations, n_extant_populations,
-                  
                   # kobo validation status
                   X_validation_status,
                   
