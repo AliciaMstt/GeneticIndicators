@@ -1,15 +1,15 @@
 ---
 title: "Data exploration and analyses"
 output:
-  word_document: default
   html_document:
     df_print: paged
+  word_document: default
   pdf_document: default
 ---
 
 ```{r global-options, include=FALSE}
 # options when we want to knit only showing text, results and plots: ie no code, warnings etc.
-knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE) 
+# knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE) 
 ```
 
 
@@ -805,7 +805,7 @@ ind2_data_firstmulti %>%
 
 ## Estimate indicator 3 (number of taxa with genetic monitoring squemes)
 
-Indicator 3 refers to the number (count) of taxa by country in which genetic monitoring is occurring. This is stored in the variable `temp_gen_monitoring` as a "yes/no" answer for each taxon, so to estimate the indicator, we only need to count how many said "yes", keeping only one of the records when the taxon was analysed more than once:
+Indicator 3 refers to the number (count) of taxa by country in which genetic monitoring is occurring. This is stored in the variable `temp_gen_monitoring` as a "yes/no" answer for each taxon, so to estimate the indicator, we only need to count how many said "yes", keeping only one of the records when the taxon was multiassessed:
 
 ```{r}
 indicator3<-ind3_data %>%
@@ -819,13 +819,58 @@ indicator3<-ind3_data %>%
                  summarise(n_taxon_gen_monitoring= n())
 ```
 
-Plot indicator 3 by country
+Plot indicator 3 by country:
 
 ```{r}
 indicator3 %>%
   ggplot(aes(x=country_assessment, y=n_taxon_gen_monitoring)) +
   geom_bar(stat="identity")
 ```
+
+Relatively few taxa have genetic monitoring, but many have some sort of genetic study. Let's check that, but first subset the ind3_data keeping only taxa assessed a single time, plust the first record of those assessed multiple times.
+```{r}
+#subset keeping only taxa assessed a single time, plust the first record of those assessed multiple times.
+ind3_data_firstmulti<-ind3_data[!duplicated(cbind(ind3_data$taxon, ind3_data$country_assessment)), ]
+```
+
+Sankey plot of genetic studies
+
+```{r}
+# transform data to how ggsankey wants it
+df <- ind3_data_firstmulti %>%
+  make_long(country_assessment, temp_gen_monitoring, gen_studies)
+
+# plot
+ggplot(df, aes(x = x,
+               next_x = next_x,
+               node = node,
+               next_node = next_node,
+               fill = factor(node),
+               label = node)) +
+  geom_sankey(flow.alpha = 0.6, 
+              show.legend = FALSE) +
+  geom_sankey_label(size = 2.5, color = "black", fill = "white") +
+  theme_sankey(base_size = 10) +
+
+    # manually set flow fill according to desired color
+                            # countries
+  scale_fill_manual(values=c(scales::hue_pal()(length(unique(ind3_data_firstmulti$country_assessment))),  
+                             # traffic light for monitoring
+                             c("darkolivegreen", "brown3", "darkgrey"),
+                             # nice soft colors for gen_studies
+                             c("grey50", "grey35", "grey50", "brown3")),
+                              
+                    breaks=c(unique(ind3_data_firstmulti$country_assessment),
+                             unique(ind3_data_firstmulti$temp_gen_monitoring),
+                             unique(ind3_data_firstmulti$gen_studies))) +
+  
+  xlab("")
+
+
+
+
+```
+
 
 
 ## Session Info for reproducibility purposes:
