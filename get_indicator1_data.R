@@ -104,14 +104,12 @@ get_indicator1_data<-function(kobo_output=kobo_output){
   mutate_all(list(~na_if(.,""))) %>%
       
   # change -999 to Na
-  mutate(n_extint_populations=na_if(n_extint_populations, -999), 
-             n_extant_populations=na_if(n_extant_populations, -999),
-             Ne=na_if(Ne, -999),
-             NeLower=na_if(NeLower, -999),
-             NeUpper=na_if(NeUpper, -999),
-             NcPoint=na_if(NcPoint, -999),
-             NcLower=na_if(NcLower, -999),
-             NcUpper=na_if(NcUpper, -999)) %>%
+  mutate(Ne=na_if(Ne, -999),
+         NeLower=na_if(NeLower, -999),
+         NeUpper=na_if(NeUpper, -999),
+         NcPoint=na_if(NcPoint, -999),
+         NcLower=na_if(NcLower, -999),
+         NcUpper=na_if(NcUpper, -999)) %>%
       
   # change "" in kobo_tabular to "kobo" ("" means that question was not answered because the taxon had less populations that the min to trigger tabular)
   mutate(kobo_tabular=ifelse(is.na(kobo_tabular), "kobo", kobo_tabular)) 
