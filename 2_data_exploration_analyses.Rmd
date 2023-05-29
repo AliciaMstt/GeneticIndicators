@@ -583,7 +583,8 @@ ind2_data_multi %>%
   xlab("") +
   coord_flip() +
   ggtitle("Variation in the number of extant populations, \nfor multiassessed taxa") +
-  theme_bw()
+  theme_bw() + 
+  theme(legend.position = "bottom")
 ```
 
 Same plot, but excluding Bombus terricola's massive variation:
@@ -599,7 +600,8 @@ ind2_data_multi %>%
   xlab("") +
   coord_flip() +
   ggtitle("Variation in the number of extant populations, \nfor multiassessed taxa") +
-  theme_bw()
+  theme_bw() + 
+  theme(legend.position = "bottom")
 ```
 
 Now for extinct populations (NA transformed as -1 for visualization purposes):
@@ -614,7 +616,8 @@ ind2_data_multi %>%
   xlab("") +
   coord_flip() +
   ggtitle("Variation in the number of extinct populations, \nfor multiassessed taxa") +
-  theme_bw()
+  theme_bw() + 
+  theme(legend.position = "bottom")
 ```
 
 See you later, Bombus terricola
@@ -630,7 +633,8 @@ ind2_data_multi %>%
   xlab("") +
   coord_flip() +
   ggtitle("Variation in the number of extinct populations, \nfor multiassessed taxa") +
-  theme_bw()
+  theme_bw() + 
+  theme(legend.position = "bottom")
 ```
 
 This is how much the values of indicator2 vary within mutliassessed taxa (taxa names with no shown values mean they have missing data in the number of populations and hence indicator 2 can't be estimated):
@@ -645,7 +649,8 @@ ind2_data_multi %>%
   xlab("") +
   coord_flip() +
   ggtitle("Variation in indicator 2, \nfor multiassessed taxa") +
-  theme_bw()
+  theme_bw() + 
+  theme(legend.position = "bottom")
 
 ```
 
