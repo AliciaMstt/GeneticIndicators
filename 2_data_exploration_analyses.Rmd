@@ -444,13 +444,33 @@ ggplot(df, aes(x = x,
 
 ## Estimate indicator 1
 
+### Remember population size data could be obtained by different means
+
+Population size data may come from different methods for each population within a single taxon. For example, some populations can have Ne estimates, other Nc and others a range. Examples:
+
 ```{r}
+ind1_data %>%
+  filter(taxon=="Alces alces") %>% 
+  select(country_assessment, taxon, population, Name, Ne, NcRange)
 
 
-
-
+ind1_data %>%
+  filter(taxon=="Alces alces") %>% 
+  select(country_assessment, taxon, population, Name, NcPoint, NcRange)
 
 ```
+
+**QUESTION: should we create a "Ne_from_all_methods" variable with a Ne estimate regardless of the source? e.g. where Ne_from_all_methods = Ne AND Ne_from_all_methods = NcPoint(0.1) AND Ne_from_all_methods = 501 if NcRange==more_5000..**
+
+
+Also, for some taxa there may be population size data for some populations, but not all. Therefore indicator 1 would be computed with less populations than the total number of populations. Example (see pop3, 4, 13, 15):
+
+```{r}
+ind1_data %>%
+  filter(taxon=="Juniperus monticola") %>% 
+  select(country_assessment, taxon, population, Name, Ne, NcPoint, NcRange)
+```
+We need to keep the former in mind for interpretation and discussion of how the indicator can change in future assessments if data becomes available for populations currently missing.
 
 
 ## Estimate indicator 2 (proportion of populations within species which are maintained)
