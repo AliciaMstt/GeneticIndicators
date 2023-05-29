@@ -72,14 +72,17 @@ get_indicator1_data<-function(kobo_output=kobo_output){
     mutate(across(starts_with("NeYear"), as.character)) %>%
     mutate(across(starts_with("NcYear"), as.character)) %>%
     mutate(across(starts_with("NcRangeDetails"), as.character)) %>%
-    
+      
     ## select relevant columns 
     # taxon and assessment info
     dplyr::select(country_assessment, taxonomic_group, taxon, scientific_authority,
-                  genus, taxon, year_assesment, name_assessor, email_assessor, kobo_tabular,
+                  genus, taxon, year_assesment, name_assessor, email_assessor, kobo_tabular, 
                   
                   # indicator 1 data               
                   time_populations, Name_pop1:Comments_pop25,
+                  
+                  # number of populations (from indicator 2)
+                  n_extint_populations, n_extant_populations,
                   
                   # kobo validation status
                   X_validation_status,
@@ -103,8 +106,20 @@ get_indicator1_data<-function(kobo_output=kobo_output){
   
   mutate_all(list(~na_if(.,""))) %>%
       
+  # change -999 to Na
+  mutate(n_extint_populations=na_if(n_extint_populations, -999), 
+             n_extant_populations=na_if(n_extant_populations, -999),
+             Ne=na_if(Ne, -999),
+             NeLower=na_if(NeLower, -999),
+             NeUpper=na_if(NeUpper, -999),
+             NcPoint=na_if(NcPoint, -999),
+             NcLower=na_if(NcLower, -999),
+             NcUpper=na_if(NcUpper, -999)) %>%
+      
   # change "" in kobo_tabular to "kobo" ("" means that question was not answered because the taxon had less populations that the min to trigger tabular)
   mutate(kobo_tabular=ifelse(is.na(kobo_tabular), "kobo", kobo_tabular)) 
+    
+  
     
   
   # End of function
