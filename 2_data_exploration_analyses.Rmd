@@ -521,21 +521,21 @@ ind2_data %>%
   select(taxon, country_assessment, n_extant_populations)
 ```
 
-Exclude outliers (>300 populations)
+Exclude outliers (>200 populations)
 ```{r}
 ind2_data %>% 
-  filter(n_extant_populations<300) %>%
+  filter(n_extant_populations<200) %>%
   ggplot(aes(x=n_extant_populations)) +
   geom_density() + 
-  ggtitle("Distribution of extant populations \nexcluding outliers (>300 pops)")
+  ggtitle("Distribution of extant populations \nexcluding outliers (>200 pops)")
 
 ```
 
-How does the number of populations vary by country?
+How does the number of populations vary by country? (excluding outliers: >200 pops)
 
 ```{r}
 ind2_data %>% 
-  filter(n_extant_populations<300) %>%
+  filter(n_extant_populations<200) %>%
   ggplot(aes(x=country_assessment, y=n_extant_populations)) +
           geom_boxplot(aes(color=country_assessment)) +
   coord_flip() +
@@ -545,11 +545,11 @@ ind2_data %>%
 
 ```
 
-And by method to define populations?
+And by method to define populations? (excluding outliers: >200 pops)
 
 ```{r}
 ind2_data %>% 
-  filter(n_extant_populations<300) %>%
+  filter(n_extant_populations<200) %>%
   ggplot(aes(x=defined_populations, y=n_extant_populations)) +
           geom_boxplot() +
   coord_flip() +
@@ -586,7 +586,7 @@ ind2_data_multi %>%
   theme_bw()
 ```
 
-Same plot, but excluding Bombus terricola massive variation:
+Same plot, but excluding Bombus terricola's massive variation:
 
 ```{r}
 # plot
@@ -752,6 +752,50 @@ ind2_data_firstmulti %>%
       theme_bw() +
       theme(panel.border = element_blank(), legend.position="none")
       
+```
+
+Does the number of populations affects the value of indicator 2? (excluding outliers: >200 pops)
+
+```{r}
+ind2_data_firstmulti %>%
+  # filter outliers with too many pops
+  filter(n_extant_populations<200) %>%
+  
+  # plot
+    ggplot(aes(x=n_extant_populations, y=indicator2)) +
+    geom_point()
+
+```
+Same, colouring by country
+
+
+```{r}
+ind2_data_firstmulti %>%
+  # filter outliers with too many pops
+  filter(n_extant_populations<200) %>%
+  
+  # plot
+    ggplot(aes(x=n_extant_populations, y=indicator2, color=country_assessment)) +
+    geom_point() +
+    theme_bw()
+
+```
+
+By global IUCN risk
+
+```{r}
+ind2_data_firstmulti %>%
+  # filter outliers with too many pops
+  filter(n_extant_populations<200) %>%
+  
+  # plot
+    ggplot(aes(x=n_extant_populations, y=indicator2, color=global_IUCN)) +
+    geom_point() + 
+        scale_color_manual(values= c("brown2", "darkgrey", "darkorange", "darkgreen", "azure2", "green", "bisque1", "yellow"), # iucn color codes
+                           breaks=c(levels(as.factor(ind2_data_firstmulti$global_IUCN)))) +
+  theme_bw()
+
+
 ```
 
 ## Estimate indicator 3 (number of taxa with genetic monitoring squemes)
