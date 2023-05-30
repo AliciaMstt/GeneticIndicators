@@ -28,6 +28,7 @@ library(ggplot2)
 library(ggsankey)
 library(alluvial)
 library(viridis)
+library(cowplot)
 ```
 
 Load required functions. These custom fuctions are available at: https://github.com/AliciaMstt/GeneticIndicators
@@ -74,6 +75,54 @@ head(metadata[,c(1:3, 12, 25,26, 64)])
 
 
 ## General description of the dataset
+
+
+
+### Methods to define populations
+
+The methods used to define populations come from a check box question were one or more of the following categories can be selected: genetic_clusters, geographic_boundaries, eco_biogeo_proxies, adaptive_traits, management_units, other. As a consequence any combination of the former can be possible. Leading to the following results:
+
+```{r}
+table(ind2_data$defined_populations)
+```
+
+To simplify from those many combinations of methods to define populations, we will keep only each method alone, plus "method_and_others" if it occurs in combination with any other, with the exception of the combination "genetic_cluster geographic_boundaries" because they are two more relevant both methodologically and in abundance.
+
+```{r} 
+## (CONSIDER ADDING THIS CHUNK TO THE GET_ FUNCTIONS)
+### for ind2_data
+ind2_data<- ind2_data %>% 
+  mutate(defined_populations_simplified = case_when(
+          defined_populations=="genetic_clusters geographic_boundaries" ~ "genetic_clusters_and_geographic_boundaries",
+          grepl("genetic_clusters ", defined_populations) ~ "genetic_clusters_and_others",
+          grepl("geographic_boundaries ", defined_populations) ~ "geographic_boundaries_and_others",
+          grepl("eco_biogeo_proxies ", defined_populations) ~ "eco_biogeo_proxies_and_others",
+          grepl("adaptive_traits ", defined_populations) ~ "adaptive_traits_and_others",
+          grepl("management_units ", defined_populations) ~ "management_units_and_others",
+          grepl("other ", defined_populations) ~ "other_and_others",
+          TRUE ~ defined_populations))
+
+
+### for metadata
+metadata<- metadata %>% 
+  mutate(defined_populations_simplified = case_when(
+          defined_populations=="genetic_clusters geographic_boundaries" ~ "genetic_clusters_and_geographic_boundaries",
+          grepl("genetic_clusters ", defined_populations) ~ "genetic_clusters_and_others",
+          grepl("geographic_boundaries ", defined_populations) ~ "geographic_boundaries_and_others",
+          grepl("eco_biogeo_proxies ", defined_populations) ~ "eco_biogeo_proxies_and_others",
+          grepl("adaptive_traits ", defined_populations) ~ "adaptive_traits_and_others",
+          grepl("management_units ", defined_populations) ~ "management_units_and_others",
+          grepl("other ", defined_populations) ~ "other_and_others",
+          TRUE ~ defined_populations))
+
+```
+
+How does that look?
+
+```{r}
+table(ind2_data$defined_populations_simplified)
+```
+
 
 ### Total number of taxa and taxa assessed more than once.
 
@@ -197,68 +246,6 @@ ggplot(metadata_firstmulti, aes(x=taxonomic_group)) +
 ```
 
 
-
-### Methods to define populations
-
-Simplify combinations of methods to define populations. Keep only each method alone, plus "method_and_others" if it occurs in combination with any other.
-
-```{r} 
-## (CONSIDER ADDING THIS CHUNK TO THE GET_ FUNCTIONS)
-### for ind2_data
-
-# create new variable
-ind2_data<- ind2_data %>% 
-            mutate(defined_populations_simplified= defined_populations)
-
-#mutate new variable to desired groups
-ind2_data<- ind2_data %>% 
-            mutate(defined_populations_simplified = ifelse(grepl("genetic_clusters ", 
-                                                       defined_populations), "genetic_clusters_and_others",
-                                                       defined_populations_simplified)) %>% 
-            mutate(defined_populations_simplified = ifelse(grepl("geographic_boundaries ", 
-                                                       defined_populations_simplified), "geographic_boundaries_and_others",
-                                                       defined_populations_simplified)) %>% 
-            mutate(defined_populations_simplified = ifelse(grepl("eco_biogeo_proxies ", 
-                                                       defined_populations_simplified), "eco_biogeo_proxies_and_others",
-                                                       defined_populations_simplified)) %>%
-            mutate(defined_populations_simplified = ifelse(grepl("adaptive_traits ", 
-                                                       defined_populations_simplified), "adaptive_traits_and_others",
-                                                       defined_populations_simplified)) %>%
-            mutate(defined_populations_simplified = ifelse(grepl("management_units ", 
-                                                       defined_populations_simplified), "management_units_and_others",
-                                                       defined_populations_simplified)) %>%
-            mutate(defined_populations_simplified = ifelse(grepl("other ", 
-                                                       defined_populations_simplified), "other_and_others",
-                                                       defined_populations_simplified))
-### for metadata
-
-# create new variable
-metadata<- metadata %>% 
-            mutate(defined_populations_simplified= defined_populations)
-
-#mutate new variable to desired groups
-metadata<- metadata %>% 
-            mutate(defined_populations_simplified = ifelse(grepl("genetic_clusters ", 
-                                                       defined_populations), "genetic_clusters_and_others",
-                                                       defined_populations_simplified)) %>% 
-            mutate(defined_populations_simplified = ifelse(grepl("geographic_boundaries ", 
-                                                       defined_populations_simplified), "geographic_boundaries_and_others",
-                                                       defined_populations_simplified)) %>% 
-            mutate(defined_populations_simplified = ifelse(grepl("eco_biogeo_proxies ", 
-                                                       defined_populations_simplified), "eco_biogeo_proxies_and_others",
-                                                       defined_populations_simplified)) %>%
-            mutate(defined_populations_simplified = ifelse(grepl("adaptive_traits ", 
-                                                       defined_populations_simplified), "adaptive_traits_and_others",
-                                                       defined_populations_simplified)) %>%
-            mutate(defined_populations_simplified = ifelse(grepl("management_units ", 
-                                                       defined_populations_simplified), "management_units_and_others",
-                                                       defined_populations_simplified)) %>%
-            mutate(defined_populations_simplified = ifelse(grepl("other ", 
-                                                       defined_populations_simplified), "other_and_others",
-                                                       defined_populations_simplified))
-
-                
-```
 
 
 ### Sankey and alluvial fun
@@ -943,10 +930,171 @@ ind2_data_firstmulti %>%
       
 ```
 
-Does the number of populations affects the value of indicator 2? (excluding outliers: >200 pops)
+By population method 
 
 ```{r}
-ind2_data_firstmulti %>%
+# get sample size by desired category
+
+sample_size <- ind2_data_firstmulti %>%
+                    filter(!is.na(indicator2)) %>% 
+                    group_by(defined_populations_simplified) %>% summarize(num=n())
+
+# plot
+ind2_data_firstmulti %>% 
+  # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(defined_populations_simplified, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=myaxis, y=indicator2, fill=defined_populations_simplified)) +
+  geom_violin(width= 1, linewidth = 0)  +
+  geom_jitter(size=.5, width = 0.1) +
+  xlab("") +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank(), legend.position="none")
+
+```
+
+
+Same, boxplot version:
+
+
+```{r}
+# get sample size by desired category
+
+sample_size <- ind2_data_firstmulti %>%
+                    filter(!is.na(indicator2)) %>% 
+                    group_by(defined_populations_simplified) %>% summarize(num=n())
+
+# plot
+ind2_data_firstmulti %>% 
+  # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(defined_populations_simplified, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_simplified)) +
+  geom_boxplot()  +
+  geom_jitter(size=.5, width = 0.1, color="black") +
+  xlab("") +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank(), legend.position="none")
+
+```
+
+Facet by country
+```{r, out.width="500px", out.height="1500px"}
+ind2_data_firstmulti %>% 
+
+  # plot
+  ggplot(aes(x=defined_populations_simplified, y=indicator2, color=defined_populations_simplified)) +
+  geom_boxplot()  +
+  geom_jitter(size=.5, width = 0.1, color="black") +
+  xlab("") +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank(), legend.position="none") + 
+  facet_wrap(~country_assessment, ncol=1)
+```
+
+
+
+### Indicator 2 within single countries
+
+Value of indicator 2 within a single country, by method to define populations, taxonomic group and iucn.
+
+```{r, out.width="600px", out.height="800px"}
+
+### For loop, 3 plots (defined_populations_simplified, taxonomic and global IUCN) by country.
+for(i in unique(ind2_data_firstmulti$country_assessment)){
+
+
+  # filter to desired country in the loop
+x <-ind2_data_firstmulti %>% filter(country_assessment==i)
+
+
+### for pops method
+
+# build plot
+p1<- x %>% 
+  ggplot(aes(x=defined_populations_simplified, y=indicator2, color=defined_populations_simplified)) +
+  geom_boxplot()  +
+  geom_jitter(size=.5, width = 0.1, color="black") +
+  coord_flip() +
+  xlab("") +
+  
+    ## manually set color
+  # use ind2_data_firstmulti instead of x to define number of colors and breaks
+  # to ensure same colors are used in all countries
+  scale_color_manual(values=scales::hue_pal()(length(levels(as.factor(ind2_data_firstmulti$defined_populations_simplified)))),
+                     breaks=levels(as.factor(ind2_data_firstmulti$defined_populations_simplified))) +
+  
+  #theme options
+  theme_bw() +
+  theme(panel.border = element_blank(), legend.position="none") +
+  # the plot at the top should have title and no x axis text and labels
+  theme(axis.text.x = element_blank()) +
+  ylab("") +
+  ggtitle(i)
+
+### for taxonomic group
+# build plot
+p2<- x %>% 
+  ggplot(aes(x=taxonomic_group, y=indicator2, color=taxonomic_group)) +
+  geom_boxplot()  +
+  geom_jitter(size=.5, width = 0.1, color="black") +
+  coord_flip() +
+  xlab("") +
+  
+  
+  ## manually set color
+  # use ind2_data_firstmulti instead of x to define number of colors and breaks
+  # to ensure same colors are used in all countries
+  scale_color_manual(values=cividis(length(levels(as.factor(ind2_data_firstmulti$taxonomic_group)))),
+                     breaks=levels(as.factor(ind2_data_firstmulti$taxonomic_group))) +
+                                       
+  # theme options
+  theme_bw() +
+  theme(panel.border = element_blank(), legend.position="none") +
+  # the plot at the middle should have no x axis text and labels and no title
+  theme(axis.text.x = element_blank()) +
+  ylab("")
+
+### for global IUCN
+# build plot
+p3<- x %>% 
+  ggplot(aes(x=global_IUCN, y=indicator2, color=global_IUCN)) +
+  geom_boxplot()  +
+  geom_jitter(size=.5, width = 0.1, color="black") +
+  coord_flip() +
+  xlab("") +
+  
+  ## manually set color
+  # use ind2_data_firstmulti instead of x to define number of colors and breaks
+  # to ensure same colors are used in all countries
+  scale_color_manual(values=c("brown2", "darkgrey", "darkorange", "darkgreen", "azure2", "green", "bisque1", "yellow"), # iucn color codes,
+                     breaks=levels(as.factor(ind2_data_firstmulti$global_IUCN))) +
+                                       
+  # theme options
+  theme_bw() +
+  theme(panel.border = element_blank(), legend.position="none")
+  # the plot at the bottom should have axis and labels
+
+#### the 3 plots togheter
+# plot_grid from cowplot helps to keep the ploting area aligned.
+print(plot_grid(p1, p2, p3, ncol = 1, align = 'v'))
+}
+```
+
+
+
+
+#### Does the number of populations affects the value of indicator 2? (excluding outliers: >200 pops) and incluidng all records of multiassessed taxa:
+
+```{r}
+ind2_data %>%
   # filter outliers with too many pops
   filter(n_extant_populations<200) %>%
   
@@ -955,11 +1103,12 @@ ind2_data_firstmulti %>%
     geom_point()
 
 ```
+
 Same, colouring by country
 
 
 ```{r}
-ind2_data_firstmulti %>%
+ind2_data %>%
   # filter outliers with too many pops
   filter(n_extant_populations<200) %>%
   
@@ -973,7 +1122,9 @@ ind2_data_firstmulti %>%
 By global IUCN risk
 
 ```{r}
-ind2_data_firstmulti %>%
+ind2_data$global_IUCN<-metadata$global_IUCN
+
+ind2_data %>%
   # filter outliers with too many pops
   filter(n_extant_populations<200) %>%
   
@@ -981,11 +1132,27 @@ ind2_data_firstmulti %>%
     ggplot(aes(x=n_extant_populations, y=indicator2, color=global_IUCN)) +
     geom_point() + 
         scale_color_manual(values= c("brown2", "darkgrey", "darkorange", "darkgreen", "azure2", "green", "bisque1", "yellow"), # iucn color codes
-                           breaks=c(levels(as.factor(ind2_data_firstmulti$global_IUCN)))) +
+                           breaks=c(levels(as.factor(ind2_data$global_IUCN)))) +
   theme_bw()
 
 
 ```
+
+By population definition method:
+
+```{r}
+ind2_data %>%
+  # filter outliers with too many pops
+  filter(n_extant_populations<200) %>%
+  
+  # plot
+    ggplot(aes(x=n_extant_populations, y=indicator2, color=defined_populations_simplified)) +
+    geom_point() +
+    theme_bw()
+
+```
+
+
 
 ## Estimate indicator 3 (number of taxa with genetic monitoring squemes)
 
