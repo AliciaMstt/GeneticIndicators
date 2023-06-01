@@ -1,9 +1,9 @@
 ---
 title: "Data exploration and analyses"
 output:
+  word_document: default
   html_document:
     df_print: paged
-  word_document: default
   pdf_document: default
 ---
 
@@ -86,7 +86,7 @@ The methods used to define populations come from a check box question were one o
 table(ind2_data$defined_populations)
 ```
 
-To simplify from those many combinations of methods to define populations, we will keep only each method alone, plus "method_and_others" if it occurs in combination with any other, with the exception of the combination "genetic_cluster geographic_boundaries" because they are two more relevant both methodologically and in abundance.
+To simplify from those many combinations of methods to define populations, we will have a "simplified version" where we keep only each method alone, plus "method_and_others" if it occurs in combination with any other, with the exception of the combination "genetic_cluster geographic_boundaries" because they are two more relevant both methodologically and in abundance. We also create a "ultra simplified version" where methods with few records alone or with "_and_others" are clustered together in "method_alone_orwith_others".
 
 ```{r} 
 ## (CONSIDER ADDING THIS CHUNK TO THE GET_ FUNCTIONS)
@@ -100,7 +100,12 @@ ind2_data<- ind2_data %>%
           grepl("adaptive_traits ", defined_populations) ~ "adaptive_traits_and_others",
           grepl("management_units ", defined_populations) ~ "management_units_and_others",
           grepl("other ", defined_populations) ~ "other_and_others",
-          TRUE ~ defined_populations))
+          TRUE ~ defined_populations)) %>% 
+  mutate(defined_populations_ultrasimplified = case_when(
+          grepl("adaptive_traits", defined_populations_simplified) ~ "adaptive_traits_alone_orwith_others",
+          grepl("eco_biogeo_proxies", defined_populations_simplified) ~ "eco_biogeo_proxies_alone_orwith_others",
+          grepl("management_units", defined_populations_simplified) ~ "management_units_alone_orwith_others",
+          TRUE ~ defined_populations_simplified))
 
 
 ### for metadata
@@ -113,16 +118,42 @@ metadata<- metadata %>%
           grepl("adaptive_traits ", defined_populations) ~ "adaptive_traits_and_others",
           grepl("management_units ", defined_populations) ~ "management_units_and_others",
           grepl("other ", defined_populations) ~ "other_and_others",
-          TRUE ~ defined_populations))
+          TRUE ~ defined_populations)) %>% 
+  mutate(defined_populations_ultrasimplified = case_when(
+          grepl("adaptive_traits", defined_populations_simplified) ~ "adaptive_traits_alone_orwith_others",
+          grepl("eco_biogeo_proxies", defined_populations_simplified) ~ "eco_biogeo_proxies_alone_orwith_others",
+          grepl("management_units", defined_populations_simplified) ~ "management_units_alone_orwith_others",
+          TRUE ~ defined_populations_simplified))
 
 ```
 
-How does that look?
+Table of equivalences:
+
+```{r}
+ind2_data %>% 
+       select(defined_populations, defined_populations_simplified, defined_populations_ultrasimplified) %>% 
+       filter(!duplicated(defined_populations))
+```
+The problem with the former is that only the first method of the list is retained, so for instance in the following example "adaptive_traits" is clustered as "others" and not counted. To avoid this we need to think in a different way of counting the methods. Maybe with a 1/0 matrix with a column for each method. 
+
+```{r}
+ind2_data %>% 
+       select(defined_populations, defined_populations_simplified, defined_populations_ultrasimplified) %>% 
+       filter(defined_populations=="eco_biogeo_proxies adaptive_traits")
+```
+
+
+Check n for simplified methods:
 
 ```{r}
 table(ind2_data$defined_populations_simplified)
 ```
 
+Check n for ultrasimplified methods:
+
+```{r}
+table(ind2_data$defined_populations_ultrasimplified)
+```
 
 ### Total number of taxa and taxa assessed more than once.
 
@@ -728,7 +759,18 @@ ind2_data %>%
 ```
 
 
-**QUESTION: How to account for different methods to deffine populations, and their combinations?**
+Same with ultrasimplified method categories:
+
+```{r, out.width=900, out.height=500}
+ind2_data %>% 
+  filter(n_extant_populations<200) %>%
+  ggplot(aes(x=defined_populations_ultrasimplified, y=n_extant_populations)) +
+          geom_boxplot() +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank())
+
+```
 
 ### Distribution of multiassessments and single assesments
 Some taxa were assessed more than once to account for, for example, different ways in how to delimit populations. Create a subset of them, excluding those records with missing data in indicator2 (due to missing data in n_pops). 
@@ -985,7 +1027,7 @@ ind2_data_firstmulti %>%
 ```
 
 Facet by country
-```{r, out.width="500px", out.height="1500px"}
+```{r, out.width="1000px", out.height="700px"}
 ind2_data_firstmulti %>% 
 
   # plot
@@ -996,7 +1038,7 @@ ind2_data_firstmulti %>%
   coord_flip() +
   theme_bw() +
   theme(panel.border = element_blank(), legend.position="none") + 
-  facet_wrap(~country_assessment, ncol=1)
+  facet_wrap(~country_assessment, ncol=3)
 ```
 
 
