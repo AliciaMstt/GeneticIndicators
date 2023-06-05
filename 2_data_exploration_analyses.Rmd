@@ -122,17 +122,9 @@ Table of equivalences:
 
 ```{r}
 ind2_data %>% 
-       select(defined_populations, defined_populations_simplified, defined_populations_simplified) %>% 
+       select(defined_populations, defined_populations_simplified) %>% 
        filter(!duplicated(defined_populations))
 ```
-The problem with the former is that only the first method of the list is retained, so for instance in the following example "adaptive_traits" is clustered as "others" and not counted. To avoid this we need to think in a different way of counting the methods. Maybe with a 1/0 matrix with a column for each method. 
-
-```{r}
-ind2_data %>% 
-       select(defined_populations, defined_populations_simplified, defined_populations_simplified) %>% 
-       filter(defined_populations=="eco_biogeo_proxies adaptive_traits")
-```
-
 
 Check n for simplified methods:
 
@@ -140,11 +132,6 @@ Check n for simplified methods:
 table(ind2_data$defined_populations_simplified)
 ```
 
-Check n for ultrasimplified methods:
-
-```{r}
-table(ind2_data$defined_populations_simplified)
-```
 
 ### Total number of taxa and taxa assessed more than once.
 
@@ -753,19 +740,6 @@ ind2_data %>%
 
 ```
 
-
-Same with ultrasimplified method categories:
-
-```{r, out.width=900, out.height=500}
-ind2_data %>% 
-  filter(n_extant_populations<200) %>%
-  ggplot(aes(x=defined_populations_simplified, y=n_extant_populations)) +
-          geom_boxplot() +
-  coord_flip() +
-  theme_bw() +
-  theme(panel.border = element_blank())
-
-```
 
 ### Distribution of multiassessments and single assesments
 Some taxa were assessed more than once to account for, for example, different ways in how to delimit populations. Create a subset of them, excluding those records with missing data in indicator2 (due to missing data in n_pops). 
