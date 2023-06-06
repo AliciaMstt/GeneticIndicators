@@ -53,7 +53,7 @@ gg_color_hue <- function(n) {
 Custom colors:
 ```{r}
 ## IUCN official colors
-IUCNcolors<-c("brown2", "darkgrey", "darkorange", "darkgreen", "azure2", "green", "bisque1", "yellow")
+IUCNcolors<-c("brown2", "darkgrey", "darkorange", "darkgreen", "bisque1", "green", "azure2", "yellow")
 
 ## nice soft ramp for taxonomic groups
 taxoncolors<-cividis(12) # same than using cividis(length(levels(as.factor(metadata$taxonomic_group))))
