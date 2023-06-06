@@ -118,18 +118,30 @@ metadata<- metadata %>%
          
 ```
 
+
+Check n for simplified methods:
+
+```{r}
+table(ind2_data$defined_populations_simplified)
+```
+
+Another option is to highlight if genetic_cluster or geographic_boundaries were used at all, which are the main drivers. This will look like:
+
+```{r}
+### for ind2_data
+ind2_data<- ind2_data %>% 
+  mutate(defined_populations_geneticgeo = case_when(
+      #### PENDIENTE USE grepl to show TRUE for geo, gen, geo AND gen, others.
+    ))
+```
+
+
 Table of equivalences:
 
 ```{r}
 ind2_data %>% 
        select(defined_populations, defined_populations_simplified) %>% 
        filter(!duplicated(defined_populations))
-```
-
-Check n for simplified methods:
-
-```{r}
-table(ind2_data$defined_populations_simplified)
 ```
 
 
@@ -609,7 +621,7 @@ ind1_data %>%
 We need to keep the former in mind for interpretation and discussion of how the indicator can change in future assessments if data becomes available for populations currently missing.
 
 
-## Estimate indicator 2 (proportion of populations within species which are maintained)
+## Indicator 2 (proportion of populations within species which are maintained)
 
 Indicator 2 is the he proportion of populations within species which are maintained. This can be estimated based on the `n_extant_populations` and `n_extint_populations`, as follows:
 
@@ -618,6 +630,153 @@ ind2_data$indicator2<- ind2_data$n_extant_populations / (ind2_data$n_extant_popu
 head(ind2_data$indicator2)
 ```
 
+
+### Number of extant populations.
+
+See the distribution of the number of extant populations:
+
+```{r}
+ind2_data %>% 
+  ggplot(aes(x=n_extant_populations)) +
+  geom_histogram() + 
+  ggtitle("histogram of extant populations")
+```
+
+Which taxa have more than 100 populations?
+```{r}
+ind2_data %>% 
+  filter(n_extant_populations>100) %>%
+  select(taxon, country_assessment, n_extant_populations)
+```
+
+Exclude outliers (>200 populations)
+```{r}
+ind2_data %>% 
+  filter(n_extant_populations<200) %>%
+  ggplot(aes(x=n_extant_populations)) +
+  geom_histogram() + 
+  ggtitle("Distribution of extant populations \nexcluding outliers (>200 pops)")
+
+```
+
+How does the number of populations vary by country? (excluding outliers: >200 pops)
+
+```{r}
+ind2_data %>% 
+  filter(n_extant_populations<200) %>%
+  ggplot(aes(x=country_assessment, y=n_extant_populations)) +
+          geom_boxplot(aes(color=country_assessment)) +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank(), legend.position="none") + 
+  ggtitle("Distribution of extant populations by country, \nexcluding outliers (>200 pops)")
+
+
+```
+
+And by method to define populations? (excluding outliers: >200 pops)
+
+```{r, out.width=900, out.height=500}
+ind2_data %>% 
+  filter(n_extant_populations<200) %>%
+  ggplot(aes(x=defined_populations, y=n_extant_populations)) +
+          geom_boxplot() +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank()) + 
+  ggtitle("Distribution of extant populations by pop definition method, \nexcluding outliers (>200 pops)")
+
+```
+
+Simplified method categories for easier visualization:
+
+```{r, out.width=900, out.height=500}
+ind2_data %>% 
+  filter(n_extant_populations<200) %>%
+  ggplot(aes(x=defined_populations_simplified, y=n_extant_populations)) +
+          geom_boxplot() +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank()) + 
+  ggtitle("Distribution of extant populations by pop definition method, \nexcluding outliers (>200 pops)")
+
+```
+
+Number of populations by taxonomic group:
+```{r}
+ind2_data %>% 
+  filter(n_extant_populations<200) %>%
+  ggplot(aes(x=taxonomic_group, y=n_extant_populations, color=taxonomic_group)) +
+          geom_boxplot() +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank()) + 
+  ggtitle("Distribution of extant populations by taxonomic group, \nexcluding outliers (>200 pops)") +
+  scale_color_manual(values= cividis(length(levels(as.factor(ind2_data$taxonomic_group)))),
+                    breaks=levels(levels(as.factor(ind2_data$taxonomic_group))))
+```
+
+Taxonomic group and method:
+```{r}
+ind2_data %>% 
+  filter(n_extant_populations<200) %>%
+  ggplot(aes(x=taxonomic_group, y=n_extant_populations, color=taxonomic_group)) +
+          geom_boxplot() +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank()) + 
+  ggtitle("Distribution of extant populations by taxonomic group and \nmethod to define pops, excluding outliers (>200 pops)") +
+  scale_color_manual(values= cividis(length(levels(as.factor(ind2_data$taxonomic_group)))),
+                    breaks=levels(levels(as.factor(ind2_data$taxonomic_group)))) +
+  facet_wrap(defined_populations_simplified ~ .) +
+  xlab("")
+```
+
+Country and method:
+```{r}
+ind2_data %>% 
+  filter(n_extant_populations<200) %>%
+  ggplot(aes(x=country_assessment, y=n_extant_populations, color=country_assessment)) +
+          geom_boxplot() +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank(), legend.position="none") + 
+  ggtitle("Distribution of extant populations by country and \nmethod to define pops, excluding outliers (>200 pops)") +
+  facet_wrap(defined_populations_simplified ~ .) +
+  xlab("") 
+```
+
+Number of populations by taxonomic group and range type:
+```{r}
+# add species range metadata
+ind2_data$species_range <- metadata$species_range
+
+ind2_data %>% 
+  filter(n_extant_populations<200) %>%
+  ggplot(aes(x=taxonomic_group, y=n_extant_populations, color=species_range)) +
+          geom_boxplot() +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank()) + 
+  ggtitle("Distribution of extant populations by taxonomic group and range, \nexcluding outliers (>200 pops)")
+```
+
+Number of populations by taxonomic group and global IUCN:
+```{r}
+# add species range metadata
+ind2_data$global_IUCN <- metadata$global_IUCN
+
+ind2_data %>% 
+  filter(n_extant_populations<200) %>%
+  ggplot(aes(x=taxonomic_group, y=n_extant_populations, col=global_IUCN)) +
+          geom_boxplot() +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank()) + 
+  ggtitle("Distribution of extant populations by taxonomic group and global IUCN, \nexcluding outliers (>200 pops)") +
+  scale_color_manual(values= c("brown2", "darkgrey", "darkorange", "darkgreen", "azure2", "green", "bisque1", "yellow"), # iucn color codes
+                    breaks=c(levels(as.factor(ind2_data$global_IUCN))))
+```
 
 
 ### Distribution of NA in indicator 2
@@ -672,73 +831,6 @@ ind2_data %>%
 ```
 
 
-### Number of extanct populations.
-
-See the distribution of the number of extant populations:
-
-```{r}
-ind2_data %>% 
-  ggplot(aes(x=n_extant_populations)) +
-  geom_density() + 
-  ggtitle("histogram of extant populations")
-```
-
-Which taxa have more than 100 populations?
-```{r}
-ind2_data %>% 
-  filter(n_extant_populations>100) %>%
-  select(taxon, country_assessment, n_extant_populations)
-```
-
-Exclude outliers (>200 populations)
-```{r}
-ind2_data %>% 
-  filter(n_extant_populations<200) %>%
-  ggplot(aes(x=n_extant_populations)) +
-  geom_density() + 
-  ggtitle("Distribution of extant populations \nexcluding outliers (>200 pops)")
-
-```
-
-How does the number of populations vary by country? (excluding outliers: >200 pops)
-
-```{r}
-ind2_data %>% 
-  filter(n_extant_populations<200) %>%
-  ggplot(aes(x=country_assessment, y=n_extant_populations)) +
-          geom_boxplot(aes(color=country_assessment)) +
-  coord_flip() +
-  theme_bw() +
-  theme(panel.border = element_blank(), legend.position="none")
-
-
-```
-
-And by method to define populations? (excluding outliers: >200 pops)
-
-```{r, out.width=900, out.height=500}
-ind2_data %>% 
-  filter(n_extant_populations<200) %>%
-  ggplot(aes(x=defined_populations, y=n_extant_populations)) +
-          geom_boxplot() +
-  coord_flip() +
-  theme_bw() +
-  theme(panel.border = element_blank())
-
-```
-
-Same with simplified method categories:
-
-```{r, out.width=900, out.height=500}
-ind2_data %>% 
-  filter(n_extant_populations<200) %>%
-  ggplot(aes(x=defined_populations_simplified, y=n_extant_populations)) +
-          geom_boxplot() +
-  coord_flip() +
-  theme_bw() +
-  theme(panel.border = element_blank())
-
-```
 
 
 ### Distribution of multiassessments and single assesments
