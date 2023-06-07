@@ -784,6 +784,46 @@ ind2_data %>%
                     breaks=levels(as.factor(ind2_data$defined_populations_simplified)))
 ```
 
+Similar, but with the US and Sweden in different scale
+```{r}
+## excluding Sweden and US
+p1<-ind2_data %>% 
+  filter(n_extant_populations<50) %>%
+  filter(country_assessment!="sweden", country_assessment!="united_states") %>%
+  
+  # plot
+  ggplot(aes(x=defined_populations_simplified, y=n_extant_populations, color=defined_populations_simplified)) +
+          geom_boxplot() +
+  coord_flip() +
+  theme_bw() + ylab("") +
+  theme(panel.border = element_blank(), legend.position="none") + 
+  ggtitle("Distribution of extant populations by country and method to define pops, excluding outliers (>200 pops)") +
+  facet_wrap(country_assessment ~ ., nrow=2) +
+  xlab("")  +
+  scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(ind2_data$defined_populations_simplified)))
+
+## With Sweden and US
+p2<-ind2_data %>% 
+  filter(n_extant_populations<200) %>%
+  filter(country_assessment %in% c("sweden", "united_states")) %>%
+  
+  # plot
+  ggplot(aes(x=defined_populations_simplified, y=n_extant_populations, color=defined_populations_simplified)) +
+          geom_boxplot() +
+  coord_flip() +
+  theme_bw() + xlab("") + ylab("Number of extant populations") +
+  theme(panel.border = element_blank(), legend.position="none") + 
+  facet_wrap(country_assessment ~ ., nrow=1, ncol=2) +
+  scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(ind2_data$defined_populations_simplified)))
+  ## plot together
+plot_grid(p1, p2, nrow=2, rel_heights = c(1.5,1))
+  
+```
+
+
+
 Number of populations by taxonomic group and range type:
 ```{r}
 # add species range metadata
