@@ -864,7 +864,7 @@ ind2_data %>%
                     breaks=c(levels(as.factor(ind2_data$global_IUCN))))
 ```
 
-### Stats on the number of extant populations
+### ANOVAS on the number of extant populations
 
 One-way ANOVA for the effect of the **method to define populations** on the number of extant pops, removing the extreme outlier (>1,000 pops)
 
@@ -900,9 +900,6 @@ summary(res.anova.extant)
 
 Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
 ```{r}
-# all
-TukeyHSD(res.anova.extant)
-
 # only padj < 0.05
 x<-TukeyHSD(res.anova.extant)
 x<-as.data.frame(x[[1]])
@@ -928,9 +925,6 @@ summary(res.anova.extant)
 
 Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
 ```{r}
-# all
-TukeyHSD(res.anova.extant)
-
 # only padj < 0.05
 x<-TukeyHSD(res.anova.extant)
 x<-as.data.frame(x[[1]])
@@ -960,9 +954,6 @@ summary(res.anova.extant)
 
 Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
 ```{r}
-# all
-TukeyHSD(res.anova.extant)
-
 # only padj < 0.05
 x<-TukeyHSD(res.anova.extant)
 x<-as.data.frame(x[[1]])
@@ -989,9 +980,6 @@ summary(res.anova.extant)
 ```
 Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
 ```{r}
-# all
-TukeyHSD(res.anova.extant)
-
 # only padj < 0.05
 x<-TukeyHSD(res.anova.extant)
 x<-as.data.frame(x[[1]])
@@ -1049,9 +1037,6 @@ summary(res.anova.extant)
 ```
 Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
 ```{r}
-# all
-TukeyHSD(res.anova.extant)
-
 # only padj < 0.05
 x<-TukeyHSD(res.anova.extant)
 x<-as.data.frame(x[[1]])
@@ -1639,6 +1624,7 @@ highlight14
 
 
 
+
 ### Indicator 2 within single countries
 
 Value of indicator 2 within a single country, by method to define populations, taxonomic group and iucn. Including only 1 assessment per multiassessed taxa.
@@ -1730,7 +1716,7 @@ print(plot_grid(p1, p2, p3, ncol = 1, align = 'v'))
 
 
 
-#### Does the number of populations affects the value of indicator 2? (excluding outliers: >200 pops) and incluidng all records of multiassessed taxa:
+### Does the number of populations affects the value of indicator 2? (excluding outliers: >200 pops) and incluidng all records of multiassessed taxa:
 
 ```{r}
 ind2_data %>%
@@ -1834,6 +1820,199 @@ p2<-ind2_data %>%
 
 plot_grid(p1, p2, ncol=2, rel_widths = c(1.5,1))
 ```
+
+
+
+### ANOVAS on indicator 2
+
+One-way ANOVA for the effect of the **method to define populations** on the number of extant pops, removing the extreme outlier (>1,000 pops)
+
+```{r, echo=TRUE, message=TRUE}
+# subset data without massive outlier
+ind2_data_anova<- ind2_data %>% 
+  filter(indicator2<1000)
+
+# summary of n per variable
+table(ind2_data_anova$defined_populations_simplified)
+
+# One way ANOVA method
+res.anova.extant<-aov(indicator2 ~ defined_populations_simplified, data=ind2_data_anova)
+res.anova.extant
+summary(res.anova.extant)
+```
+
+Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
+```{r}
+# only padj < 0.05
+x<-TukeyHSD(res.anova.extant)
+x<-as.data.frame(x[[1]])
+x[x$`p adj`<0.05, ]
+```
+
+Same One-way ANOVA for the effect of the **method to define populations** on the number of extant pops, but removing outliers >200 pops
+
+```{r, echo=TRUE, message=TRUE}
+# subset data without outliers
+ind2_data_anova<- ind2_data %>% 
+  filter(n_extant_populations<200)
+
+# summary of n per variable
+table(ind2_data_anova$defined_populations_simplified)
+
+# One way ANOVA method
+res.anova.extant<-aov(indicator2 ~ defined_populations_simplified, data=ind2_data_anova)
+res.anova.extant
+summary(res.anova.extant)
+```
+
+Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
+```{r}
+# only padj < 0.05
+x<-TukeyHSD(res.anova.extant)
+x<-as.data.frame(x[[1]])
+x[x$`p adj`<0.05, ]
+```
+
+
+One-way ANOVA for the effect of the **country** on the number of extant pops, removing outliers >200 pops
+
+```{r, echo=TRUE, message=TRUE}
+# subset data without outliers
+ind2_data_anova<- ind2_data %>% 
+  filter(n_extant_populations<200)
+
+# summary of n per variable
+table(ind2_data_anova$country_assessment)
+
+# One way ANOVA method
+res.anova.extant<-aov(indicator2 ~ country_assessment, data=ind2_data_anova)
+res.anova.extant
+summary(res.anova.extant)
+```
+
+Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
+```{r}
+# only padj < 0.05
+x<-TukeyHSD(res.anova.extant)
+x<-as.data.frame(x[[1]])
+x[x$`p adj`<0.05, ]
+```
+
+
+One-way ANOVA for the effect of the **taxonomic group** on the number of extant pops, removing outliers >200 pops and taxonomic groups with too few data
+
+```{r, echo=TRUE, message=TRUE}
+# summary of n per variable
+table(ind2_data$taxonomic_group)
+
+# subset data 
+ind2_data_anova<- ind2_data %>% 
+  filter(n_extant_populations<200) %>% 
+  filter(taxonomic_group %!in% c("fungus", "bryophyte", "other", "pteridophytes"))
+
+# summary of n per variable
+table(ind2_data_anova$taxonomic_group)
+
+# One way ANOVA method
+res.anova.extant<-aov(indicator2 ~ taxonomic_group, data=ind2_data_anova)
+res.anova.extant
+summary(res.anova.extant)
+```
+
+Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
+```{r}
+# only padj < 0.05
+x<-TukeyHSD(res.anova.extant)
+x<-as.data.frame(x[[1]])
+x[x$`p adj`<0.05, ]
+```
+
+Two-way ANOVA with interaction effect of the method to define populations and the country, removing outliers >200 pops
+**Question: is interaction he correct model? or should it be additive?**
+  
+```{r}
+# subset data without outliers
+ind2_data_anova<- ind2_data %>% 
+  filter(n_extant_populations<200)
+
+# summary of n per variable
+ind2_data_anova %>%
+  group_by(country_assessment, defined_populations_simplified) %>% summarise(n=n())
+
+# Two-way ANOVA with interaction effect of the method to define populations and the country
+res.anova.extant<-aov(indicator2 ~ defined_populations_simplified * country_assessment , data=ind2_data_anova)
+res.anova.extant
+summary(res.anova.extant)
+
+```
+Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
+```{r}
+# only padj < 0.05
+x<-TukeyHSD(res.anova.extant)
+x<-as.data.frame(x[[1]])
+x[x$`p adj`<0.05, ]
+```
+
+
+Two-way ANOVA with interaction effect of the method to define populations and the country, but keeping only groups with enough n
+```{r, echo=TRUE, message=TRUE}
+# variables with enough n
+enough_n<-ind2_data %>%
+  group_by(country_assessment, defined_populations_simplified) %>% 
+  summarise(n=n()) %>% 
+  filter(n>=15)
+
+# n by group
+enough_n
+
+# subset data without outliers and with enough n
+ind2_data_anova<- ind2_data %>% 
+  filter(n_extant_populations<200) %>% 
+  # this gives the country
+  filter(country_assessment==unique(enough_n$country_assessment)[1] & 
+           #this gives the methods for that country (the last [[1]] is to get the results out of a list)
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[1], 2][[1]]  | 
+           
+           # the same for rest of countries. Notice the use of & for methods within country and | to change to other country
+           country_assessment==unique(enough_n$country_assessment)[2] & 
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[2], 2][[1]] | 
+           
+           country_assessment==unique(enough_n$country_assessment)[3] & 
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[3], 2][[1]] |
+           
+           country_assessment==unique(enough_n$country_assessment)[4] & 
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[4], 2][[1]] | 
+           
+           country_assessment==unique(enough_n$country_assessment)[5] & 
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[5], 2][[1]] | 
+           
+           country_assessment==unique(enough_n$country_assessment)[6] & 
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[6], 2][[1]] | 
+           
+           country_assessment==unique(enough_n$country_assessment)[7] & 
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[7], 2][[1]] | 
+           
+           country_assessment==unique(enough_n$country_assessment)[8] & 
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[8], 2][[1]])
+
+# summary of n per variable
+ind2_data_anova %>%
+  group_by(country_assessment, defined_populations_simplified) %>% summarise(n=n())
+
+# Two-way ANOVA with interaction effect of the method to define populations and the country
+res.anova.extant<-aov(indicator2 ~ defined_populations_simplified * country_assessment , data=ind2_data_anova)
+res.anova.extant
+summary(res.anova.extant)
+```
+Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
+```{r}
+# only padj < 0.05
+x<-TukeyHSD(res.anova.extant)
+x<-as.data.frame(x[[1]])
+x[x$`p adj`<0.05, ]
+```
+
+
 
 
 ## Estimate indicator 3 (number of taxa with genetic monitoring squemes)
