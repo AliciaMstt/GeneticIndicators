@@ -601,7 +601,7 @@ Sankey just becasue why not:
 ```{r}
 # transform data to how ggsankey wants it
 df <- metadata %>%
-  make_long(country_assessment, defined_populations_simplified)
+  make_long(country_assessment, defined_populations_simplified, taxonomic_group)
 
 # Sankey plot
 ggplot(df, aes(x = x,
@@ -615,10 +615,13 @@ ggplot(df, aes(x = x,
               show.legend = FALSE) +
   geom_sankey_label(size = 2, color = 1, fill = "white") +
   # colour by country
-  scale_fill_manual(values=c(scales::hue_pal()(length(unique(metadata$country_assessment))),  # a nice  color for each of the n countries
-                             rep("darkgrey", length(unique(metadata$defined_populations_simplified)))), # grey for the n taxonomic groups
+                              # a nice  color for each of the n countries
+  scale_fill_manual(values=c(scales::hue_pal()(length(unique(metadata$country_assessment))),  
+                             rep("darkgrey", length(unique(metadata$defined_populations_simplified))),
+                             taxoncolors), 
                     breaks=c(unique(metadata$country_assessment), 
-                             unique(metadata$defined_populations_simplified))) +
+                             levels(as.factor(ind2_data$defined_populations_simplified)),
+                             levels(as.factor(ind2_data$taxonomic_group)))) +
   theme_sankey(base_size = 10) +
   xlab("")
 ```
@@ -626,7 +629,8 @@ ggplot(df, aes(x = x,
 
 
 
-## Estimate indicator 1
+## Indicator 1 (populations Ne > 500)
+
 
 ### Remember population size data could be obtained by different means
 
@@ -644,8 +648,6 @@ ind1_data %>%
 
 ```
 
-**QUESTION: should we create a "Ne_from_all_methods" variable with a Ne estimate regardless of the source? e.g. where Ne_from_all_methods = Ne AND Ne_from_all_methods = NcPoint(0.1) AND Ne_from_all_methods = 501 if NcRange==more_5000..**
-
 
 Also, for some taxa there may be population size data for some populations, but not all. Therefore indicator 1 would be computed with less populations than the total number of populations. Example (see pop3, 4, 13, 15):
 
@@ -655,6 +657,67 @@ ind1_data %>%
   select(country_assessment, taxon, population, Name, Ne, NcPoint, NcRange)
 ```
 We need to keep the former in mind for interpretation and discussion of how the indicator can change in future assessments if data becomes available for populations currently missing.
+
+How many of the `r nrow(ind1_data)` populations have Ne, Nc or range data?
+
+Ne?
+```{r}
+sum(!is.na(ind1_data$Ne))
+```
+
+Nc point?
+```{r}
+sum(!is.na(ind1_data$NcPoint))
+```
+
+Nc range?
+```{r}
+sum(!is.na(ind1_data$NcRange))
+```
+
+
+Has Ne values?
+```{r}
+ind1_data %>%
+  ggplot(aes(x=country_assessment, fill=is.na(Ne)))+
+  geom_bar(position = "dodge") +
+  coord_flip() + 
+  scale_fill_discrete(labels=c("has Ne data", "missing data")) + 
+  labs(fill="Indicator 1 Ne data") +
+  xlab("")
+```
+
+
+### Ne values
+
+How is Ne data distributed? 
+
+```{r}
+summary(ind1_data$Ne)
+```
+
+
+Boxplot of Ne values:
+```{r}
+ind1_data %>%
+  ggplot(aes(x=country_assessment, y=Ne)) +
+  geom_boxplot()
+```
+Check outliers (Ne very high):
+```{r}
+ind1_data %>% 
+  filter(Ne > 100000) %>%
+  select(country_assessment, name_assessor, taxon, taxonomic_group, Ne, NeLower, NeUpper, multiassessment, population)
+```
+
+
+Boxplot filtering outliers (Ne)
+```{r}
+ind1_data %>% filter(Ne < 100000) %>%
+  ggplot(aes(x=country_assessment, y=Ne)) +
+  geom_boxplot()
+```
+
 
 
 ## Indicator 2 (proportion of populations within species which are maintained)
@@ -825,7 +888,7 @@ p2<-ind2_data %>%
   scale_color_manual(values=simplifiedmethods_colors,
                     breaks=levels(as.factor(ind2_data$defined_populations_simplified)))
   ## plot together
-plot_grid(p1, p2, nrow=2, rel_heights = c(1.5,1))
+plot_grid(p1, p2, nrow=2, rel_heights = c(2,1))
   
 ```
 
@@ -1339,6 +1402,20 @@ ind2_data %>%
   
 ```
 
+By taxonomic group and country
+```{r}
+ind2_data %>%
+  ggplot(aes(x=taxonomic_group, fill=is.na(indicator2)))+
+  geom_bar(position = "dodge") +
+  coord_flip()+ 
+  scale_fill_discrete(labels=c("number of populations known", "has missing data")) + 
+  labs(fill="Indicator 2 data") +
+  xlab("") + facet_wrap(country_assessment ~., nrow = 2) +
+  theme(panel.border = element_blank(), legend.position="right")
+  
+```
+
+
 ### Distribution of multiassessments and single assesments
 Some taxa were assessed more than once to account for, for example, different ways in how to delimit populations. Create a subset of them, excluding those records with missing data in indicator2 (due to missing data in n_pops). 
 
@@ -1507,10 +1584,52 @@ ggplot(aes(x=myaxis, y=indicator2, fill=taxonomic_group), color=NA) +
       scale_fill_manual(values= taxoncolors,
                     breaks=c(levels(as.factor(ind2_data_firstmulti$taxonomic_group)))) +
       theme_bw() +
-      theme(panel.border = element_blank(), legend.position="none")
+      theme(panel.border = element_blank(), legend.position="none", text = element_text(size = 15)) 
 highlight10
       
 ```
+
+Same boxplot
+```{r}
+# get sample size by desired category
+sample_size <- ind2_data_firstmulti %>%
+                    filter(!is.na(indicator2)) %>% 
+                    group_by(taxonomic_group) %>% summarize(num=n())
+
+ind2_data_firstmulti %>% 
+  # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(taxonomic_group, " (n= ", num, ")")) %>%
+  
+  #plot
+ggplot(aes(x=myaxis, y=indicator2, color=taxonomic_group)) +
+      geom_boxplot()  +
+      geom_jitter(size=.5, width = 0.1, color="brown") +
+      xlab("") +
+      coord_flip() +
+      scale_color_manual(values= taxoncolors,
+                    breaks=c(levels(as.factor(ind2_data_firstmulti$taxonomic_group)))) +
+      theme_bw() +
+      theme(panel.border = element_blank(), legend.position="none", text = element_text(size = 15)) 
+```
+
+Zoom in to invertebrates by country:
+
+```{r}
+ind2_data_firstmulti %>% 
+      filter(!is.na(indicator2)) %>%
+      filter(taxonomic_group=="invertebrate") %>% 
+
+ggplot(aes(x=country_assessment, y=indicator2, fill=country_assessment), color=NA) +
+      geom_violin()  +
+      geom_jitter(size=.7, width = 0.1, color="black") +
+      xlab("") +
+      coord_flip() +
+      theme_bw() +
+      theme(panel.border = element_blank(), legend.position="none", text = element_text(size = 15)) +
+      ggtitle("Distribution of Indicator 2 for Invertebrates")
+```
+
 
 Visualizing by IUCN:
 
@@ -1539,9 +1658,67 @@ highlight11<-ind2_data_firstmulti %>%
       scale_fill_manual(values= IUCNcolors, # iucn color codes
                     breaks=c(levels(as.factor(ind2_data_firstmulti$global_IUCN)))) +
       theme_bw() +
-      theme(panel.border = element_blank(), legend.position="none")
+      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=15))
 highlight11
       
+```
+
+Visualizing by range type:
+
+```{r}
+
+# add data form metadata to ind2
+ind2_data_firstmulti$species_range <- metadata_firstmulti$species_range
+
+# get sample size by desired category
+sample_size <- ind2_data_firstmulti %>%
+                    filter(!is.na(indicator2)) %>% 
+                    group_by(species_range) %>% summarize(num=n())
+
+# plot
+ind2_data_firstmulti %>% 
+  # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=myaxis, y=indicator2, fill=species_range)) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") +
+      coord_flip() +
+      theme_bw() +
+      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20))
+
+      
+```
+
+Visualizing by rarity:
+
+```{r}
+
+# add data form metadata to ind2
+ind2_data_firstmulti$rarity <- metadata_firstmulti$rarity
+
+# get sample size by desired category
+sample_size <- ind2_data_firstmulti %>%
+                    filter(!is.na(indicator2)) %>% 
+                    group_by(rarity) %>% summarize(num=n())
+
+# plot
+ind2_data_firstmulti %>% 
+  # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(rarity, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=myaxis, y=indicator2, fill=rarity)) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") +
+      coord_flip() +
+      theme_bw() +
+      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20))
 ```
 
 By population method 
@@ -1622,7 +1799,26 @@ highlight14<-ind2_data_firstmulti %>%
 highlight14
 ```
 
+Facet by country and IUCN
+```{r, out.width="1000px", out.height="700px"}
+ind2_data_firstmulti %>% 
 
+  # plot
+ ggplot(aes(x=global_IUCN, y=indicator2, fill=global_IUCN)) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") +
+      coord_flip() +
+      scale_fill_manual(values= IUCNcolors, # iucn color codes
+                    breaks=c(levels(as.factor(ind2_data_firstmulti$global_IUCN)))) +
+      theme_bw() +
+      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=15)) + 
+  facet_wrap(~country_assessment, ncol=3) +
+  scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(ind2_data_firstmulti$defined_populations_simplified)))
+
+
+```
 
 
 ### Indicator 2 within single countries
@@ -1778,6 +1974,25 @@ ind2_data %>%
                     breaks=levels(as.factor(ind2_data$defined_populations_simplified)))
 
 ```
+Run model (first removing missing data)
+```{r}
+# remove missing data 
+ind2_data_wo_missing<-ind2_data %>% 
+                      filter(!is.na(indicator2)) %>%
+                      filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
+
+# check n per method
+table(ind2_data_wo_missing$defined_populations_simplified)
+
+# run model
+m2 <- glm(ind2_data_wo_missing$indicator2 ~ ind2_data_wo_missing$n_extant_populations + 
+            ind2_data_wo_missing$defined_populations_simplified + 
+            ind2_data_wo_missing$n_extant_populations*ind2_data_wo_missing$defined_populations_simplified, family = "quasibinomial")
+m2
+summary(m2)
+
+```
+
 
 Put side by side the plots of number of populations and indicator 2 range (excluding >200 pops outlieres):
 ```{r, out.height="500px", out.width="1064px"}
@@ -1803,29 +2018,50 @@ p1<-ind2_data %>%
   theme(panel.border = element_blank(), legend.position="none",
         plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots
   scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(ind2_data$defined_populations_simplified)))
+                    breaks=levels(as.factor(ind2_data$defined_populations_simplified))) +
+    theme(text = element_text(size = 15))
 
 ## plot for indicator 2
 p2<-ind2_data %>% 
   filter(n_extant_populations<500) %>%
   ggplot(aes(x=defined_populations_simplified, y=indicator2, color=defined_populations_simplified)) +
-          geom_boxplot() + xlab("") + ylab("Indicator 2 (proportion of remaining populations)") +
+          geom_boxplot() + xlab("") + ylab("Indicator 2") +
           geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
   theme_bw() +
   theme(panel.border = element_blank(), legend.position="none", axis.text.y = element_blank(),
         plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) + 
   scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(ind2_data$defined_populations_simplified)))
+                    breaks=levels(as.factor(ind2_data$defined_populations_simplified))) +
+  theme(text = element_text(size = 15))
 
 plot_grid(p1, p2, ncol=2, rel_widths = c(1.5,1))
 ```
+Add the scatter plot of indicator2 and extant pops as a third pannel
+```{r}
+p3<- ind2_data %>%
+  # filter outliers with too many pops
+  filter(n_extant_populations<500) %>%
+  
+  # plot
+    ggplot(aes(x=n_extant_populations, y=indicator2, color=defined_populations_simplified)) +
+    geom_point() +
+    theme_bw() +
+    scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(ind2_data$defined_populations_simplified))) +
+    theme(legend.position = "none") +
+    ylab("Indicator 2") +
+    xlab("Number of extant populations") +
+    theme(text = element_text(size = 15))
+p3
 
+plot_grid(p1, p2, p3, ncol=3, rel_widths = c(1.7,1,1), align = "h")  
 
+```
 
-### ANOVAS on indicator 2
+### ANOVAS on the number of extant populations
 
-One-way ANOVA for the effect of the **method to define populations** on the number of extant pops, removing the extreme outlier (>1,000 pops)
+One-way ANOVA for the effect of the **method to define populations** on indicator 2, removing the extreme outlier (>1,000 pops)
 
 ```{r, echo=TRUE, message=TRUE}
 # subset data without massive outlier
@@ -1841,20 +2077,12 @@ res.anova.extant
 summary(res.anova.extant)
 ```
 
-Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
-```{r}
-# only padj < 0.05
-x<-TukeyHSD(res.anova.extant)
-x<-as.data.frame(x[[1]])
-x[x$`p adj`<0.05, ]
-```
-
-Same One-way ANOVA for the effect of the **method to define populations** on the number of extant pops, but removing outliers >200 pops
+Same One-way ANOVA for the effect of the **method to define populations** on indicator 2, but removing outliers >200 pops
 
 ```{r, echo=TRUE, message=TRUE}
 # subset data without outliers
 ind2_data_anova<- ind2_data %>% 
-  filter(n_extant_populations<200)
+  filter(indicator2<200)
 
 # summary of n per variable
 table(ind2_data_anova$defined_populations_simplified)
@@ -1866,7 +2094,7 @@ summary(res.anova.extant)
 ```
 
 Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
-```{r}
+  ```{r}
 # only padj < 0.05
 x<-TukeyHSD(res.anova.extant)
 x<-as.data.frame(x[[1]])
@@ -1874,12 +2102,12 @@ x[x$`p adj`<0.05, ]
 ```
 
 
-One-way ANOVA for the effect of the **country** on the number of extant pops, removing outliers >200 pops
+One-way ANOVA for the effect of the **country** on indicator 2, removing outliers >200 pops
 
 ```{r, echo=TRUE, message=TRUE}
 # subset data without outliers
 ind2_data_anova<- ind2_data %>% 
-  filter(n_extant_populations<200)
+  filter(indicator2<200)
 
 # summary of n per variable
 table(ind2_data_anova$country_assessment)
@@ -1891,7 +2119,7 @@ summary(res.anova.extant)
 ```
 
 Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
-```{r}
+  ```{r}
 # only padj < 0.05
 x<-TukeyHSD(res.anova.extant)
 x<-as.data.frame(x[[1]])
@@ -1899,7 +2127,7 @@ x[x$`p adj`<0.05, ]
 ```
 
 
-One-way ANOVA for the effect of the **taxonomic group** on the number of extant pops, removing outliers >200 pops and taxonomic groups with too few data
+One-way ANOVA for the effect of the **taxonomic group** on indicator 2, removing outliers >200 pops and taxonomic groups with too few data
 
 ```{r, echo=TRUE, message=TRUE}
 # summary of n per variable
@@ -1907,7 +2135,7 @@ table(ind2_data$taxonomic_group)
 
 # subset data 
 ind2_data_anova<- ind2_data %>% 
-  filter(n_extant_populations<200) %>% 
+  filter(indicator2<200) %>% 
   filter(taxonomic_group %!in% c("fungus", "bryophyte", "other", "pteridophytes"))
 
 # summary of n per variable
@@ -1920,7 +2148,7 @@ summary(res.anova.extant)
 ```
 
 Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
-```{r}
+  ```{r}
 # only padj < 0.05
 x<-TukeyHSD(res.anova.extant)
 x<-as.data.frame(x[[1]])
@@ -1930,10 +2158,10 @@ x[x$`p adj`<0.05, ]
 Two-way ANOVA with interaction effect of the method to define populations and the country, removing outliers >200 pops
 **Question: is interaction he correct model? or should it be additive?**
   
-```{r}
+  ```{r}
 # subset data without outliers
 ind2_data_anova<- ind2_data %>% 
-  filter(n_extant_populations<200)
+  filter(indicator2<200)
 
 # summary of n per variable
 ind2_data_anova %>%
@@ -1946,7 +2174,7 @@ summary(res.anova.extant)
 
 ```
 Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
-```{r}
+  ```{r}
 # only padj < 0.05
 x<-TukeyHSD(res.anova.extant)
 x<-as.data.frame(x[[1]])
@@ -1962,12 +2190,10 @@ enough_n<-ind2_data %>%
   summarise(n=n()) %>% 
   filter(n>=15)
 
-# n by group
-enough_n
 
 # subset data without outliers and with enough n
 ind2_data_anova<- ind2_data %>% 
-  filter(n_extant_populations<200) %>% 
+  filter(indicator2<200) %>% 
   # this gives the country
   filter(country_assessment==unique(enough_n$country_assessment)[1] & 
            #this gives the methods for that country (the last [[1]] is to get the results out of a list)
@@ -2005,6 +2231,46 @@ res.anova.extant
 summary(res.anova.extant)
 ```
 Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
+  ```{r}
+# only padj < 0.05
+x<-TukeyHSD(res.anova.extant)
+x<-as.data.frame(x[[1]])
+x[x$`p adj`<0.05, ]
+```
+
+### ANOVAs on indicator 2
+
+One-way ANOVA for the effect of the **method to define populations** on indicator 2, removing the extreme outlier (>1,000 pops)
+
+```{r, echo=TRUE, message=TRUE}
+# subset data without massive outlier
+ind2_data_anova<- ind2_data %>% 
+  filter(indicator2<1000)
+
+# summary of n per variable
+table(ind2_data_anova$defined_populations_simplified)
+
+# One way ANOVA method
+res.anova.extant<-aov(indicator2 ~ defined_populations_simplified, data=ind2_data_anova)
+summary(res.anova.extant)
+```
+
+Same One-way ANOVA for the effect of the **method to define populations** on indicator 2, but removing outliers >1000 pops
+
+```{r, echo=TRUE, message=TRUE}
+# subset data without outliers
+ind2_data_anova<- ind2_data %>% 
+  filter(indicator2<1000)
+
+# summary of n per variable
+table(ind2_data_anova$defined_populations_simplified)
+
+# One way ANOVA method
+res.anova.extant<-aov(indicator2 ~ defined_populations_simplified, data=ind2_data_anova)
+summary(res.anova.extant)
+```
+
+Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
 ```{r}
 # only padj < 0.05
 x<-TukeyHSD(res.anova.extant)
@@ -2012,6 +2278,205 @@ x<-as.data.frame(x[[1]])
 x[x$`p adj`<0.05, ]
 ```
 
+One-way ANOVA for the effect of the **country** on indicator 2, removing outliers >1000 pops
+
+```{r, echo=TRUE, message=TRUE}
+# subset data without outliers
+ind2_data_anova<- ind2_data %>% 
+  filter(indicator2<1000)
+
+# summary of n per variable
+table(ind2_data_anova$country_assessment)
+
+# One way ANOVA method
+res.anova.extant<-aov(indicator2 ~ country_assessment, data=ind2_data_anova)
+summary(res.anova.extant)
+```
+
+Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
+```{r}
+# only padj < 0.05
+x<-TukeyHSD(res.anova.extant)
+x<-as.data.frame(x[[1]])
+x[x$`p adj`<0.05, ]
+```
+
+
+One-way ANOVA for the effect of the **taxonomic group** on indicator 2, removing outliers >1000 pops and taxonomic groups with too few data
+
+```{r, echo=TRUE, message=TRUE}
+# summary of n per variable
+table(ind2_data$taxonomic_group)
+
+# subset data 
+ind2_data_anova<- ind2_data %>% 
+  filter(indicator2<1000) %>% 
+  filter(taxonomic_group %!in% c("fungus", "bryophyte", "other"))
+
+# summary of n per variable
+table(ind2_data_anova$taxonomic_group)
+
+# One way ANOVA
+res.anova.extant<-aov(indicator2 ~ taxonomic_group, data=ind2_data_anova)
+summary(res.anova.extant)
+```
+
+Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
+```{r}
+# only padj < 0.05
+x<-TukeyHSD(res.anova.extant)
+x<-as.data.frame(x[[1]])
+x[x$`p adj`<0.05, ]
+```
+One-way ANOVA for the effect of the **global IUCN** on indicator 2, removing outliers >1000 pops and taxonomic groups with too few data
+
+```{r, echo=TRUE, message=TRUE}
+# summary of n per variable
+table(ind2_data$global_IUCN)
+
+# subset data 
+ind2_data_anova<- ind2_data %>% 
+  filter(indicator2<1000) %>% 
+  filter(global_IUCN %!in% c("dd", "unknown"))
+
+# summary of n per variable
+table(ind2_data_anova$global_IUCN)
+
+# One way ANOVA method
+res.anova.extant<-aov(indicator2 ~ global_IUCN, data=ind2_data_anova)
+summary(res.anova.extant)
+```
+
+Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
+```{r}
+# only padj < 0.05
+x<-TukeyHSD(res.anova.extant)
+x<-as.data.frame(x[[1]])
+x[x$`p adj`<0.05, ]
+```
+
+One-way ANOVA for the effect of the **species range** on indicator 2
+
+```{r, echo=TRUE, message=TRUE}
+# summary of n per variable
+table(ind2_data$species_range)
+
+# subset data 
+ind2_data_anova<- ind2_data %>% 
+                  filter(species_range != "unknown")
+
+# summary of n per variable
+table(ind2_data_anova$species_range)
+
+# One way ANOVA method
+res.anova.extant<-aov(indicator2 ~ species_range, data=ind2_data_anova)
+summary(res.anova.extant)
+```
+
+One-way ANOVA for the effect of the **rarity** on indicator 2
+
+```{r, echo=TRUE, message=TRUE}
+# summary of n per variable
+
+table(ind2_data_firstmulti$rarity)
+
+# subset data 
+ind2_data_anova<- ind2_data_firstmulti
+
+
+# One way ANOVA method
+res.anova.extant<-aov(indicator2 ~ species_range, data=ind2_data_anova)
+summary(res.anova.extant)
+```
+
+
+Two-way ANOVA with interaction effect of the method to define populations and the country, removing outliers >200 pops
+**Question: is interaction he correct model? or should it be additive?**
+  
+```{r}
+# subset data without outliers
+ind2_data_anova<- ind2_data %>% 
+  filter(indicator2<200)
+
+# summary of n per variable
+ind2_data_anova %>%
+  group_by(country_assessment, defined_populations_simplified) %>% summarise(n=n())
+
+# Two-way ANOVA with interaction effect of the method to define populations and the country
+res.anova.extant<-aov(indicator2 ~ defined_populations_simplified * country_assessment , data=ind2_data_anova)
+res.anova.extant
+summary(res.anova.extant)
+
+```
+
+Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
+
+```{r}
+# only padj < 0.05
+x<-TukeyHSD(res.anova.extant)
+x<-as.data.frame(x[[1]])
+x[x$`p adj`<0.05, ]
+```
+
+
+Two-way ANOVA with interaction effect of the method to define populations and the country, but keeping only groups with enough n
+
+```{r, echo=TRUE, message=TRUE}
+# variables with enough n
+enough_n<-ind2_data %>%
+  group_by(country_assessment, defined_populations_simplified) %>% 
+  summarise(n=n()) %>% 
+  filter(n>=15)
+
+
+# subset data without outliers and with enough n
+ind2_data_anova<- ind2_data %>% 
+  filter(indicator2<200) %>% 
+  # this gives the country
+  filter(country_assessment==unique(enough_n$country_assessment)[1] & 
+           #this gives the methods for that country (the last [[1]] is to get the results out of a list)
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[1], 2][[1]]  | 
+           
+           # the same for rest of countries. Notice the use of & for methods within country and | to change to other country
+           country_assessment==unique(enough_n$country_assessment)[2] & 
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[2], 2][[1]] | 
+           
+           country_assessment==unique(enough_n$country_assessment)[3] & 
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[3], 2][[1]] |
+           
+           country_assessment==unique(enough_n$country_assessment)[4] & 
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[4], 2][[1]] | 
+           
+           country_assessment==unique(enough_n$country_assessment)[5] & 
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[5], 2][[1]] | 
+           
+           country_assessment==unique(enough_n$country_assessment)[6] & 
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[6], 2][[1]] | 
+           
+           country_assessment==unique(enough_n$country_assessment)[7] & 
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[7], 2][[1]] | 
+           
+           country_assessment==unique(enough_n$country_assessment)[8] & 
+           defined_populations_simplified %in% enough_n[enough_n$country_assessment==unique(enough_n$country_assessment)[8], 2][[1]])
+
+# summary of n per variable
+ind2_data_anova %>%
+  group_by(country_assessment, defined_populations_simplified) %>% summarise(n=n())
+
+# Two-way ANOVA with interaction effect of the method to define populations and the country
+res.anova.extant<-aov(indicator2 ~ defined_populations_simplified * country_assessment , data=ind2_data_anova)
+res.anova.extant
+summary(res.anova.extant)
+```
+
+Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
+
+```{r}
+# only padj < 0.05
+x<-TukeyHSD(res.anova.extant)
+x<-as.data.frame(x[[1]])
+x[x$`p adj`<0.05, ]
+```
 
 
 
