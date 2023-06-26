@@ -1,9 +1,9 @@
 ---
 title: "Data exploration and cleaning"
 output:
-  word_document: default
   html_document:
     df_print: paged
+  word_document: default
   pdf_document: default
 ---
 
@@ -32,7 +32,7 @@ Useful functions
 
 Get Kobo raw output data:
 ```{r}
-kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-05-25-07-12-30.csv", sep=";", header=TRUE) %>%
+kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-06-23-14-59-49.csv", sep=";", header=TRUE) %>%
 
 ## add  taxon column
 mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE))) %>%
@@ -67,11 +67,12 @@ cols= c("name_assessor", "email_assessor", "genus", "species", "subspecies_varie
 # check for "test" on any of them
 kobo_clean %>% 
   filter(if_any(all_of(cols), ~ grepl("test", .)))  %>% 
-  select(country_assessment, name_assessor, genus, species)
+  select(country_assessment, name_assessor, genus, species, X_uuid)
 
 # filter them out of dataset
 kobo_clean<- kobo_clean %>% 
-              filter(if_any(all_of(cols), ~ !grepl("test", .)))
+              filter(if_any(all_of(cols), ~ !grepl("test", .)))  %>%
+              filter(species != "test")
 
 ```
 
