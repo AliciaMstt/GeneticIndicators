@@ -10,7 +10,7 @@ output:
 
 ```{r global-options, include=FALSE}
 # options when we want to knit only showing text, results and plots: ie no code, warnings etc.
-#knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE) 
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE) 
 ```
 
 
@@ -106,11 +106,17 @@ head(ind3_data[,c(1:3, 9:11)])
 metadata<-get_metadata(kobo_output=kobo_clean)
 head(metadata[,c(1:3, 12, 25,26, 64)])
 
+
+# save processed data
+write.csv(ind1_data, "ind1_data.csv", row.names = FALSE, fileEncoding = "UTF-8")
+write.csv(ind2_data, "ind2_data.csv", row.names = FALSE, fileEncoding = "UTF-8")
+write.csv(ind3_data, "ind3_data.csv", row.names = FALSE, fileEncoding = "UTF-8")
+write.csv(metadata, "metadata.csv", row.names = FALSE, fileEncoding = "UTF-8")
+
 ```
 
 
 ## General description of the dataset
-
 
 
 ### Methods to define populations
@@ -676,15 +682,88 @@ sum(!is.na(ind1_data$NcRange))
 ```
 
 
-Has Ne values?
+Ne data by population
 ```{r}
 ind1_data %>%
   ggplot(aes(x=country_assessment, fill=is.na(Ne)))+
   geom_bar(position = "dodge") +
   coord_flip() + 
-  scale_fill_discrete(labels=c("has Ne data", "missing data")) + 
-  labs(fill="Indicator 1 Ne data") +
-  xlab("")
+  scale_fill_manual(labels=c("no", "yes"),
+                      breaks=c("TRUE", "FALSE"),
+                      values=c("brown", "darkgreen")) + 
+  labs(fill="Population has Ne data?") +
+  xlab("") +
+  theme_bw() +
+  theme(text = element_text(size = 17), legend.position = "bottom", panel.border = element_blank())
+```
+Nc data type by population
+
+```{r}
+ind1_data %>%
+  filter(!is.na(NcType)) %>%
+  ggplot(aes(x=country_assessment, fill=NcType))+
+  geom_bar(position = "dodge") +
+  coord_flip() + 
+  scale_fill_discrete(labels=c("Nc_point", "Nc_range", "Unknown Nc for this population"),
+                     breaks=c("Nc_point", "Nc_range", "unknown")) +
+  xlab("") +
+  theme_bw() +
+  theme(text = element_text(size = 17), legend.position = "bottom", panel.border = element_blank()) +
+  labs(fill="") +
+  ggtitle("Type of Nc data by population")
+```
+
+
+*By taxa*
+
+Nc data availalbe by taxa?
+```{r}
+metadata %>%
+  filter(!is.na(nc_pops_exists)) %>%
+  ggplot(aes(x=country_assessment, fill=nc_pops_exists))+
+  geom_bar() +
+  coord_flip() + 
+  scale_fill_manual(values=c("brown", "darkgreen")) + 
+  labs(fill="Has Nc data for indicator 1?") +
+  xlab("") +
+  ggtitle("Has Nc data?") +
+  theme_bw() +
+  theme(text = element_text(size = 17), legend.position = "bottom", panel.border = element_blank())
+```
+
+Ne data and genetic data available?
+
+```{r}
+metadata %>% 
+  filter(!is.na(ne_pops_exists)) %>% 
+    ggplot(aes(x=country_assessment, fill=ne_pops_exists)) + 
+  geom_bar(position = "dodge") +
+scale_fill_manual(labels=c("no", "yes", "no, but has genetic data"),
+                      breaks=c("no_genetic_data", "ne_available", "other_genetic_info"),
+                      values=c("brown", "darkgreen", "grey")) +
+  coord_flip()  +
+theme_bw() +
+theme(text = element_text(size = 17), legend.position = "bottom", panel.border = element_blank()) +
+ggtitle("Has Ne data?")
+```
+
+Ne data yes or not?
+
+```{r}
+metadata %>% 
+  filter(!is.na(ne_pops_exists)) %>% 
+  filter(ne_pops_exists!="other_genetic_info") %>%
+    ggplot(aes(x=country_assessment, fill=ne_pops_exists)) + 
+  geom_bar() +
+scale_fill_manual(labels=c("no", "yes"),
+                      breaks=c("no_genetic_data", "ne_available"),
+                      values=c("brown", "darkgreen")) +
+  coord_flip()  +
+xlab("") +
+labs(fill="Has Ne data for indicator 1?")  +
+theme_bw() +
+theme(text = element_text(size = 17), legend.position = "bottom", panel.border = element_blank()) +
+ggtitle("Has Ne data?")
 ```
 
 
