@@ -4,6 +4,7 @@ output: html_document
 date: "2023-08-03"
 ---
 
+This notebook estimates the indicators based on the raw data and perfomrs the main analyses and figures used in the manuscript of the multicountry paper. The input is the "clean kobo output" that was first cleaned by `1.2_cleaning`.
 
 ## Packages and functions
 
