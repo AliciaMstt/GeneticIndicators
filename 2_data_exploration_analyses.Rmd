@@ -10,7 +10,10 @@ output:
 
 ```{r global-options, include=FALSE}
 # options when we want to knit only showing text, results and plots: ie no code, warnings etc.
-knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE) 
+# knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE) 
+
+# only ommitt warnings and messages
+ knitr::opts_chunk$set(warning=FALSE, message=FALSE) 
 ```
 
 
@@ -39,6 +42,8 @@ source("get_indicator1_data.R")
 source("get_indicator2_data.R")
 source("get_indicator3_data.R")
 source("get_metadata.R")
+source("transform_to_Ne.R")
+source("estimate_indicator1.R")
 ```
 
 Other custom functions:
@@ -72,12 +77,12 @@ taxoncolors<-cividis(12) # same than using cividis(length(levels(as.factor(metad
 simplifiedmethods_colors<-c("#b34656", #"adaptive_traits management_units"
                             "#7f611b", # "eco_biogeo_proxies"
                             "#668cd1", # "genetic_clusters"     
-                            "#5081db", # "genetic_clusters eco_biogeo_proxies"     
+                            "#668cd1", # "genetic_clusters eco_biogeo_proxies"     
                             "#45c097", # "genetic_clusters geographic_boundaries"  
                             "#d4b43e", # "geographic_boundaries"                   
-                            "#e38a36", # "geographic_boundaries adaptive_traits"
-                            "#d1a16b", # "geographic_boundaries eco_biogeo_proxies"
-                            "#d9aa69", # "geographic_boundaries management_units"  
+                            "#d4b43e", # "geographic_boundaries adaptive_traits"
+                            "#d4b43e", # "geographic_boundaries eco_biogeo_proxies"
+                            "#d4b43e", # "geographic_boundaries management_units"  
                             "#be72c9", # "low_freq_combinations" 
                             "#b93921", # "management_units" 
                             "#d868a2")# "other" 
@@ -190,11 +195,10 @@ ind2_data %>%
 Records by country, including taxa assessed more than once (see below for details on this)
 
 ```{r, out.width="700px", out.height="400px"}
-highlight1<-ggplot(metadata, aes(x=country_assessment)) + 
+ggplot(metadata, aes(x=country_assessment)) + 
   geom_bar(stat = "count") +
   ggtitle("Number of taxa assessedd by country, \nincluding duplicated taxa")
 
-highlight1
 ```
 
 Did countries used kobo or tabular?
@@ -280,24 +284,23 @@ metadata_firstmulti %>% # we use the _firstmulti dataset so that multiassesed re
 ```
 
 ```{r}
-highlight2<-metadata_firstmulti %>% # we use the _unique dataset so that multiassesed records are counted only once
+metadata_firstmulti %>% # we use the _unique dataset so that multiassesed records are counted only once
         filter(multiassessment=="multiassessment") %>%
 
 ggplot(aes(x=taxonomic_group, fill=country_assessment)) + 
   geom_bar(stat = "count") +
   theme(axis.text.x = element_text(angle = 45)) +
   ggtitle("Number of taxa assessed more than once")
-highlight2
 
 ```
 
 **Now check taxa assessed excluding duplicates, i.e. the real number of taxa assessed. This will be used in downstream analyses**
 
 ```{r, out.width="700px", out.height="400px"}
-highlight3<-ggplot(metadata_firstmulti, aes(x=country_assessment)) + 
+ggplot(metadata_firstmulti, aes(x=country_assessment)) + 
   geom_bar(stat = "count") +
   ggtitle("Number of taxa assessed by country")
-highlight3
+
 ```
 
 ```{r}
@@ -400,7 +403,7 @@ levels(countries)<-my_cols
 countries<-as.vector(countries)
 head(countries)
 
-# plot (highlight4)
+# plot
 alluvial(foralluvial_1[,1:3], freq = foralluvial_1$n,
          col=countries, 
          blocks=FALSE,
@@ -451,7 +454,7 @@ df <- metadata_firstmulti %>%
   make_long(country_assessment, taxonomic_group, popsize_data)
 
 # Sankey
-highlight5<-ggplot(df, aes(x = x,
+ggplot(df, aes(x = x,
                next_x = next_x,
                node = node,
                next_node = next_node,
@@ -474,16 +477,28 @@ highlight5<-ggplot(df, aes(x = x,
   theme_sankey(base_size = 10) +
   xlab("")
 
-highlight5
 
 ```
 
+Bar plots
+
+```{r}
+ggplot(metadata, aes(x=taxonomic_group, fill=popsize_data)) + 
+  geom_bar(stat = "count") +
+  coord_flip() +
+  facet_wrap(~country_assessment, ncol = 4) +
+  scale_fill_manual(values=c("#1f77b4", "grey80", "#2ca02c"),
+                    breaks=c(levels(as.factor(metadata$popsize_data)))) +
+  theme_light()
+  
+```
 
 
 #### Taxonomic groups and IUCN status
 
-Using alluvial:
-```{r, out.width="900px", out.height="600px"}
+Using alluvial: (pending to fix a NA in Cucurbita argyrosperma)
+```{r, out.width="900px", out.height="600px", eval=FALSE}
+
 library(alluvial)
 # estimate frequencies for alluvial plot
 foralluvial_1<-metadata_firstmulti %>% group_by(taxonomic_group, global_IUCN, popsize_data) %>%
@@ -795,6 +810,195 @@ Boxplot filtering outliers (Ne)
 ind1_data %>% filter(Ne < 100000) %>%
   ggplot(aes(x=country_assessment, y=Ne)) +
   geom_boxplot()
+```
+
+### Estimate indicator 1
+
+Get function to transform NcRange and NcPoint data into Ne. 
+```{r}
+# check what the custom funciton does
+transform_to_Ne
+```
+
+Use function to get Ne data from NcRange or NcPoint data, and their combination (Ne estimated from Ne if Ne is available, otherwise, from Nc)
+```{r}
+ind1_data<-transform_to_Ne(ind1_data = ind1_data) 
+ind1_data %>%
+  select(taxon, population, Ne, NcPoint, NcRange, Ne_from_Nc, Ne_combined)
+
+```
+
+Get function to estimate indicator 1
+```{r}
+# check what the custom funciton does
+estimate_indicator1
+```
+
+Now estimate indicator 1 :)
+```{r}
+indicator1<-estimate_indicator1(ind1_data = ind1_data)
+indicator1
+```
+
+### Plots indicator 1
+
+By country
+```{r}
+# get sample size by desired category
+
+sample_size <- indicator1 %>%
+                    group_by(country_assessment) %>% summarize(num=n())
+
+# plot
+indicator1 %>% 
+  # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(country_assessment, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=myaxis, y=indicator1, fill=country_assessment)) +
+  geom_violin(width= 1, linewidth = 0)  +
+  geom_jitter(size=.5, width = 0.1) +
+  xlab("") +
+  ylab("indicator 1 (proportion of populations Ne > 500)") +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank(), legend.position="none", text = element_text(size = 20))
+```
+
+By  taxonomic group
+
+```{r}
+# get sample size by desired category
+
+sample_size <- indicator1 %>%
+                    group_by(taxonomic_group) %>% summarize(num=n())
+
+# plot
+indicator1 %>%
+  # add sampling size
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(taxonomic_group, " (n= ", num, ")")) %>%
+
+  #plot
+ggplot(aes(x=myaxis, y=indicator1, fill=taxonomic_group), color=NA) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1, color="brown") +
+      xlab("") +
+      coord_flip() +
+      scale_fill_manual(values= taxoncolors,
+                    breaks=c(levels(as.factor(indicator1$taxonomic_group)))) +
+      theme_bw() +
+      theme(panel.border = element_blank(), legend.position="none", text = element_text(size = 15))
+```
+
+By country and taxonomic group
+```{r}
+indicator1 %>%
+ggplot(aes(x=taxonomic_group, y=indicator1, fill=taxonomic_group), color=NA) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1, color="brown") +
+      xlab("") +
+      ylab("Indicator 1 (proportion of populations Ne > 500") +
+      coord_flip() +
+      scale_fill_manual(values= taxoncolors,
+                    breaks=c(levels(as.factor(indicator1 $taxonomic_group)))) +
+      theme_bw() +
+      theme(panel.border = element_blank(), legend.position="none", text = element_text(size = 14)) +
+      facet_wrap(~country_assessment, ncol = 5) +
+       theme(panel.spacing = unit(1.5, "lines"))
+```
+
+
+By IUCN 
+```{r}
+ # get sample size by desired category
+
+sample_size <- indicator1 %>%
+                    group_by(global_IUCN) %>% summarize(num=n())
+
+# plot
+indicator1 %>% 
+  # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(global_IUCN, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=myaxis, y=indicator1, fill=global_IUCN)) +
+      geom_violin(width=.7, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") +
+      coord_flip() +
+      scale_fill_manual(values= IUCNcolors, # iucn color codes
+                    breaks=c(levels(as.factor(indicator1$global_IUCN)))) +
+      theme_bw() +
+      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=15)) +
+      theme(panel.spacing = unit(1.5, "lines"))
+```
+
+By IUCN and country
+```{r}
+
+# get sample size by desired category
+# plot
+indicator1 %>% 
+  # plot
+  ggplot(aes(x=global_IUCN, y=indicator1, fill=global_IUCN)) +
+      geom_violin(width=.7, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") +
+      coord_flip() +
+      scale_fill_manual(values= IUCNcolors, # iucn color codes
+                    breaks=c(levels(as.factor(indicator1$global_IUCN)))) +
+      theme_bw() +
+      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=15)) +
+      facet_wrap(~country_assessment, ncol = 5) +
+      theme(panel.spacing = unit(1.5, "lines"))
+```
+
+By range
+```{r}
+
+# get sample size by desired category
+sample_size <- indicator1  %>%
+                    filter(!is.na(indicator1)) %>% 
+                    group_by(species_range) %>% summarize(num=n())
+
+# plot
+indicator1  %>% 
+  # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=myaxis, y=indicator1 , fill=species_range)) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") +
+      coord_flip() +
+      theme_bw() +
+      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20))
+```
+
+By range and country
+```{r}
+# plot
+indicator1  %>% 
+  # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=species_range, y=indicator1 , fill=species_range)) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") +
+      coord_flip() +
+      theme_bw() +
+      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20)) +
+      facet_wrap(~country_assessment, ncol = 5) +
+      theme(panel.spacing = unit(1.5, "lines"))
+
 ```
 
 
@@ -1578,7 +1782,7 @@ This is how much the values of indicator2 vary within mutliassessed taxa (taxa n
 ```{r, out.width=800, out.height=500}
 
 # plot
-highlight8<- ind2_data_multi %>% 
+ind2_data_multi %>% 
   ggplot(aes(x=taxon, y=indicator2)) +
           geom_line(colour="darkgrey") + 
           geom_point(aes(color=country_assessment)) +
@@ -1588,7 +1792,7 @@ highlight8<- ind2_data_multi %>%
   theme_bw() + 
   theme(legend.position = "bottom")
 
-highlight8
+
 
 ```
 
@@ -1622,7 +1826,7 @@ sample_size <- ind2_data_firstmulti %>%
                     group_by(country_assessment) %>% summarize(num=n())
 
 # plot
-highlight9<-ind2_data_firstmulti %>% 
+ind2_data_firstmulti %>% 
   # add sampling size 
   left_join(sample_size) %>%
   mutate(myaxis = paste0(country_assessment, " (n= ", num, ")")) %>%
@@ -1635,7 +1839,6 @@ highlight9<-ind2_data_firstmulti %>%
   coord_flip() +
   theme_bw() +
   theme(panel.border = element_blank(), legend.position="none")
-highlight9
 
 ```
 
@@ -1649,7 +1852,7 @@ sample_size <- ind2_data_firstmulti %>%
                     group_by(taxonomic_group) %>% summarize(num=n())
 
 # plot
-highlight10<-ind2_data_firstmulti %>% 
+ind2_data_firstmulti %>% 
   # add sampling size 
   left_join(sample_size) %>%
   mutate(myaxis = paste0(taxonomic_group, " (n= ", num, ")")) %>%
@@ -1664,7 +1867,7 @@ ggplot(aes(x=myaxis, y=indicator2, fill=taxonomic_group), color=NA) +
                     breaks=c(levels(as.factor(ind2_data_firstmulti$taxonomic_group)))) +
       theme_bw() +
       theme(panel.border = element_blank(), legend.position="none", text = element_text(size = 15)) 
-highlight10
+
       
 ```
 
@@ -1723,7 +1926,7 @@ sample_size <- ind2_data_firstmulti %>%
                     group_by(global_IUCN) %>% summarize(num=n())
 
 # plot
-highlight11<-ind2_data_firstmulti %>% 
+ind2_data_firstmulti %>% 
   # add sampling size 
   left_join(sample_size) %>%
   mutate(myaxis = paste0(global_IUCN, " (n= ", num, ")")) %>%
@@ -1738,7 +1941,7 @@ highlight11<-ind2_data_firstmulti %>%
                     breaks=c(levels(as.factor(ind2_data_firstmulti$global_IUCN)))) +
       theme_bw() +
       theme(panel.border = element_blank(), legend.position="none", text= element_text(size=15))
-highlight11
+
       
 ```
 
@@ -1800,37 +2003,7 @@ ind2_data_firstmulti %>%
       theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20))
 ```
 
-By population method 
-
-```{r}
-# get sample size by desired category
-
-sample_size <- ind2_data_firstmulti %>%
-                    filter(!is.na(indicator2)) %>% 
-                    group_by(defined_populations_simplified) %>% summarize(num=n())
-
-# plot
-highlight12<-ind2_data_firstmulti %>% 
-  # add sampling size 
-  left_join(sample_size) %>%
-  mutate(myaxis = paste0(defined_populations_simplified, " (n= ", num, ")")) %>%
-
-  # plot
-  ggplot(aes(x=myaxis, y=indicator2, fill=defined_populations_simplified)) +
-  geom_violin(width= 1, linewidth = 0)  +
-  geom_jitter(size=.5, width = 0.1) +
-  xlab("") +
-  coord_flip() +
-  theme_bw() +
-  theme(panel.border = element_blank(), legend.position="none") +
-  scale_fill_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(ind2_data_firstmulti$defined_populations_simplified)))
-highlight12
-
-```
-
-
-Same, boxplot version:
+By population method, boxplot version:
 
 
 ```{r}
@@ -1841,7 +2014,7 @@ sample_size <- ind2_data_firstmulti %>%
                     group_by(defined_populations_simplified) %>% summarize(num=n())
 
 # plot
-highlight13<-ind2_data_firstmulti %>% 
+ind2_data_firstmulti %>% 
   # add sampling size 
   left_join(sample_size) %>%
   mutate(myaxis = paste0(defined_populations_simplified, " (n= ", num, ")")) %>%
@@ -1856,12 +2029,11 @@ highlight13<-ind2_data_firstmulti %>%
   theme(panel.border = element_blank(), legend.position="none") +
   scale_color_manual(values=simplifiedmethods_colors,
                     breaks=levels(as.factor(ind2_data$defined_populations_simplified)))
-highlight13
 ```
 
 Facet by country
 ```{r, out.width="1000px", out.height="700px"}
-highlight14<-ind2_data_firstmulti %>% 
+ind2_data_firstmulti %>% 
 
   # plot
   ggplot(aes(x=defined_populations_simplified, y=indicator2, color=defined_populations_simplified)) +
@@ -1875,7 +2047,6 @@ highlight14<-ind2_data_firstmulti %>%
   scale_color_manual(values=simplifiedmethods_colors,
                     breaks=levels(as.factor(ind2_data_firstmulti$defined_populations_simplified)))
 
-highlight14
 ```
 
 Facet by country and IUCN
@@ -2227,7 +2398,7 @@ summary(res.anova.extant)
 ```
 
 Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
-  ```{r}
+```{r}
 # only padj < 0.05
 x<-TukeyHSD(res.anova.extant)
 x<-as.data.frame(x[[1]])
@@ -2237,7 +2408,7 @@ x[x$`p adj`<0.05, ]
 Two-way ANOVA with interaction effect of the method to define populations and the country, removing outliers >200 pops
 **Question: is interaction he correct model? or should it be additive?**
   
-  ```{r}
+```{r}
 # subset data without outliers
 ind2_data_anova<- ind2_data %>% 
   filter(indicator2<200)
@@ -2253,7 +2424,7 @@ summary(res.anova.extant)
 
 ```
 Since there significant differences, check which pairs are actually different (Tukey Honest Significant Differences):
-  ```{r}
+```{r}
 # only padj < 0.05
 x<-TukeyHSD(res.anova.extant)
 x<-as.data.frame(x[[1]])
@@ -2578,7 +2749,7 @@ indicator3<-ind3_data %>%
 Plot indicator 3 by country:
 
 ```{r}
-## from the table counting studies by country
+ ## from the table counting studies by country
 indicator3 %>%
   ggplot(aes(x=country_assessment, y=n_taxon_gen_monitoring)) +
   geom_bar(stat="identity")
@@ -2586,7 +2757,7 @@ indicator3 %>%
 
 
 ## from raw data to include other variables for color by taxonomic group
-highlight6<-ind3_data %>%
+ind3_data %>%
                  # keep only one record if the taxon was assessed more than once within the country
                  select(country_assessment, taxon, temp_gen_monitoring, taxonomic_group) %>%
                  filter(!duplicated(.)) %>%
@@ -2599,13 +2770,12 @@ ggplot(aes(x=country_assessment, fill=taxonomic_group)) +
                     breaks=levels(as.factor(ind3_data$taxonomic_group))) +
   theme_bw()
 
-highlight6
 
 ## by iucn
 
 ind3_data$global_IUCN<-metadata$global_IUCN
 
-highlight6.1<-ind3_data %>%
+ind3_data %>%
                  # keep only one record if the taxon was assessed more than once within the country
                  select(country_assessment, taxon, temp_gen_monitoring, global_IUCN) %>%
                  filter(!duplicated(.)) %>%
@@ -2618,7 +2788,7 @@ ggplot(aes(x=country_assessment, fill=global_IUCN)) +
                     breaks=levels(as.factor(ind3_data$global_IUCN))) +
       theme_bw()
 
-highlight6.1
+
 
 ```
 
@@ -2677,7 +2847,7 @@ countries<-as.factor(foralluvial_2$country_assessment)
 levels(countries)<-my_cols
 countries<-as.vector(countries)
 
-# plot (highlight7)
+# plot 
 alluvial(foralluvial_2[,1:3], freq = foralluvial_2$n,
          col=countries,  
          blocks=FALSE,
@@ -2690,89 +2860,7 @@ alluvial(foralluvial_2[,1:3], freq = foralluvial_2$n,
 
 ```
 
-# Highlights 
-
-### Taxa and records by country
-
-```{r}
-highlight1
-highlight2
-highlight3
-
-# highlight4
-foralluvial_1<-metadata_firstmulti %>% group_by(country_assessment, taxonomic_group, popsize_data) %>%
-             summarise(n=n())
-head(foralluvial_1)
-
-## plot
-# define colors
-my_cols<- gg_color_hue(length(unique(foralluvial_1$country_assessment)))
-
-# we need a vector of colors by country for each row of the dataset, so:
-countries<-as.factor(foralluvial_1$country_assessment)
-levels(countries)<-my_cols
-countries<-as.vector(countries)
-head(countries)
-
-# plot
-alluvial(foralluvial_1[,1:3], freq = foralluvial_1$n,
-         col=countries, 
-         blocks=FALSE,
-         gap.width = 0.5,
-         cex=.8, 
-         xw = 0.1,
-         cw = 0.2,
-         border = NA)
-
-
-highlight5
-
-```
-
-### Indicator 3
-
-```{r}
-highlight6
-
-# highlight7
-# format data as needed
-foralluvial_2<-ind3_data_firstmulti %>% group_by(country_assessment, temp_gen_monitoring, gen_studies) %>%
-             summarise(n=n())
-
-# define colors
-my_cols<- gg_color_hue(length(unique(foralluvial_2$country_assessment)))
-# we need a vector of colors by country for each row of the dataset, so:
-countries<-as.factor(foralluvial_2$country_assessment)
-levels(countries)<-my_cols
-countries<-as.vector(countries)
-
-# plot (highlight7)
-alluvial(foralluvial_2[,1:3], freq = foralluvial_2$n,
-         col=countries,  
-         blocks=FALSE,
-         gap.width = 0.5,
-         cex=.8, 
-         xw = 0.1,
-         cw = 0.2,
-         border = NA)
-
-```
-
-
-### Indicator 2
-
-```{r}
-highlight8
-highlight9
-highlight10
-highlight11
-highlight12
-```
-
-
-Plots by country, see forloop above.
-
-## Session Info for reproducibility purposes:
+# Session Info for reproducibility purposes:
 
 ```{r}
 sessionInfo()
