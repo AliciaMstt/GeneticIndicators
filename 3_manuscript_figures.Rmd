@@ -271,7 +271,7 @@ Records by country, including taxa assessed more than once (see below for detail
 ggplot(metadata, aes(x=country_assessment)) + 
   geom_bar(stat = "count") +
   xlab("") +
-  ggtitle("Number of records assessed by country, including taxa assed more than once")
+  ggtitle("Number of taxa assessed by country, including taxa assed more than once")
 
 ```
 Some taxa were assessed twice, for example to account for uncertainty on how to divide populations. This information is stored in variable `multiassessment` of the metadata (created by `get_metadata()`). An example of taxa with multiple assessments:
@@ -334,10 +334,10 @@ ggplot(metadata, aes(x=taxonomic_group, fill=popsize_data)) +
   facet_wrap(~country_assessment, ncol = 5) +
   scale_fill_manual(values=c("#1f77b4", "grey80", "#2ca02c"),
                     breaks=c(levels(as.factor(metadata$popsize_data))),
-                    labels=c("Data at species level", "Insufficient data", "Data at population level")) +
+                    labels=c("Species level or subspecies level", "Insufficient data", "Population level")) +
   labs(fill="Population size data availability",
        x="",
-       y="Number of records") +
+       y="Number of taxa (including records of taxa assessed more than once)") +
   theme_light() +
   theme(legend.position="bottom")
   
@@ -345,7 +345,6 @@ ggplot(metadata, aes(x=taxonomic_group, fill=popsize_data)) +
 
 Same plot but including a panel for the entire dataset:
 
-Option 1:
 ```{r}
 ## Duplicate data with an additional column "facet"
 
@@ -361,10 +360,10 @@ ggplot(df, aes(x=taxonomic_group, fill=popsize_data)) +
   facet_wrap(~facet, ncol = 5, scales="free_x") +
   scale_fill_manual(values=c("#1f77b4", "grey80", "#2ca02c"),
                     breaks=c(levels(as.factor(metadata$popsize_data))),
-                    labels=c("Data at species level", "Insufficient data", "Data at population level")) +
+                                        labels=c("Species level or subspecies level", "Insufficient data", "Population level")) +
   labs(fill="Population size data availability",
        x="",
-       y="Number of records") +
+       y="Number of taxa (including records of taxa assessed more than once)") +
   theme_light() +
   theme(legend.position="bottom")
 
@@ -386,10 +385,10 @@ ggplot(df, aes(x=taxonomic_group, fill=popsize_data)) +
   facet_wrap(~facet, ncol = 5) +
   scale_fill_manual(values=c("#1f77b4", "grey80", "#2ca02c"),
                     breaks=c(levels(as.factor(metadata$popsize_data))),
-                    labels=c("Data at species level", "Insufficient data", "Data at population level")) +
+                    labels=c("Species level or subspecies level", "Insufficient data", "Population level")) +
   labs(fill="Population size data availability",
        x="",
-       y="Number of records") +
+       y="Number of taxa (including records of taxa assessed more than once)") +
   theme_light() +
   theme(legend.position="bottom")
 
@@ -401,10 +400,10 @@ ggplot(metadata, aes(x=taxonomic_group, fill=popsize_data)) +
   coord_flip() +
   scale_fill_manual(values=c("#1f77b4", "grey80", "#2ca02c"),
                     breaks=c(levels(as.factor(metadata$popsize_data))),
-                    labels=c("Data at species level", "Insufficient data", "Data at population level")) +
+                                        labels=c("Species level or subspecies level", "Insufficient data", "Population level")) +
   labs(fill="Population size data availability",
        x="",
-       y="Number of records") +
+       y="Number of taxa (including records of taxa assessed more than once)") +
   theme_light() +
   theme(legend.position="right")
 ```
@@ -429,7 +428,7 @@ theme_bw() +
 theme(text = element_text(size = 14), legend.position = "top", panel.border = element_blank(),
       #center legend
       plot.title = element_text(hjust = 0.5, size=14)) +
-ggtitle("Ne available \n(from genetic data)")
+ggtitle("a) Ne available \n(from genetic data)")
 
 p1
 
@@ -450,7 +449,7 @@ p2<-metadata %>%
   theme(text = element_text(size = 14), legend.position = "top", panel.border = element_blank(),
       #center legend
       plot.title = element_text(hjust = 0.5, size=14)) +
-  ggtitle("Nc available")
+  ggtitle("b) Nc available")
 p2
 ```
 
@@ -461,11 +460,11 @@ p3<-ind1_data %>%
   ggplot(aes(x=country_assessment, fill=NcType))+
   geom_bar(position = "dodge") +
   coord_flip() + 
-  scale_fill_discrete(labels=c("Point Nc estimate", "Quantitative Nc range \nor qualitative data", "Unknown Nc \nfor this pop."),
+  scale_fill_discrete(labels=c("Point", "Range \nor qualitative", "Unknown"),
                      breaks=c("Nc_point", "Nc_range", "unknown")) +
   xlab("") +
-  ylab("Number of taxa") +
-  ggtitle("Type of Nc data by population") +
+  ylab("Number of populations") +
+  ggtitle("c) Type of Nc data by population") +
   theme_bw() +
   theme(text = element_text(size = 14), legend.position = "top", panel.border = element_blank(),
       #center legend
@@ -478,12 +477,12 @@ p3
 Distribution of Nc, Ne and types of Ne in a single figure with 3 panels:
 
 
-```{r, out.width="1600px", out.height="400px"}
+```{r, out.width="1000px", out.height="350px"}
 p2<- p2 + theme(axis.text.y=element_blank())
 p3<- p3 + theme(axis.text.y=element_blank())
 
 # plot
-plot_grid(p1, p2, p3, ncol=3, rel_widths = c(1.4,1,1), align = "h")  
+plot_grid(p1, p2, p3, ncol=3, rel_widths = c(1.2,1,1), align = "h")  
 ```
 
 
