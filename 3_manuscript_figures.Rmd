@@ -485,8 +485,157 @@ p3<- p3 + theme(axis.text.y=element_blank())
 plot_grid(p1, p2, p3, ncol=3, rel_widths = c(1.2,1,1), align = "h")  
 ```
 
-
 ## Effect of method used to define populations on number of populations and indicator 2
+
+### Plot
+Prepare data for nice labels:
+
+```{r}
+# original method names
+levels(as.factor(ind2_data$defined_populations_simplified))
+
+# nice methods names
+nice_names <- c("adaptive traits & management units",
+                "eco- biogeographic proxies",
+               "genetic clusters",
+               "genetic clusters & eco- biogeographic proxies",
+               "genetic clusters & geographic boundaries",
+               "geographic boundaries",
+               "geographic boundaries & adaptive traits",
+               "geographic boundaries & eco- biogeographic proxies",
+               "geographic boundaries & management units",
+               "low frequency combinations",
+               "management units",
+               "others")
+## add them
+ind2_data$defined_populations_nicenames<-as.factor(ind2_data$defined_populations_simplified)
+levels(ind2_data$defined_populations_nicenames)<-nice_names
+  
+# sample size of TOTAL populations
+sample_size <- ind2_data %>%
+                    filter(!is.na(indicator2)) %>% 
+                    group_by(defined_populations_nicenames) %>% summarize(num=n())
+
+# custom axis
+## new dataframe
+df<-ind2_data %>% 
+  filter(n_extant_populations<500) %>%
+    # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(defined_populations_nicenames, " (n= ", num, ")"))
+
+
+```
+
+Plot number of populations and indicator 2 by method
+```{r, out.height="500px", out.width="1064px"}
+# plot for number of pops
+  p1<- df %>%
+  ggplot(aes(x=myaxis, y=n_extant_populations, color=defined_populations_simplified)) +
+          geom_boxplot() + xlab("") + ylab("Number of mantained populations") +
+          geom_jitter(size=.4, width = 0.1, color="black") +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank(), legend.position="none",
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots
+  scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(ind2_data$defined_populations_simplified))) +
+  theme(text = element_text(size = 13))
+
+## plot for indicator 2
+p2<-ind2_data %>% 
+  filter(n_extant_populations<500) %>%
+  ggplot(aes(x=defined_populations_simplified, y=indicator2, color=defined_populations_simplified)) +
+          geom_boxplot() + xlab("") + ylab("Indicator 2") +
+          geom_jitter(size=.4, width = 0.1, color="black") +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border = element_blank(), legend.position="none", axis.text.y = element_blank(),
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) + 
+  scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(ind2_data$defined_populations_simplified))) +
+  theme(text = element_text(size = 13))
+
+plot_grid(p1, p2, ncol=2, rel_widths = c(1.5,1))
+```
+Scatter plot of indicator2 and extant pops
+```{r}
+p3<- ind2_data %>%
+  # filter outliers with too many pops
+  filter(n_extant_populations<500) %>%
+  
+  # plot
+    ggplot(aes(x=n_extant_populations, y=indicator2, color=defined_populations_simplified)) +
+    geom_point() +
+    theme_bw() +
+    scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(ind2_data$defined_populations_simplified))) +
+    theme(legend.position = "none") +
+    ylab("Indicator 2") +
+    xlab("Number of mantained populations") +
+    theme(text = element_text(size = 13))
+p3
+
+
+
+```
+Plot in three panels
+```{r, out.height="380px", out.width="1130px"}
+plot_grid(p1, p2, p3, ncol=3, rel_widths = c(2,1,1), align = "h", labels=c("a)", "b)", "c)"))  
+
+```
+
+Option 2:
+```{r}
+# panel labels
+p1<-p1+ggtitle("a)")
+p2<-p2+ggtitle("b)")
+p3<-p3+ggtitle("c)")
+
+# nested plot!
+panel_figure <- plot_grid(
+  plot_grid(p1, p2, ncol = 2, rel_widths = c(1.5,1)),  # Arranging p1 and p2 in 2 columns
+  p3,                            # Placing p3 centered below p1 and p2
+  ncol = 1,                      # Single column layout
+  rel_heights = c(2, 1)          # Adjust the relative heights of rows
+)
+
+panel_figure
+
+```
+
+
+
+### Stat analyses for panel 3 (number of pops vs indicator)
+
+Prepare data
+```{r}
+# remove missing data 
+ind2_data_wo_missing<-ind2_data %>% 
+                      filter(!is.na(indicator2)) %>%
+                      filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
+
+# check n per method
+table(ind2_data_wo_missing$defined_populations_simplified)
+
+```
+
+Run model
+```{r}
+# run model
+m2 <- glm(ind2_data_wo_missing$indicator2 ~ ind2_data_wo_missing$n_extant_populations + 
+            ind2_data_wo_missing$defined_populations_simplified + 
+            ind2_data_wo_missing$n_extant_populations*ind2_data_wo_missing$defined_populations_simplified, family = "quasibinomial")
+m2
+```
+
+Summary:
+
+```{r}
+summary(m2)
+```
+
+
 
 ## Missing data on extinct populations
 
