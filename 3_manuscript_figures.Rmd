@@ -333,7 +333,7 @@ ggplot(metadata, aes(x=taxonomic_group, fill=popsize_data)) +
   scale_fill_manual(values=c("#1f77b4", "grey80", "#2ca02c"),
                     breaks=c(levels(as.factor(metadata$popsize_data))),
                     labels=c("Data at species level", "Insufficient data", "Data at population level")) +
-  labs(fill="Population size data available",
+  labs(fill="Population size data availability",
        x="",
        y="Number of records") +
   theme_light() +
@@ -360,7 +360,7 @@ ggplot(df, aes(x=taxonomic_group, fill=popsize_data)) +
   scale_fill_manual(values=c("#1f77b4", "grey80", "#2ca02c"),
                     breaks=c(levels(as.factor(metadata$popsize_data))),
                     labels=c("Data at species level", "Insufficient data", "Data at population level")) +
-  labs(fill="Population size data available",
+  labs(fill="Population size data availability",
        x="",
        y="Number of records") +
   theme_light() +
@@ -384,12 +384,26 @@ ggplot(df, aes(x=taxonomic_group, fill=popsize_data)) +
   scale_fill_manual(values=c("#1f77b4", "grey80", "#2ca02c"),
                     breaks=c(levels(as.factor(metadata$popsize_data))),
                     labels=c("Data at species level", "Insufficient data", "Data at population level")) +
-  labs(fill="Population size data available",
+  labs(fill="Population size data availability",
        x="",
        y="Number of records") +
   theme_light() +
   theme(legend.position="bottom")
 
+```
+Population size data availability in the entire dataset:
+```{r}
+ggplot(metadata, aes(x=taxonomic_group, fill=popsize_data)) + 
+  geom_bar(stat = "count") +
+  coord_flip() +
+  scale_fill_manual(values=c("#1f77b4", "grey80", "#2ca02c"),
+                    breaks=c(levels(as.factor(metadata$popsize_data))),
+                    labels=c("Data at species level", "Insufficient data", "Data at population level")) +
+  labs(fill="Population size data availability",
+       x="",
+       y="Number of records") +
+  theme_light() +
+  theme(legend.position="right")
 ```
 
 
