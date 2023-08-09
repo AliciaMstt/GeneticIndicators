@@ -198,12 +198,14 @@ To have nice levels in the plots we will change the way country names are writte
 ```{r}
 # make factor
 metadata$country_assessment<-as.factor(metadata$country_assessment)
+ind1_data$country_assessment<-as.factor(ind1_data$country_assessment)
 
 # original levels
 levels(metadata$country_assessment)
 
 # change
 levels(metadata$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US")
+levels(ind1_data$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US")
 
 ```
 
@@ -367,6 +369,7 @@ ggplot(df, aes(x=taxonomic_group, fill=popsize_data)) +
   theme(legend.position="bottom")
 
 ```
+
 Option 2:
 ```{r}
 ## Duplicate data with an additional column "facet"
@@ -407,10 +410,10 @@ ggplot(metadata, aes(x=taxonomic_group, fill=popsize_data)) +
 ```
 
 
-Ne data yes or not?
+### Ne data yes or not?
 
 ```{r}
-metadata %>% 
+p1<- metadata %>% 
   filter(!is.na(ne_pops_exists)) %>% 
   filter(ne_pops_exists!="other_genetic_info") %>%
     ggplot(aes(x=country_assessment, fill=ne_pops_exists)) + 
@@ -420,25 +423,67 @@ scale_fill_manual(labels=c("no", "yes"),
                       values=c("#ff7f0e", "#2ca02c")) +
   coord_flip()  +
 xlab("") +
-labs(fill="Has Ne data for indicator 1?")  +
+ylab("Number of taxa") +
+labs(fill="")  +
 theme_bw() +
-theme(text = element_text(size = 17), legend.position = "bottom", panel.border = element_blank()) +
-ggtitle("Has Ne data?")
+theme(text = element_text(size = 14), legend.position = "top", panel.border = element_blank(),
+      #center legend
+      plot.title = element_text(hjust = 0.5, size=14)) +
+ggtitle("Ne available \n(from genetic data)")
+
+p1
+
 ```
 
-Nc data availalbe by taxa?
+Nc data available by taxa?
 ```{r}
-metadata %>%
+p2<-metadata %>%
   filter(!is.na(nc_pops_exists)) %>%
   ggplot(aes(x=country_assessment, fill=nc_pops_exists))+
   geom_bar() +
   coord_flip() + 
   scale_fill_manual(values=c("#ff7f0e", "#2ca02c")) + 
-  labs(fill="Has Nc data for indicator 1?") +
+  labs(fill="") +
   xlab("") +
-  ggtitle("Has Nc data?") +
+  ylab("Number of taxa") +
   theme_bw() +
-  theme(text = element_text(size = 17), legend.position = "bottom", panel.border = element_blank())
+  theme(text = element_text(size = 14), legend.position = "top", panel.border = element_blank(),
+      #center legend
+      plot.title = element_text(hjust = 0.5, size=14)) +
+  ggtitle("Nc available")
+p2
+```
+
+What kind of Nc data?
+```{r}
+p3<-ind1_data %>%
+  filter(!is.na(NcType)) %>%
+  ggplot(aes(x=country_assessment, fill=NcType))+
+  geom_bar(position = "dodge") +
+  coord_flip() + 
+  scale_fill_discrete(labels=c("Point Nc estimate", "Quantitative Nc range \nor qualitative data", "Unknown Nc \nfor this pop."),
+                     breaks=c("Nc_point", "Nc_range", "unknown")) +
+  xlab("") +
+  ylab("Number of taxa") +
+  ggtitle("Type of Nc data by population") +
+  theme_bw() +
+  theme(text = element_text(size = 14), legend.position = "top", panel.border = element_blank(),
+      #center legend
+      plot.title = element_text(hjust = 0.5, size=14)) +
+  labs(fill="")
+p3
+ 
+```
+
+Distribution of Nc, Ne and types of Ne in a single figure with 3 panels:
+
+
+```{r, out.width="1600px", out.height="400px"}
+p2<- p2 + theme(axis.text.y=element_blank())
+p3<- p3 + theme(axis.text.y=element_blank())
+
+# plot
+plot_grid(p1, p2, p3, ncol=3, rel_widths = c(1.4,1,1), align = "h")  
 ```
 
 
