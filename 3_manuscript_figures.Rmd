@@ -1,6 +1,9 @@
 ---
-title: "3_manuscript_figures"
-output: html_document
+title: "Main figures and analyses for the manuscript"
+output:
+  html_document:
+    df_print: paged
+    toc: true
 date: "2023-08-03"
 ---
 
@@ -35,8 +38,25 @@ source("estimate_indicator1.R")
 
 Other custom functions:
 ```{r}
-# not in
+### not in
 '%!in%' <- function(x,y)!('%in%'(x,y))
+
+
+#' Duplicates data to create additional facet. Thanks to https://stackoverflow.com/questions/18933575/easily-add-an-all-facet-to-facet-wrap-in-ggplot2
+#' @param df a dataframe
+#' @param col the name of facet column
+#'  
+CreateAllFacet <- function(df, col){
+  df$facet <- df[[col]]
+  temp <- df
+  temp$facet <- "all"
+  merged <-rbind(temp, df)
+
+  # ensure the facet value is a factor
+  merged[[col]] <- as.factor(merged[[col]])
+
+  return(merged)
+}
 ```
 
 Custom colors:
@@ -88,6 +108,7 @@ head(ind3_data[,c(1:3, 9:11)])
 metadata<-get_metadata(kobo_output=kobo_clean)
 head(metadata[,c(1:3, 12, 25,26, 64)])
 ```
+
 
 ### Indicator 1 (proportion of populations with Ne >500):
 
@@ -170,9 +191,26 @@ write.csv(metadata, "metadata.csv", row.names = FALSE, fileEncoding = "UTF-8")
 ```
 
 
+## Change country name to nicer labels
+
+To have nice levels in the plots we will change the way country names are written: 
+
+```{r}
+# make factor
+metadata$country_assessment<-as.factor(metadata$country_assessment)
+
+# original levels
+levels(metadata$country_assessment)
+
+# change
+levels(metadata$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US")
+
+```
+
+
 ## Simplify combinations of methods to define populations
 
-The methods used to define populations come from a check box question were one or more of the following categories can be selected: genetic_clusters, geographic_boundaries, eco_biogeo_proxies, adaptive_traits, management_units, other. As a consequence any combination of the former can be possible. Leading to the following results:
+The methods used to define populations come from a check box question were one or more of the following categories can be selected: genetic_clusters, geographic_boundaries, eco_biogeo_proxies, adaptive_traits, management_units, other. As a consequence any combination of the former can be possible. Leading to the following frequency table:
 
 ```{r}
 table(ind2_data$defined_populations)
@@ -188,10 +226,9 @@ colnames(x)[1]<-"method"
 x
 
 ```
-
+We can add this new column to the metadata and indicator 2 data:
 
 ```{r} 
-## (CONSIDER ADDING THIS CHUNK TO THE GET_ FUNCTIONS?)
 ### for ind2_data
 ind2_data<- ind2_data %>% 
   mutate(defined_populations_simplified = case_when(
@@ -231,7 +268,8 @@ Records by country, including taxa assessed more than once (see below for detail
 ```{r, out.width="700px", out.height="400px"}
 ggplot(metadata, aes(x=country_assessment)) + 
   geom_bar(stat = "count") +
-  ggtitle("Number of records assessedd by country, \nincluding taxa assed more than once")
+  xlab("") +
+  ggtitle("Number of records assessed by country, including taxa assed more than once")
 
 ```
 Some taxa were assessed twice, for example to account for uncertainty on how to divide populations. This information is stored in variable `multiassessment` of the metadata (created by `get_metadata()`). An example of taxa with multiple assessments:
@@ -253,17 +291,18 @@ metadata_firstmulti<-metadata[!duplicated(cbind(metadata$taxon, metadata$country
 
 ```
 
-How many records?
+How many taxa were assessed (i.e. counting only once taxa that were assessed multiple times)?
 ```{r}
 # how many?
 nrow(metadata_firstmulti)
 ```
 
-**Now check taxa assessed excluding duplicates, i.e. the real number of taxa assessed:**
+Plot taxa assessed excluding duplicates, i.e. the real number of taxa assessed:
 
 ```{r, out.width="700px", out.height="400px"}
 ggplot(metadata_firstmulti, aes(x=country_assessment)) + 
   geom_bar(stat = "count") +
+  xlab("") +
   ggtitle("Number of taxa assessed by country")
 
 ```
@@ -276,8 +315,9 @@ metadata_firstmulti %>% # we use the _unique dataset so that multiassesed record
 ggplot(aes(x=taxonomic_group, fill=country_assessment)) + 
   geom_bar(stat = "count") +
   theme(axis.text.x = element_text(angle = 45)) +
+  labs(fill="Country") +
   ggtitle("Number of taxa assessed more than once")
-highlight2
+
 
 ```
 
@@ -291,10 +331,67 @@ ggplot(metadata, aes(x=taxonomic_group, fill=popsize_data)) +
   coord_flip() +
   facet_wrap(~country_assessment, ncol = 5) +
   scale_fill_manual(values=c("#1f77b4", "grey80", "#2ca02c"),
-                    breaks=c(levels(as.factor(metadata$popsize_data)))) +
-  theme_light()
+                    breaks=c(levels(as.factor(metadata$popsize_data))),
+                    labels=c("Data at species level", "Insufficient data", "Data at population level")) +
+  labs(fill="Population size data available",
+       x="",
+       y="Number of records") +
+  theme_light() +
+  theme(legend.position="bottom")
   
 ```
+
+Same plot but including a panel for the entire dataset:
+
+Option 1:
+```{r}
+## Duplicate data with an additional column "facet"
+
+df<-CreateAllFacet(metadata, "country_assessment")
+
+# order with "all" as last
+df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US", "all"))
+
+# Plot
+ggplot(df, aes(x=taxonomic_group, fill=popsize_data)) + 
+  geom_bar(stat = "count") +
+  coord_flip() +
+  facet_wrap(~facet, ncol = 5, scales="free_x") +
+  scale_fill_manual(values=c("#1f77b4", "grey80", "#2ca02c"),
+                    breaks=c(levels(as.factor(metadata$popsize_data))),
+                    labels=c("Data at species level", "Insufficient data", "Data at population level")) +
+  labs(fill="Population size data available",
+       x="",
+       y="Number of records") +
+  theme_light() +
+  theme(legend.position="bottom")
+
+```
+Option 2:
+```{r}
+## Duplicate data with an additional column "facet"
+
+df<-CreateAllFacet(metadata, "country_assessment")
+
+# order with "all" as last
+df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US", "all"))
+
+# Plot
+ggplot(df, aes(x=taxonomic_group, fill=popsize_data)) + 
+  geom_bar(stat = "count") +
+  coord_flip() +
+  facet_wrap(~facet, ncol = 5) +
+  scale_fill_manual(values=c("#1f77b4", "grey80", "#2ca02c"),
+                    breaks=c(levels(as.factor(metadata$popsize_data))),
+                    labels=c("Data at species level", "Insufficient data", "Data at population level")) +
+  labs(fill="Population size data available",
+       x="",
+       y="Number of records") +
+  theme_light() +
+  theme(legend.position="bottom")
+
+```
+
 
 Ne data yes or not?
 
