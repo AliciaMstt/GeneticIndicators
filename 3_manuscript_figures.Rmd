@@ -111,6 +111,17 @@ metadata<-get_metadata(kobo_output=kobo_clean)
 head(metadata[,c(1:3, 12, 25,26, 64)])
 ```
 
+## Multiassesments
+Some taxa were assessed twice or more times, for example to account for uncertainty on how to divide populations. This information is stored in variable `multiassessment` of the metadata (created by `get_metadata()`). An example of taxa with multiple assessments:
+
+```{r}
+metadata %>%
+filter(multiassessment=="multiassessment")  %>%
+  select(taxonomic_group, taxon, country_assessment, multiassessment) %>%
+  arrange(taxon, country_assessment) %>%
+  head()
+  
+```
 
 ### Indicator 1 (proportion of populations with Ne >500):
 
@@ -311,16 +322,6 @@ ggplot(metadata, aes(x=country_assessment)) +
   theme_light()
 
 ```
-Some taxa were assessed twice, for example to account for uncertainty on how to divide populations. This information is stored in variable `multiassessment` of the metadata (created by `get_metadata()`). An example of taxa with multiple assessments:
-
-```{r}
-metadata %>%
-filter(multiassessment=="multiassessment")  %>%
-  select(taxonomic_group, taxon, country_assessment, multiassessment) %>%
-  arrange(taxon, country_assessment) %>%
-  head()
-  
-```
 
 To explore what kind of taxa countries assessed regardless of if they assessed them once or more, lets create a dataset keeping all single assessed taxa, plus only the first assessment for taxa assessed multiple times. 
 
@@ -374,7 +375,7 @@ ggplot(metadata, aes(x=taxonomic_group, fill=popsize_data)) +
   facet_wrap(~country_assessment, ncol = 5) +
   scale_fill_manual(values=c("#1f77b4", "grey80", "#2ca02c"),
                     breaks=c(levels(as.factor(metadata$popsize_data))),
-                    labels=c("Species level or subspecies level", "Insufficient data", "Population level")) +
+                    labels=c("Species or subspecies level", "Insufficient data", "Population level")) +
   labs(fill="Population size data availability",
        x="",
        y="Number of taxa (including records of taxa assessed more than once)") +
@@ -1162,3 +1163,48 @@ indicator1 %>%
 ```
 
 ## Values of indicator 1 and indicator 2 for multiassessed species
+
+```{r}
+#subset only with taxa assessed multiple times:
+only_multi<-indicators_full %>% 
+                          filter(multiassessment=="multiassessment") 
+```
+
+First, check how indicator 1 changes across the multiassessments.
+
+```{r}
+only_multi %>% 
+  # filter species with missing data for the desired indicator
+ filter(indicator1!=is.na(indicator1)) %>%
+  # Keep rows with different values in indicator1 within each taxon group
+  group_by(taxon) %>%
+  filter(n_distinct(indicator1) > 1) %>%
+  ggplot(aes(x=taxon, y=indicator1)) +
+          geom_line(colour="darkgrey") + 
+          geom_point(aes(color=country_assessment)) +
+  xlab("") + ylab("Proportion of popuations with Ne > 500") +
+  labs(color="country") +
+  ylim(0, 1)+
+  coord_flip() +
+  theme_light() + 
+  theme(panel.border = element_blank(), legend.position="right", text= element_text(size=13))
+
+```
+
+Now check how indicator 2 changes across the multiassessments.
+To be able to visualize the missing data, the following plot changes NA to -1.
+```{r}
+only_multi %>% 
+  # filter species with missing data for the desired indicator
+  filter(indicator2!=is.na(indicator2)) %>%
+  
+  ggplot(aes(x=taxon, y=indicator2)) +
+          geom_line(colour="darkgrey") + 
+          geom_point(aes(color=country_assessment)) +
+  xlab("") + ylab("Proportion of mantained populations") +
+  labs(color="country") +
+  coord_flip() +
+  theme_light() + 
+  theme(panel.border = element_blank(), legend.position="right", text= element_text(size=13))
+```
+
