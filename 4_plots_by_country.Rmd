@@ -1,0 +1,461 @@
+---
+title: "Plots by individual country"
+output: html_document
+date: "2023-08-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Packages and functions
+
+Load required libraries:
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyr)
+library(dplyr)
+library(utile.tools)
+library(stringr)
+library(ggplot2)
+library(ggsankey)
+library(alluvial)
+library(viridis)
+library(cowplot)
+```
+
+Load required functions. These custom fuctions are available at: https://github.com/AliciaMstt/GeneticIndicators
+
+```{r source}
+source("get_indicator1_data.R")
+source("get_indicator2_data.R")
+source("get_indicator3_data.R")
+source("get_metadata.R")
+source("transform_to_Ne.R")
+source("estimate_indicator1.R")
+```
+
+Other custom functions:
+```{r custom_funs}
+### not in
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+
+#' Duplicates data to create additional facet. Thanks to https://stackoverflow.com/questions/18933575/easily-add-an-all-facet-to-facet-wrap-in-ggplot2
+#' @param df a dataframe
+#' @param col the name of facet column
+#'  
+CreateAllFacet <- function(df, col){
+  df$facet <- df[[col]]
+  temp <- df
+  temp$facet <- "all"
+  merged <-rbind(temp, df)
+
+  # ensure the facet value is a factor
+  merged[[col]] <- as.factor(merged[[col]])
+
+  return(merged)
+}
+```
+
+Custom colors:
+```{r custom colors}
+## IUCN official colors
+# Assuming order of levels is: "re", "cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown" (for regional, and w/o "re" for global). Make sure to change the levels to that order before plotting.
+IUCNcolors<-c("brown2", "darkorange", "yellow", "green", "darkgreen", "darkgrey", "azure2", "bisque1")
+IUCNcolors_regional<-c("darkorchid2", "brown2", "darkorange", "yellow", "green", "darkgreen", "darkgrey", "azure2", "bisque1")
+
+## nice soft ramp for taxonomic groups
+taxoncolors<-cividis(12) # same than using cividis(length(levels(as.factor(metadata$taxonomic_group))))
+  
+```
+
+## Get data 
+Get indicators and metadata data (single file with all), as well as indicator 1 population raw data (since this is by population and the metadata and indicators are estimated by species, indicator 1 raw data is in a different file):
+```{r, echo=TRUE}
+# Get data:
+indicators_full<-read.csv(file="indicators_full.csv", header=TRUE)
+ind1_data<-read.csv(file="ind1_data.csv", header=TRUE)
+
+```
+
+Select which country you want to analyse:
+```{r}
+# after "desired_country" in the code below, write the name of your country as it is written here:
+# "australia"     "belgium"       "colombia"      "france"        "japan"         "mexico"        "south_africa"  "sweden"       
+# "united_states"
+
+desired_country<-"belgium"
+```
+
+
+```{r}
+# Subset data to desired country:
+indicators_full <- indicators_full %>% 
+                   filter(country_assessment==desired_country)
+
+ind1_data<-ind1_data %>% filter(country_assessment==desired_country)
+```
+
+
+## General description of the dataset
+
+`r desired_country` has a total of `r nrow(indicators_full)` records. Of those, some taxa could have been assessed more than once, for example to account for different methods to define populations.
+
+To explore what kind of taxa the country assessed regardless of if they assessed them once or more, lets create a dataset keeping all single assessed taxa, plus only the first assessment for taxa assessed multiple times. 
+
+```{r}
+# object with single assessed taxa, plus only the first assessment for taxa assessed multiple times
+firstmulti<-indicators_full[!duplicated(cbind(indicators_full$taxon, indicators_full$country_assessment)), ]
+
+```
+
+How many taxa were assessed (i.e. counting only once taxa that were assessed multiple times)?
+```{r}
+# how many?
+nrow(firstmulti)
+```
+
+### Taxonomic groups
+Records by country, including taxa assessed more than once (see below for details on this)
+
+```{r, out.width="700px", out.height="400px"}
+ggplot(indicators_full, aes(x=taxonomic_group)) + 
+  geom_bar(stat = "count") +
+  xlab("") +
+  ggtitle("Number of taxa by taxonomic groups assessed") +
+  theme_light()
+
+```
+
+### Population size data availability
+
+Population size (Nc or Ne) data availability at the taxon level:
+```{r}
+ggplot(indicators_full, aes(x=taxonomic_group, fill=popsize_data)) + 
+  geom_bar(stat = "count") +
+  coord_flip() +
+  scale_fill_manual(values=c("#2ca02c", "#1f77b4", "grey80"),
+                    breaks=c("yes", "data_for_species", "insuff_data_species"),
+                    labels=c("Population level", "Species or subspecies level", "Insufficient data")) +
+  labs(fill="Population size data availability",
+       x="",
+       y="Number of taxa (including records of taxa assessed more than once)") +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="top")
+  
+```
+Ne available?
+```{r}
+indicators_full %>% 
+  filter(!is.na(ne_pops_exists)) %>% 
+  filter(ne_pops_exists!="other_genetic_info") %>%
+    ggplot(aes(x=taxonomic_group, fill=ne_pops_exists)) + 
+  geom_bar() +
+  coord_flip() +
+scale_fill_manual(labels=c("no", "yes"),
+                      breaks=c("no_genetic_data", "ne_available"),
+                      values=c("#ff7f0e", "#2ca02c")) +
+xlab("") +
+ylab("Number of taxa") +
+labs(fill="Ne available \n(from genetic data)")  +
+theme_light() +
+theme(text = element_text(size = 14), legend.position = "right", panel.border = element_blank())
+
+
+```
+
+Nc data available by taxa?
+```{r}
+indicators_full %>%
+  filter(!is.na(nc_pops_exists)) %>%
+    ggplot(aes(x=taxonomic_group, fill=nc_pops_exists)) +
+    geom_bar() +
+    coord_flip() +
+    scale_fill_manual(values=c("#ff7f0e", "#2ca02c")) + 
+    labs(fill="Nc available") +
+    xlab("") +
+    ylab("Number of taxa") +
+    theme_light() +
+    theme(text = element_text(size = 14), legend.position = "right", panel.border = element_blank())
+```
+
+What kind of Nc data?
+```{r}
+ind1_data %>%
+  filter(!is.na(NcType)) %>%
+  ggplot(aes(x=taxonomic_group, fill=NcType))+
+  geom_bar() +
+  scale_fill_manual(labels=c("Point", "Range \nor qualitative", "Unknown"),
+                      breaks=c("Nc_point", "Nc_range", "unknown"),
+                      values=c("#0072B2", "#E69F00", "grey80")) +
+  xlab("") +
+  ylab("Number of populations") +
+  coord_flip() +
+  labs(fill="Type of Nc data \nby population") +
+  theme_light() +
+  theme(text = element_text(size = 14), legend.position = "right", panel.border = element_blank())
+ 
+```
+
+
+
+## Methods used to define populations
+Frequency table of methods used to define population
+```{r}
+table(indicators_full$defined_populations)
+```
+
+### Plot number of populations by method
+```{r, out.height="500px", out.width="1064px"}
+# Prepare data for plot with nice labels:
+# sample size of TOTAL populations
+sample_size <- indicators_full %>%
+                    filter(!is.na(indicator2)) %>% 
+                    group_by(defined_populations) %>% summarize(num=n())
+
+# custom axis
+## new dataframe
+df<-indicators_full %>% 
+  filter(n_extant_populations<500) %>%
+    # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(defined_populations, " (n= ", num, ")"))
+
+
+# plot for number of pops
+df %>%
+  ggplot(aes(x=myaxis, y=n_extant_populations, color=defined_populations)) +
+          geom_boxplot() + xlab("") + ylab("Number of mantained populations") +
+          geom_jitter(size=.4, width = 0.1, color="black") +
+  coord_flip() +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none",
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots
+  scale_x_discrete(limits=rev) +  
+  theme(text = element_text(size = 13))
+
+```
+
+### Plot indicator 2 by method
+```{r}
+# Prepare data for plot with nice labels:
+# sample size of TOTAL populations
+sample_size <- indicators_full %>%
+                    filter(!is.na(indicator2)) %>% 
+                    group_by(defined_populations) %>% summarize(num=n())
+
+# custom axis
+## new dataframe
+df<-indicators_full %>% 
+  filter(n_extant_populations<500) %>%
+    # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(defined_populations, " (n= ", num, ")"))
+
+
+
+## plot for indicator 2
+df %>%
+  filter(n_extant_populations<500) %>%
+  ggplot(aes(x=myaxis, y=indicator2, color=defined_populations)) +
+          geom_boxplot() + xlab("") + ylab("Indicator 2") +
+          geom_jitter(size=.4, width = 0.1, color="black") +
+  coord_flip() +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none") +
+  scale_x_discrete(limits=rev) +
+  theme(text = element_text(size = 13))
+
+
+```
+### Plot Scatter plot of indicator2 and extant pops
+```{r}
+indicators_full %>%
+  # filter outliers with too many pops
+  # filter(n_extant_populations<200) %>%
+  
+  # plot
+    ggplot(aes(x=n_extant_populations, y=indicator2, color=defined_populations)) +
+    geom_point() +
+    theme_light() +
+    theme(legend.position = "none") +
+    ylab("Indicator 2") +
+    xlab("Number of mantained populations") +
+    theme(text = element_text(size = 13))
+```
+
+## Missing data on extant and extinct populations
+
+We have NA in indicator 2 because in some cases the number of extinct populations is unknown, therefore the operation cannot be computed. 
+
+### Counts
+Total records with NA in extant populations:
+```{r}
+sum(is.na(indicators_full$n_extant_populations))
+```
+
+Taxa with NA in extant populations:
+```{r}
+indicators_full %>%
+  filter(is.na(n_extant_populations)) %>%
+    select(taxonomic_group, taxon, n_extant_populations, n_extint_populations)
+```
+
+Total taxa with NA in **extinct** populations:
+```{r}
+sum(is.na(indicators_full$n_extint_populations))
+```
+
+Do taxa with NA for extant also have NA for extinct?
+
+```{r}
+indicators_full$taxon[is.na(indicators_full$n_extant_populations)] %in% indicators_full$taxon[is.na(indicators_full$n_extint_populations)]
+```
+
+### Plot missing data extinct populations
+```{r}
+indicators_full %>%
+  ggplot(aes(x=taxonomic_group, fill=is.na(n_extint_populations))) +
+  geom_bar() +
+  scale_fill_manual(labels=c("number of populations known", "missing data"),
+                    values=c("#2ca02c", "#ff7f0e")) + 
+  coord_flip() +
+  labs(fill="Extinct populations") +
+  xlab("") + ylab("Number of taxa") +
+  theme_light() +
+  theme(panel.border = element_blank())
+```
+
+
+## Indicator 1 by type of range
+
+Indicator 1 by type of range in the entire dataset:
+
+```{r indicator1 by range type}
+# get sample size by desired category
+sample_size <- indicators_full  %>%
+                    filter(!is.na(indicator1)) %>% 
+                    group_by(species_range) %>% summarize(num=n())
+
+# plot
+indicators_full  %>% 
+  # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=myaxis, y=indicator1 , fill=species_range)) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") + ylab("Proportion of popuations with Ne > 500") +
+      coord_flip() +
+      scale_fill_manual(breaks=c("wide_ranging", "restricted", "unknown"),
+                       labels=c("wide ranging", "restricted", "unknown"),
+                       values=c("#F8766D", "#00BFC4", "grey80")) +
+      theme_light() +
+      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20))
+```
+
+## Indicator 1 by IUCN status
+
+Indicator 1 by global IUCN:
+
+```{r indicator1 gobalIUCN}
+
+## Global IUCN
+## prepare data
+# add sampling size
+sample_size <- indicators_full %>%
+               filter(!is.na(indicator1)) %>% 
+               group_by(global_IUCN) %>% summarize(num=n())
+
+# new df 
+df<- indicators_full %>% 
+     filter(!is.na(indicator1)) %>% 
+        # add sampling size 
+        left_join(sample_size) %>%
+        mutate(myaxis = paste0(global_IUCN, " (n= ", num, ")"))
+
+
+# change order of levels so that they are in the desired order
+df$myaxis<-factor(df$myaxis, 
+                  #grep is used below to get the sample size, which may change depending on the data
+                  levels=c(grep("cr", unique(df$myaxis), value = TRUE),
+                          grep("en", unique(df$myaxis), value = TRUE),
+                          grep("vu", unique(df$myaxis), value = TRUE),
+                          grep("nt", unique(df$myaxis), value = TRUE),
+                          grep("lc", unique(df$myaxis), value = TRUE),
+                          grep("dd", unique(df$myaxis), value = TRUE),
+                          grep("not_assessed", unique(df$myaxis), value = TRUE),
+                          grep("unknown", unique(df$myaxis), value = TRUE)))
+
+df$global_IUCN<-factor(df$global_IUCN, levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
+
+
+      
+# plot
+df %>%
+    ggplot(aes(x=myaxis, y=indicator1 , fill=global_IUCN)) +
+      geom_violin(width=1.5, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") + ylab("Proportion of popuations with Ne > 500") +
+      coord_flip() +
+      scale_fill_manual(values= IUCNcolors, # iucn color codes
+                        breaks=c(levels(df$global_IUCN))) +
+      theme_light() +
+      ggtitle("global Red List") +
+      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=15))
+
+```
+
+Indicator 1 by regional IUCN (this may make no sense for your country if there is no IUCN redlist assesments at regional level:
+
+```{r indicator1 regionalIUCN}
+## Regional IUCN
+
+## prepare data
+# add sampling size
+sample_size <- indicators_full %>%
+               filter(!is.na(indicator1)) %>% 
+               group_by(regional_redlist) %>% summarize(num=n())
+
+# new df 
+df<- indicators_full %>% 
+     filter(!is.na(indicator1)) %>% 
+        # add sampling size 
+        left_join(sample_size) %>%
+        mutate(myaxis = paste0(regional_redlist, " (n= ", num, ")"))
+
+# change order of levels so that they are in the desired order
+df$myaxis<-factor(df$myaxis, 
+                  #grep is used below to get the sample size, which may change depending on the data
+                  levels=c(grep("re", unique(df$myaxis), value = TRUE),
+                          grep("cr", unique(df$myaxis), value = TRUE),
+                          grep("en", unique(df$myaxis), value = TRUE),
+                          grep("vu", unique(df$myaxis), value = TRUE),
+                          grep("nt", unique(df$myaxis), value = TRUE),
+                          grep("lc", unique(df$myaxis), value = TRUE),
+                          grep("dd", unique(df$myaxis), value = TRUE),
+                          grep("not_assessed", unique(df$myaxis), value = TRUE),
+                          grep("unknown", unique(df$myaxis), value = TRUE)))
+
+df$regional_redlist<-factor(df$regional_redlist, levels=c("re","cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
+      
+# plot
+df %>%
+    ggplot(aes(x=myaxis, y=indicator1 , fill=regional_redlist)) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") + ylab("Proportion of popuations with Ne > 500") +
+      coord_flip() +
+      scale_fill_manual(values= IUCNcolors_regional, # iucn color codes
+                        breaks=c(levels(df$regional_redlist))) +
+      theme_light() +
+      ggtitle("regional Red List") +
+      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=15))
+
+
+
+```
