@@ -4,10 +4,11 @@ output: html_document
 date: "2023-08-12"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+Select which country you want to analyse. For this after "desired_country" in the code below, write the name of your country exactly as it is written in this list: "australia", "belgium", "colombia", "france", "japan", "mexico", "south_africa", "sweden" or "united_states": 
 
+```{r}
+desired_country<-"mexico"
+```
 
 ## Packages and functions
 
@@ -80,15 +81,6 @@ ind1_data<-read.csv(file="ind1_data.csv", header=TRUE)
 
 ```
 
-Select which country you want to analyse:
-```{r}
-# after "desired_country" in the code below, write the name of your country as it is written here:
-# "australia"     "belgium"       "colombia"      "france"        "japan"         "mexico"        "south_africa"  "sweden"       
-# "united_states"
-
-desired_country<-"belgium"
-```
-
 
 ```{r}
 # Subset data to desired country:
@@ -117,15 +109,27 @@ How many taxa were assessed (i.e. counting only once taxa that were assessed mul
 nrow(firstmulti)
 ```
 
-### Taxonomic groups
-Records by country, including taxa assessed more than once (see below for details on this)
+### Taxonomic groups and endemicity
+
 
 ```{r, out.width="700px", out.height="400px"}
-ggplot(indicators_full, aes(x=taxonomic_group)) + 
+ggplot(indicators_full, aes(x=taxonomic_group, fill=national_endemic)) + 
   geom_bar(stat = "count") +
   xlab("") +
-  ggtitle("Number of taxa by taxonomic groups assessed") +
-  theme_light()
+  ggtitle("Number of taxa by taxonomic groups and endemicity") +
+  theme_light() +
+  theme(legend.position="bottom")
+
+```
+### Proportion of species distribution within the country
+
+```{r, out.width="700px", out.height="400px"}
+ggplot(indicators_full, aes(x=taxonomic_group, fill=country_proportion)) + 
+  geom_bar(stat = "count") +
+  xlab("") +
+  ggtitle("Number of taxa by taxonomic groups and proportion \nof taxon distribution within the country") +
+  theme_light() +
+  theme(legend.position="bottom")
 
 ```
 
@@ -218,6 +222,7 @@ sample_size <- indicators_full %>%
 # custom axis
 ## new dataframe
 df<-indicators_full %>% 
+  filter(!is.na(indicator2)) %>%
   filter(n_extant_populations<500) %>%
     # add sampling size 
   left_join(sample_size) %>%
@@ -238,53 +243,6 @@ df %>%
 
 ```
 
-### Plot indicator 2 by method
-```{r}
-# Prepare data for plot with nice labels:
-# sample size of TOTAL populations
-sample_size <- indicators_full %>%
-                    filter(!is.na(indicator2)) %>% 
-                    group_by(defined_populations) %>% summarize(num=n())
-
-# custom axis
-## new dataframe
-df<-indicators_full %>% 
-  filter(n_extant_populations<500) %>%
-    # add sampling size 
-  left_join(sample_size) %>%
-  mutate(myaxis = paste0(defined_populations, " (n= ", num, ")"))
-
-
-
-## plot for indicator 2
-df %>%
-  filter(n_extant_populations<500) %>%
-  ggplot(aes(x=myaxis, y=indicator2, color=defined_populations)) +
-          geom_boxplot() + xlab("") + ylab("Indicator 2") +
-          geom_jitter(size=.4, width = 0.1, color="black") +
-  coord_flip() +
-  theme_light() +
-  theme(panel.border = element_blank(), legend.position="none") +
-  scale_x_discrete(limits=rev) +
-  theme(text = element_text(size = 13))
-
-
-```
-### Plot Scatter plot of indicator2 and extant pops
-```{r}
-indicators_full %>%
-  # filter outliers with too many pops
-  # filter(n_extant_populations<200) %>%
-  
-  # plot
-    ggplot(aes(x=n_extant_populations, y=indicator2, color=defined_populations)) +
-    geom_point() +
-    theme_light() +
-    theme(legend.position = "none") +
-    ylab("Indicator 2") +
-    xlab("Number of mantained populations") +
-    theme(text = element_text(size = 13))
-```
 
 ## Missing data on extant and extinct populations
 
@@ -329,9 +287,12 @@ indicators_full %>%
 ```
 
 
-## Indicator 1 by type of range
 
-Indicator 1 by type of range in the entire dataset:
+## Ne > 500 indicator (indicator 1)
+
+### Ne > 500 (indicator 1) by type of range
+
+By type of range in the entire dataset:
 
 ```{r indicator1 by range type}
 # get sample size by desired category
@@ -351,16 +312,13 @@ indicators_full  %>%
       geom_jitter(size=.5, width = 0.1) +
       xlab("") + ylab("Proportion of popuations with Ne > 500") +
       coord_flip() +
-      scale_fill_manual(breaks=c("wide_ranging", "restricted", "unknown"),
-                       labels=c("wide ranging", "restricted", "unknown"),
-                       values=c("#F8766D", "#00BFC4", "grey80")) +
       theme_light() +
       theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20))
 ```
 
-## Indicator 1 by IUCN status
+### Ne > 500 (indicator 1) by IUCN status
 
-Indicator 1 by global IUCN:
+By global IUCN:
 
 ```{r indicator1 gobalIUCN}
 
@@ -410,7 +368,7 @@ df %>%
 
 ```
 
-Indicator 1 by regional IUCN (this may make no sense for your country if there is no IUCN redlist assesments at regional level:
+By regional IUCN (this may make no sense for your country if there is no IUCN redlist assessments at regional level:
 
 ```{r indicator1 regionalIUCN}
 ## Regional IUCN
@@ -458,4 +416,139 @@ df %>%
 
 
 
+```
+### Ne > 500 (indicator 1) by endemicity
+```{r}
+# get sample size by desired category
+sample_size <- indicators_full  %>%
+                    filter(!is.na(indicator1)) %>% 
+                    group_by(national_endemic) %>% summarize(num=n())
+
+# plot
+indicators_full  %>% 
+  # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(national_endemic, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=myaxis, y=indicator1 , fill=national_endemic)) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") + ylab("Proportion of popuations with Ne > 500") +
+      coord_flip() +
+      theme_light() +
+      theme(panel.border = element_blank(), legend.position="right", text= element_text(size=20))
+```
+
+
+### Distribution of Ne values
+
+How is Ne data distributed? 
+
+```{r}
+summary(ind1_data$Ne)
+```
+
+
+Boxplot of Ne values:
+```{r}
+ind1_data %>%
+  ggplot(aes(x=taxonomic_group, y=Ne)) +
+  geom_boxplot() + geom_point(aes(x=taxonomic_group, y=Ne))
+```
+Check outliers (Ne very high):
+```{r}
+ind1_data %>% 
+  filter(Ne > 100000) %>%
+  select(country_assessment, name_assessor, taxon, taxonomic_group, Ne, NeLower, NeUpper, multiassessment, population)
+```
+
+Boxplot filtering outliers (Ne)
+```{r}
+ind1_data %>% filter(Ne < 100000) %>%
+  ggplot(aes(x=taxonomic_group, y=Ne)) +
+  geom_boxplot() + geom_point(aes(x=taxonomic_group, y=Ne))
+```
+
+### Distribution of Nc values and ranges
+
+```{r}
+
+```
+
+
+
+## Proportion of populations mantained (indicator 2)
+
+### Plot indicator 2 by method
+```{r}
+# Prepare data for plot with nice labels:
+# sample size of TOTAL populations
+sample_size <- indicators_full %>%
+                    filter(!is.na(indicator2)) %>% 
+                    group_by(defined_populations) %>% summarize(num=n())
+
+# custom axis
+## new dataframe
+df<-indicators_full %>% 
+  filter(n_extant_populations<500) %>%
+  filter(!is.na(indicator2)) %>%
+    # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(defined_populations, " (n= ", num, ")"))
+
+
+
+## plot for indicator 2
+df %>%
+  filter(n_extant_populations<500) %>%
+  ggplot(aes(x=myaxis, y=indicator2, color=defined_populations)) +
+          geom_boxplot() + xlab("") + ylab("Indicator 2") +
+          geom_jitter(size=.4, width = 0.1, color="black") +
+  coord_flip() +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none") +
+  scale_x_discrete(limits=rev) +
+  theme(text = element_text(size = 13))
+
+
+```
+### Indicator 2 by endemicity
+```{r}
+# get sample size by desired category
+sample_size <- indicators_full  %>%
+                    filter(!is.na(indicator2)) %>% 
+                    group_by(national_endemic) %>% summarize(num=n())
+
+# plot
+indicators_full  %>% 
+  # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(national_endemic, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=myaxis, y=indicator2 , fill=national_endemic)) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") + ylab("Proportion of popuations with Ne > 500") +
+      coord_flip() +
+      theme_light() +
+      theme(panel.border = element_blank(), legend.position="right", text= element_text(size=20))
+```
+
+### Plot Scatter plot of indicator2 and extant pops
+```{r}
+indicators_full %>%
+  filter(!is.na(indicator2)) %>%
+  # filter outliers with too many pops
+  # filter(n_extant_populations<200) %>%
+  
+  # plot
+    ggplot(aes(x=n_extant_populations, y=indicator2, color=defined_populations)) +
+    geom_point() +
+    theme_light() +
+    theme(legend.position = "bottom") +
+    ylab("Indicator 2") +
+    xlab("Number of mantained populations") +
+    theme(text = element_text(size = 13))
 ```
