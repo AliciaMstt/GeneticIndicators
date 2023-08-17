@@ -28,6 +28,34 @@ get_attached_data <- function(root_dir, target_dir, kobo_output) {
   if(!dir.exists(target_dir)) {
     dir.create(target_dir)
   }
+
+  kobo_output
+  
+  ### Separate data 
+  
+    # create a variable with the full taxon name if this variable doesn't exist already
+    # (raw kobo output doesn't include it, but it may exists in a "clean" version of the 
+    # output if ran through the quality check pipeline)
+    
+if("taxon" %in% colnames(kobo_output)){
+       print("the data already contained a taxon column, that was used instead of creating a new one")
+        
+    }else {
+    kobo_output<-kobo_output %>% 
+      mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE))) %>%
+        # remove white space at the end of the name
+        mutate(taxon=str_trim(taxon, "right"))
+    } 
+  
+   ## Add a variable to the metadata stating if the taxon was assessed multiple times or only a single time
+  
+   # object with duplicated taxa within a single country
+   kobo_output_duplicates<-kobo_output[duplicated(cbind(kobo_output$taxon, kobo_output$country_assessment)), ]
+  
+   # if it is a duplicate then tag it as multi_assessment, if it is not duplicated then single
+   kobo_output <- kobo_output %>% 
+     mutate(multiassessment = if_else(
+       taxon %in% kobo_output_duplicates$taxon, "multiassessment", "single_assessment"))
   
   # Inner function to extract maximum numeric value from a string
   max_value_from_string <- function(value) {
@@ -36,7 +64,7 @@ get_attached_data <- function(root_dir, target_dir, kobo_output) {
     if (any(is.na(numbers))) return(NA) # Return NA if any conversion error
     return(max(numbers, na.rm = TRUE)) # Return the maximum value
   }
-  
+
   # Inner function to detect delimiter used in a file
   detect_delimiter <- function(file_path) {
     line <- readLines(file_path, n = 1) # Read the first line of the file
@@ -98,6 +126,8 @@ get_attached_data <- function(root_dir, target_dir, kobo_output) {
   close(output_conn) # Close the output file connection
   
   # Further process files in the target directory
+  # Further process files in the target directory
+  attached_df <- data.frame()
   result_files <- list.files(path = target_dir, pattern = "\\.(txt|csv)$", full.names = TRUE) # List all text and CSV files
   for(file_path in result_files) {
     # Process each result file
@@ -107,20 +137,23 @@ get_attached_data <- function(root_dir, target_dir, kobo_output) {
     delimiter <- detect_delimiter(new_file_path)
     convert_delimiter(new_file_path, delimiter)
     df <- read_delim(new_file_path, delim = '\t')
+
+    df <- df %>%
+      rename(population = populationID, Name = PopulationName) %>% 
+      mutate(year_assesment = (2023)) %>%
+      mutate(across(starts_with("IntroductionYear"), as.character)) %>%
+      mutate(across(starts_with("NeYear"), as.character)) %>%
+      mutate(across(starts_with("NcYear"), as.character)) %>%
+      mutate(across(starts_with("NcRangeDetails"), as.character))
     
-    # Extract maximum values for specific columns
-    NcYear_max <- sapply(df$NcYear, max_value_from_string)
-    NeYear_max <- sapply(df$NeYear, max_value_from_string)
-    if(length(NcYear_max) == 0) NcYear_max <- rep(NA, nrow(df))
-    if(length(NeYear_max) == 0) NeYear_max <- rep(NA, nrow(df))
-    df$NcYear_max <- NcYear_max
-    df$NeYear_max <- NeYear_max
     
     # Find matches in "kobo_output" and merge matching rows
     matching_row <- kobo_output %>%
-      filter(X_uuid == file_name_without_extension) %>%
-      select(country_assessment, taxonomic_group, scientific_authority, name_assessor, email_assessor, kobo_tabular, genus, species, X_validation_status, X_uuid)
-    
+    filter(X_uuid == file_name_without_extension) %>%
+    select(country_assessment, taxonomic_group, time_populations, taxon,multiassessment, 
+    scientific_authority, name_assessor, email_assessor, kobo_tabular, genus, species, 
+    X_validation_status, X_uuid)
+
     if(nrow(matching_row) > 0) {
       df$genus <- matching_row$genus[1]
       df$species <- matching_row$species[1]
@@ -129,9 +162,23 @@ get_attached_data <- function(root_dir, target_dir, kobo_output) {
       df <- bind_cols(matching_row, df)
     }
     
+desired_order <- c(
+  "country_assessment", "taxonomic_group", "taxon", "scientific_authority", 
+  "genus", "year_assesment", "name_assessor", "email_assessor", "kobo_tabular", 
+  "time_populations", "X_validation_status", "X_uuid", "multiassessment", "population", 
+  "Name", "Origin", "IntroductionYear", "Ne", "NeLower", "NeUpper", 
+  "NeYear", "GeneticMarkers", "GeneticMarkersOther", "MethodNe", "SourceNe", 
+  "NcType", "NcYear", "NcMethod", "NcRange", "NcRangeDetails", "NcPoint", 
+  "NcLower", "NcUpper", "SourceNc", "Comments")
+
+  df <- df %>% select(desired_order)
+
     # Write the modified DataFrame to new file paths (both tab and comma delimited)
-    copy_file_path <- sub("\\.txt$", "_copy.csv", new_file_path)
+    copy_file_path <- sub("\\.txt$", "_copy.csv", new_file_path) 
     write_delim(df, new_file_path, delim = '\t')
     write_delim(df, copy_file_path, delim = ',')
+  
+  attached_df <- rbind(attached_df, df)
   }
+  return(attached_df)
 }
