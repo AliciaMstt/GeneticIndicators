@@ -48,16 +48,18 @@ if("taxon" %in% colnames(kobo_output)){
     } 
   
    ## Add a variable to the metadata stating if the taxon was assessed multiple times or only a single time
+  # object with duplicated taxa within a single country
+  # duplicated() is run twice, the second time with  fromLast = TRUE so that 
+  # the first occurrence is also accounted for, i.e. we can subset all records with the same taxon for a given country
+  kobo_output_duplicates <- kobo_output[which(duplicated(kobo_output[c('taxon', 'country_assessment')]) | duplicated(kobo_output[c('taxon', 'country_assessment')], fromLast = TRUE)), ]
   
-   # object with duplicated taxa within a single country
-   kobo_output_duplicates<-kobo_output[duplicated(cbind(kobo_output$taxon, kobo_output$country_assessment)), ]
+  # if it is a duplicate then tag it as multi_assessment, if it is not duplicated within the country then single
+  kobo_output <- kobo_output %>% 
+    mutate(multiassessment= if_else(
+      X_uuid %in% kobo_output_duplicates$X_uuid, "multiassessment", "single_assessment"))
   
-   # if it is a duplicate then tag it as multi_assessment, if it is not duplicated then single
-   kobo_output <- kobo_output %>% 
-     mutate(multiassessment = if_else(
-       taxon %in% kobo_output_duplicates$taxon, "multiassessment", "single_assessment"))
   
-  # Inner function to extract maximum numeric value from a string
+  ### Inner function to extract maximum numeric value from a string
   max_value_from_string <- function(value) {
     if (is.na(value) || value == "") return(NA)  # Return NA if value is NA or empty
     numbers <- as.numeric(unlist(str_extract_all(value, "\\d+"))) # Extract all numbers

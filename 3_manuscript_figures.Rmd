@@ -95,6 +95,10 @@ Get indicators and metadata data from clean kobo output
 # Get data:
 kobo_clean<-read.csv(file="kobo_output_clean.csv", header=TRUE)
 
+# Extract indicator 1 data from kobo output, show most relevant columns
+ind1_data<-get_indicator1_data(kobo_output=kobo_clean)
+head(ind1_data[,c(1:3, 12:14)])
+
 # Extract indicator 2 data from kobo output, show most relevant columns
 ind2_data<-get_indicator2_data(kobo_output=kobo_clean)
 head(ind2_data[,c(1:3, 9:10,13)])
@@ -108,7 +112,7 @@ metadata<-get_metadata(kobo_output=kobo_clean)
 head(metadata[,c(1:3, 12, 25,26, 64)])
 ```
 
-## Tag multiassesments
+## A note on multiassesments
 Some taxa were assessed twice or more times, for example to account for uncertainty on how to divide populations. This information is stored in variable `multiassessment` of the metadata (created by `get_metadata()`). An example of taxa with multiple assessments:
 
 ```{r}
@@ -123,9 +127,8 @@ filter(multiassessment=="multiassessment")  %>%
 
 ### Indicator 1 (proportion of populations with Ne >500):
 
-Extract indicator 1 data from kobo output, show most relevant columns
+Show most relevant columns of indicator 1 data
 ```{r}
-ind1_data<-get_indicator1_data(kobo_output=kobo_clean)
 head(ind1_data[,c(1:3, 12:14)])
 
 ```
@@ -333,11 +336,11 @@ select(metadata, defined_populations_nicenames, defined_populations_simplified)
 ```
 
 
-## Number or records and taxa assessed by country
+## General description of records and taxa assessed by country
 
 Records by country, including taxa assessed more than once (see below for details on this)
 
-```{r, out.width="700px", out.height="400px"}
+```{r  taxa by country, out.width="700px", out.height="400px"}
 ggplot(metadata, aes(x=country_assessment)) + 
   geom_bar(stat = "count") +
   xlab("") +
@@ -372,7 +375,7 @@ ggplot(metadata_firstmulti, aes(x=country_assessment)) +
 ```
 
 Of which countries and taxonomic groups are the taxa that were assessed more than once?
-```{r}
+```{r multiassessed}
 metadata_firstmulti %>% # we use the _unique dataset so that multiassesed records are counted only once
         filter(multiassessment=="multiassessment") %>%
 
@@ -1211,11 +1214,10 @@ First, check how indicator 1 changes across the multiassessments.
 
 ```{r}
 only_multi %>% 
-  # filter species with missing data for the desired indicator
- filter(indicator1!=is.na(indicator1)) %>%
   # Keep rows with different values in indicator1 within each taxon group
   group_by(taxon) %>%
   filter(n_distinct(indicator1) > 1) %>%
+  # plot
   ggplot(aes(x=taxon, y=indicator1)) +
           geom_line(colour="darkgrey") + 
           geom_point(aes(color=country_assessment)) +
@@ -1232,8 +1234,9 @@ Now check how indicator 2 changes across the multiassessments.
 To be able to visualize the missing data, the following plot changes NA to -1.
 ```{r}
 only_multi %>% 
-  # filter species with missing data for the desired indicator
-  filter(indicator2!=is.na(indicator2)) %>%
+  # Keep rows with different values in indicator1 within each taxon group
+  group_by(taxon) %>%
+  filter(n_distinct(indicator2) > 1) %>%
   
   ggplot(aes(x=taxon, y=indicator2)) +
           geom_line(colour="darkgrey") + 
