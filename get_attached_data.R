@@ -140,8 +140,8 @@ if("taxon" %in% colnames(kobo_output)){
 
     df <- df %>%
       rename(population = populationID, Name = PopulationName) %>% 
-      mutate(year_assesment = (2023)) %>%
-      mutate(across(starts_with("IntroductionYear"), as.character)) %>%
+              mutate(year_assesment=substr(end,1,4)) %>%      
+              mutate(across(starts_with("IntroductionYear"), as.character)) %>%
       mutate(across(starts_with("NeYear"), as.character)) %>%
       mutate(across(starts_with("NcYear"), as.character)) %>%
       mutate(across(starts_with("NcRangeDetails"), as.character))
