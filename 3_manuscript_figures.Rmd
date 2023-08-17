@@ -112,17 +112,7 @@ metadata<-get_metadata(kobo_output=kobo_clean)
 head(metadata[,c(1:3, 12, 25,26, 64)])
 ```
 
-## A note on multiassesments
-Some taxa were assessed twice or more times, for example to account for uncertainty on how to divide populations. This information is stored in variable `multiassessment` of the metadata (created by `get_metadata()`). An example of taxa with multiple assessments:
 
-```{r}
-metadata %>%
-filter(multiassessment=="multiassessment")  %>%
-  select(taxonomic_group, taxon, country_assessment, multiassessment) %>%
-  arrange(taxon, country_assessment) %>%
-  head()
-  
-```
 ## Estimate indicators
 
 ### Indicator 1 (proportion of populations with Ne >500):
@@ -336,6 +326,63 @@ select(metadata, defined_populations_nicenames, defined_populations_simplified)
 ```
 
 
+
+## Averaging multiassessments
+Some taxa were assessed twice or more times, for example to account for uncertainty on how to divide populations. This information is stored in variable `multiassessment` of the metadata (created by `get_metadata()`). An example of taxa with multiple assessments:
+
+```{r}
+metadata %>%
+filter(multiassessment=="multiassessment")  %>%
+  select(taxonomic_group, taxon, country_assessment, multiassessment) %>%
+  arrange(taxon, country_assessment) %>%
+  head()
+  
+```
+
+Multiassessments allow to account for uncertainty in the number of populations or the size of them. We can examine how the indicators value species by species as done elsewhere in these analyses (see below "Values for indicator 1 and 2 for multiassessed species), but to examine global trends, some of the figures below use the average.
+
+```{r}
+indicators_averaged<-indicators_full %>%
+  # group desired multiassessments
+  group_by(country_assessment, multiassessment, taxon) %>%
+  # estimate means
+  mutate(indicator1_mean=mean(indicator1, na.rm=TRUE)) %>%
+  mutate(indicator2_mean=mean(indicator2, na.rm=TRUE)) %>%
+  # change NaN for NA (needed due to the NAs and 0s in the dataset)
+  mutate_all(~ifelse(is.nan(.), NA, .)) 
+```
+
+Examples of how this looks to check it was done properly. For indicator 1:
+```{r}
+indicators_averaged %>%
+  filter(taxon == "Barbastella barbastellus") %>%
+  select(taxon, country_assessment, multiassessment, indicator1, indicator1_mean)
+
+indicators_averaged %>%
+  filter(taxon == "Rana dalmatina") %>%
+  select(taxon, country_assessment, multiassessment, indicator1, indicator1_mean)
+
+
+indicators_averaged %>%
+  filter(taxon == "Ambystoma cingulatum") %>%
+  select(taxon, country_assessment, multiassessment, indicator1, indicator1_mean)
+```
+
+For indicator 2:
+```{r}
+indicators_averaged %>%
+  filter(taxon == "Ambystoma cingulatum") %>%
+  select(taxon, country_assessment, multiassessment, indicator2, indicator2_mean)
+
+```
+
+Because we will use the averages to show a single value for multiasssessed taxa, we can keep only the first record for multiassessed taxa.
+```{r}
+indicators_averaged_one<-indicators_averaged[!duplicated(cbind(indicators_averaged$taxon, indicators_averaged$country_assessment)), ]
+```
+
+
+
 ## General description of records and taxa assessed by country
 
 Records by country, including taxa assessed more than once (see below for details on this)
@@ -349,24 +396,18 @@ ggplot(metadata, aes(x=country_assessment)) +
 
 ```
 
-To explore what kind of taxa countries assessed regardless of if they assessed them once or more, lets create a dataset keeping all single assessed taxa, plus only the first assessment for taxa assessed multiple times. 
-
-```{r}
-# object with single assessed taxa, plus only the first assessment for taxa assessed multiple times
-metadata_firstmulti<-metadata[!duplicated(cbind(metadata$taxon, metadata$country_assessment)), ]
-
-```
+To explore what kind of taxa countries assessed regardless of if they assessed them once or more, we are going to use the subset `indicators_averaged_one`, were we averaged the indicators and kept only 1 record per assessment. 
 
 How many taxa were assessed (i.e. counting only once taxa that were assessed multiple times)?
 ```{r}
 # how many?
-nrow(metadata_firstmulti)
+nrow(indicators_averaged_one)
 ```
 
 Plot taxa assessed excluding duplicates, i.e. the real number of taxa assessed:
 
 ```{r, out.width="700px", out.height="400px"}
-ggplot(metadata_firstmulti, aes(x=country_assessment)) + 
+ggplot(indicators_averaged_one, aes(x=country_assessment)) + 
   geom_bar(stat = "count") +
   xlab("") +
   ggtitle("Number of taxa assessed by country") +
@@ -376,7 +417,7 @@ ggplot(metadata_firstmulti, aes(x=country_assessment)) +
 
 Of which countries and taxonomic groups are the taxa that were assessed more than once?
 ```{r multiassessed}
-metadata_firstmulti %>% # we use the _unique dataset so that multiassesed records are counted only once
+indicators_averaged_one %>% # we use the _unique dataset so that multiassesed records are counted only once
         filter(multiassessment=="multiassessment") %>%
 
 ggplot(aes(x=taxonomic_group, fill=country_assessment)) + 
