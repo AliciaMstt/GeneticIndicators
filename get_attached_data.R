@@ -128,7 +128,6 @@ if("taxon" %in% colnames(kobo_output)){
   close(output_conn) # Close the output file connection
   
   # Further process files in the target directory
-  # Further process files in the target directory
   attached_df <- data.frame()
   result_files <- list.files(path = target_dir, pattern = "\\.(txt|csv)$", full.names = TRUE) # List all text and CSV files
   for(file_path in result_files) {
@@ -140,6 +139,9 @@ if("taxon" %in% colnames(kobo_output)){
     convert_delimiter(new_file_path, delimiter)
     df <- read_delim(new_file_path, delim = '\t')
 
+    # Check if required column names exist, if one doesn't exist, create it empity. 
+    
+    
     df <- df %>%
       rename(population = populationID, Name = PopulationName) %>% 
               mutate(year_assesment=substr(end,1,4)) %>%      
