@@ -99,7 +99,7 @@ kobo_clean<-read.csv(file="kobo_output_clean.csv", header=TRUE)
 ind1_data<-get_indicator1_data(kobo_output=kobo_clean)
 head(ind1_data[,c(1:3, 12:14)])
 
-# Extract Proportion of mantained populations (indicator) data from kobo output, show most relevant columns
+# Extract Proportion of maintained populations (indicator) data from kobo output, show most relevant columns
 ind2_data<-get_indicator2_data(kobo_output=kobo_clean)
 head(ind2_data[,c(1:3, 9:10,13)])
 
@@ -147,9 +147,9 @@ estimate_indicator1
 indicator1<-estimate_indicator1(ind1_data = ind1_data)
 ```
 
-### Proportion of mantained populations (indicator) (proportion of populations within species which are maintained)
+### Proportion of maintained populations (indicator) (proportion of populations within species which are maintained)
 
-Proportion of mantained populations (indicator) is the he proportion of populations within species which are maintained. This can be estimated based on the `n_extant_populations` and `n_extint_populations`, as follows:
+Proportion of maintained populations (indicator) is the he proportion of populations within species which are maintained. This can be estimated based on the `n_extant_populations` and `n_extint_populations`, as follows:
 
 ```{r}
 ind2_data$indicator2<- ind2_data$n_extant_populations / (ind2_data$n_extant_populations + ind2_data$n_extint_populations)
@@ -212,9 +212,11 @@ levels(metadata$country_assessment)
 
 # change
 levels(metadata$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US")
+levels(indicators_full$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US")
 levels(ind1_data$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US")
 levels(ind2_data$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US")
 levels(indicator1$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US")
+
 
 ```
 
@@ -237,7 +239,7 @@ colnames(x)[1]<-"method"
 x
 
 ```
-We can add this new column to the metadata and Proportion of mantained populations (indicator) data:
+We can add this new column to the metadata and Proportion of maintained populations (indicator) data:
 
 ```{r} 
 ### for ind2_data
@@ -368,7 +370,7 @@ indicators_averaged %>%
   select(taxon, country_assessment, multiassessment, indicator1, indicator1_mean)
 ```
 
-For Proportion of mantained populations (indicator):
+For Proportion of maintained populations (indicator):
 ```{r}
 indicators_averaged %>%
   filter(taxon == "Ambystoma cingulatum") %>%
@@ -569,7 +571,7 @@ p3
 
 ## Missing data on extant and extinct populations
 
-We have NA in Proportion of mantained populations (indicator) because in some cases the number of extinct populations is unknown, therefore the operation cannot be computed. 
+We have NA in Proportion of maintained populations (indicator) because in some cases the number of extinct populations is unknown, therefore the operation cannot be computed. 
 
 ### Counts
 Total records with NA in extant populations:
@@ -686,11 +688,11 @@ alluvial(foralluvial[,1:3], freq = foralluvial$n,
 ```
 
 
-## Effect of method used to define populations on number of populations and Proportion of mantained populations (indicator) 
+## Effect of method used to define populations on number of populations and Proportion of maintained populations (indicator) 
 
-### Number of mantained populations by country and method
+### Number of maintained populations by country and method
 
-Plot Number of mantained populations by country and method
+Plot Number of maintained populations by country and method
 
 ```{r}
 ind2_data %>% 
@@ -707,7 +709,7 @@ ind2_data %>%
   coord_flip() +
   facet_wrap(country_assessment ~ ., nrow=3, scales="free_x") +
   xlab("")  +
-  ylab("Number of mantained populations") +
+  ylab("Number of maintained populations") +
   scale_fill_manual(values=alpha(simplifiedmethods_colors, .3),
                     breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
   scale_color_manual(values=simplifiedmethods_colors,
@@ -722,7 +724,7 @@ ind2_data %>%
 levels(ind2_data$country_assessment)
 ```
 
-### Number of mantained populations by method
+### Number of maintained populations by method
 
 Plot number of populations by method
 ```{r, out.height="500px", out.width="1064px"}
@@ -748,7 +750,7 @@ df<-ind2_data %>%
   p1<- df %>%
   ggplot(aes(x=myaxis, y=n_extant_populations, color=defined_populations_nicenames,
                                                fill=defined_populations_nicenames)) +
-          geom_boxplot() + xlab("") + ylab("Number of mantained populations") +
+          geom_boxplot() + xlab("") + ylab("Number of maintained populations") +
           geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
   theme_light() +
@@ -795,7 +797,7 @@ x[x$`p adj`<0.05, ]
 ```
 
 
-### Proportion of mantained populations (indicator) by method
+### Proportion of maintained populations (indicator) by method
 
 Plot
 
@@ -819,12 +821,12 @@ df<-ind2_data %>%
 
 
 
-## plot for Proportion of mantained populations (indicator)
+## plot for Proportion of maintained populations (indicator)
 p2<- df %>%
   filter(n_extant_populations<500) %>%
   ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_simplified,    
                                      fill=defined_populations_simplified)) +
-          geom_boxplot() + xlab("") + ylab("Proportion of mantained populations (indicator)") +
+          geom_boxplot() + xlab("") + ylab("Proportion of maintained populations (indicator)") +
           geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
   theme_light() +
@@ -887,8 +889,8 @@ p3<- ind2_data %>%
     scale_color_manual(values=simplifiedmethods_colors,
                     breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
     theme(legend.position = "none") +
-    ylab("Proportion of mantained populations (indicator)") +
-    xlab("Number of mantained populations") +
+    ylab("Proportion of maintained populations (indicator)") +
+    xlab("Number of maintained populations") +
     theme(text = element_text(size = 13))
 p3
 
@@ -924,16 +926,16 @@ summary(m2)
 ```
 
 
-### Single plot 3 panels for the effect of method to define populations on Proportion of mantained populations (indicator) and number of pops
+### Single plot 3 panels for the effect of method to define populations on Proportion of maintained populations (indicator) and number of pops
 
 Plot in three panels. 
 ```{r, out.height="380px", out.width="1130px"}
-## plot for Proportion of mantained populations (indicator) without axis labels
+## plot for Proportion of maintained populations (indicator) without axis labels
 p2<-ind2_data %>% 
   filter(n_extant_populations<500) %>%
   ggplot(aes(x=defined_populations_simplified, y=indicator2, color=defined_populations_simplified,
                                                              fill=defined_populations_simplified)) +
-          geom_boxplot() + xlab("") + ylab("Proportion of mantained populations (indicator)") +
+          geom_boxplot() + xlab("") + ylab("Proportion of maintained populations (indicator)") +
           geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
   theme_light() +
@@ -969,24 +971,27 @@ panel_figure
 
 ```
 
-## Indicator 1 by type of range
+## Indicator 1 and indicator 2 by type of range
 
+All the following plots below consider the average of multiassessed species, so that they are shown only once.
+
+### Indicator 1 (Ne > 5000)
 Indicator 1 by type of range in the entire dataset:
 
-```{r indicator1 by range type}
+```{r indicator1 by range}
 # get sample size by desired category
-sample_size <- indicator1  %>%
-                    filter(!is.na(indicator1)) %>% 
+sample_size <- indicators_averaged_one  %>%
+                    filter(!is.na(indicator1_mean)) %>% 
                     group_by(species_range) %>% summarize(num=n())
 
 # plot
-indicator1  %>% 
+p1<-indicators_averaged_one %>% 
   # add sampling size 
   left_join(sample_size) %>%
   mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
 
   # plot
-  ggplot(aes(x=myaxis, y=indicator1 , fill=species_range)) +
+  ggplot(aes(x=myaxis, y=indicator1_mean , fill=species_range)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
       xlab("") + ylab("Proportion of popuations with Ne > 500") +
@@ -996,12 +1001,13 @@ indicator1  %>%
                        values=c("#F8766D", "#00BFC4", "grey80")) +
       theme_light() +
       theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20))
+p1
 ```
 Indicator 1 by country and type of range
 
 ```{r indicator1 by country and range}
 ### Duplicate dataframe to have a column with "all data" for faceting
-df<-CreateAllFacet(indicator1 , "country_assessment")
+df<-CreateAllFacet(indicators_averaged_one, "country_assessment")
 
 # order with "all" as last
 df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US", "all"))
@@ -1012,7 +1018,7 @@ df  %>%
   filter(species_range!="unknown") %>%
   
 # plot
-ggplot(aes(x=species_range, y=indicator1 , fill=species_range)) +
+ggplot(aes(x=species_range, y=indicator1_mean , fill=species_range)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
       xlab("") + ylab("Proportion of popuations with Ne > 500") +
@@ -1030,22 +1036,23 @@ Test the effect of range on indicator1 with country as a random effect.
 ```{r stats indicator1 and range}
 library(lme4)
 ## Remove unknown
-data<-indicator1 %>%
+data<-indicators_averaged_one %>%
      filter(species_range!="unknown")
   
 ## run model with glm
-m1 <- glm(data$indicator1 ~ data$species_range + data$country_assessment, family = "quasibinomial")
+m1 <- glm(data$indicator1_mean ~ data$species_range + data$country_assessment, family = "quasibinomial")
 summary(m1)
 
 # or with lme4?
-m2 <-lmer(indicator1 ~ species_range + (1|country_assessment), data = data)
+m2 <-lmer(indicator1_mean ~ species_range + (1|country_assessment), data = data)
 summary(m2)
 
 ```
 
 
-## Indicator 1 by IUCN status
+## Indicator 1 and Indicator 2 by IUCN status
 
+### Indicator 1
 Indicator 1 by global IUCN in the entire dataset:
 
 ```{r indicator1 gobalIUCN}
@@ -1053,13 +1060,13 @@ Indicator 1 by global IUCN in the entire dataset:
 ## Global IUCN
 ## prepare data
 # add sampling size
-sample_size <- indicator1 %>%
-               filter(!is.na(indicator1)) %>% 
+sample_size <- indicators_averaged_one %>%
+               filter(!is.na(indicator1_mean)) %>% 
                group_by(global_IUCN) %>% summarize(num=n())
 
 # new df 
-df<- indicator1 %>% 
-     filter(!is.na(indicator1)) %>% 
+df<- indicators_averaged_one %>% 
+     filter(!is.na(indicator1_mean)) %>% 
         # add sampling size 
         left_join(sample_size) %>%
         mutate(myaxis = paste0(global_IUCN, " (n= ", num, ")"))
@@ -1098,20 +1105,20 @@ p1
 ```
 
 
-Indicator 1 by IUCN in the entire dataset:
+Indicator 1 by regional IUCN in the entire dataset:
 
 ```{r indicator1 regionalIUCN}
 ## Regional IUCN
 
 ## prepare data
 # add sampling size
-sample_size <- indicator1 %>%
-               filter(!is.na(indicator1)) %>% 
+sample_size <- indicators_averaged_one %>%
+               filter(!is.na(indicator1_mean)) %>% 
                group_by(regional_redlist) %>% summarize(num=n())
 
 # new df 
-df<- indicator1 %>% 
-     filter(!is.na(indicator1)) %>% 
+df<- indicators_averaged_one %>% 
+     filter(!is.na(indicator1_mean)) %>% 
         # add sampling size 
         left_join(sample_size) %>%
         mutate(myaxis = paste0(regional_redlist, " (n= ", num, ")"))
@@ -1133,7 +1140,7 @@ df$regional_redlist<-factor(df$regional_redlist, levels=c("re","cr", "en", "vu",
       
 # plot
 p2<-df %>%
-    ggplot(aes(x=myaxis, y=indicator1 , fill=regional_redlist)) +
+    ggplot(aes(x=myaxis, y=indicator1_mean , fill=regional_redlist)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
       xlab("") + ylab("Proportion of popuations with Ne > 500") +
@@ -1153,16 +1160,17 @@ Both together
 ```{r indicator1 IUCN global regional}
 plot_grid(p1, p2, ncol=2)
 ```
+
 Indicator 1 by country and global IUCN
 
 ```{r indicator1 country globalIUCN}
 ## change order of levels so that categories match with the order of colors
-indicator1$global_IUCN<-factor(indicator1$global_IUCN, levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
+indicators_averaged_one$global_IUCN<-factor(indicators_averaged_one$global_IUCN, levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
 
 # plot
-indicator1 %>% 
+indicators_averaged_one %>% 
   # plot
-  ggplot(aes(x=global_IUCN, y=indicator1, fill=global_IUCN)) +
+  ggplot(aes(x=global_IUCN, y=indicator1_mean, fill=global_IUCN)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
       xlab("") + ylab("Proportion of popuations with Ne > 500") +
@@ -1180,15 +1188,15 @@ Indicator1 by regional IUCN Redlist, excluding US and Mexico becasue they don't 
 
 ```{r indicator1 country regionalIUCN}
 ## change order of levels so that categories match with the order of colors
-indicator1$regional_redlist<-factor(indicator1$regional_redlist, levels=c("re","cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
+indicators_averaged_one$regional_redlist<-factor(indicators_averaged_one$regional_redlist, levels=c("re","cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
 
 # plot
-indicator1 %>% 
+indicators_averaged_one %>% 
   # filter US and Mx
   filter(country_assessment!="Mexico", country_assessment!="US") %>%
   
   # plot
-  ggplot(aes(x=regional_redlist, y=indicator1, fill=regional_redlist)) +
+  ggplot(aes(x=regional_redlist, y=indicator1_mean, fill=regional_redlist)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
       xlab("") + ylab("Proportion of popuations with Ne > 500") +
@@ -1202,7 +1210,7 @@ indicator1 %>%
       theme(panel.spacing = unit(1.5, "lines"))
 ```
 
-## Values of indicator 1 and Proportion of mantained populations (indicator) for multiassessed species
+## Values of indicator 1 and indicator 2 for multiassessed species
 
 ```{r}
 #subset only with taxa assessed multiple times:
@@ -1213,7 +1221,7 @@ only_multi<-indicators_full %>%
 First, check how indicator 1 changes across the multiassessments.
 
 ```{r}
-only_multi %>% 
+p1<-only_multi %>% 
   # Keep rows with different values in indicator1 within each taxon group
   group_by(taxon) %>%
   filter(n_distinct(indicator1) > 1) %>%
@@ -1227,13 +1235,14 @@ only_multi %>%
   coord_flip() +
   theme_light() + 
   theme(panel.border = element_blank(), legend.position="right", text= element_text(size=13))
+p1
 
 ```
 
-Now check how Proportion of mantained populations (indicator) changes across the multiassessments.
-To be able to visualize the missing data, the following plot changes NA to -1.
+Now check how Proportion of maintained populations (indicator 2) changes across the multiassessments.
+
 ```{r}
-only_multi %>% 
+p2<-only_multi %>% 
   # Keep rows with different values in indicator1 within each taxon group
   group_by(taxon) %>%
   filter(n_distinct(indicator2) > 1) %>%
@@ -1241,12 +1250,24 @@ only_multi %>%
   ggplot(aes(x=taxon, y=indicator2)) +
           geom_line(colour="darkgrey") + 
           geom_point(aes(color=country_assessment)) +
-  xlab("") + ylab("Proportion of populations mantained ") +
+    scale_color_manual(values= scales::hue_pal()(4)[2:4]) + # last 3 colors to make them the same than the other plot
+  xlab("") + ylab("Proportion of populations maintained ") +
   labs(color="country") +
   coord_flip() +
   theme_light() + 
   theme(panel.border = element_blank(), legend.position="right", text= element_text(size=13))
+p2
 ```
+
+Plot together:
+```{r}
+plot_grid(p2, p1,  
+          rel_heights = c(1.3, 0.9),
+          ncol=1, labels=c("a)", "b)")) 
+```
+
+
+
 ## Indicator 3 (number of species with genetic diversity monitoring)
 Indicator 3 refers to the number (count) of taxa by country in which genetic monitoring is occurring. This is stored in the variable temp_gen_monitoring as a “yes/no” answer for each taxon.
 
