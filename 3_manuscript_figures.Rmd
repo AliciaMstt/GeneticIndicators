@@ -99,7 +99,7 @@ kobo_clean<-read.csv(file="kobo_output_clean.csv", header=TRUE)
 ind1_data<-get_indicator1_data(kobo_output=kobo_clean)
 head(ind1_data[,c(1:3, 12:14)])
 
-# Extract indicator 2 data from kobo output, show most relevant columns
+# Extract Proportion of mantained populations (indicator) data from kobo output, show most relevant columns
 ind2_data<-get_indicator2_data(kobo_output=kobo_clean)
 head(ind2_data[,c(1:3, 9:10,13)])
 
@@ -147,9 +147,9 @@ estimate_indicator1
 indicator1<-estimate_indicator1(ind1_data = ind1_data)
 ```
 
-### Indicator 2 (proportion of populations within species which are maintained)
+### Proportion of mantained populations (indicator) (proportion of populations within species which are maintained)
 
-Indicator 2 is the he proportion of populations within species which are maintained. This can be estimated based on the `n_extant_populations` and `n_extint_populations`, as follows:
+Proportion of mantained populations (indicator) is the he proportion of populations within species which are maintained. This can be estimated based on the `n_extant_populations` and `n_extint_populations`, as follows:
 
 ```{r}
 ind2_data$indicator2<- ind2_data$n_extant_populations / (ind2_data$n_extant_populations + ind2_data$n_extint_populations)
@@ -237,7 +237,7 @@ colnames(x)[1]<-"method"
 x
 
 ```
-We can add this new column to the metadata and indicator 2 data:
+We can add this new column to the metadata and Proportion of mantained populations (indicator) data:
 
 ```{r} 
 ### for ind2_data
@@ -368,7 +368,7 @@ indicators_averaged %>%
   select(taxon, country_assessment, multiassessment, indicator1, indicator1_mean)
 ```
 
-For indicator 2:
+For Proportion of mantained populations (indicator):
 ```{r}
 indicators_averaged %>%
   filter(taxon == "Ambystoma cingulatum") %>%
@@ -569,7 +569,7 @@ p3
 
 ## Missing data on extant and extinct populations
 
-We have NA in indicator 2 because in some cases the number of extinct populations is unknown, therefore the operation cannot be computed. 
+We have NA in Proportion of mantained populations (indicator) because in some cases the number of extinct populations is unknown, therefore the operation cannot be computed. 
 
 ### Counts
 Total records with NA in extant populations:
@@ -649,8 +649,6 @@ plot_grid(p1 + theme(legend.justification = c(0,.5)), # legend.justification ali
 ```
 
 
-
-
 ## Method to define populations used by country (alluvial)
 
 Reformat data
@@ -688,7 +686,7 @@ alluvial(foralluvial[,1:3], freq = foralluvial$n,
 ```
 
 
-## Effect of method used to define populations on number of populations and indicator 2 
+## Effect of method used to define populations on number of populations and Proportion of mantained populations (indicator) 
 
 ### Number of mantained populations by country and method
 
@@ -797,7 +795,7 @@ x[x$`p adj`<0.05, ]
 ```
 
 
-### Indicator 2 by method
+### Proportion of mantained populations (indicator) by method
 
 Plot
 
@@ -821,12 +819,12 @@ df<-ind2_data %>%
 
 
 
-## plot for indicator 2
+## plot for Proportion of mantained populations (indicator)
 p2<- df %>%
   filter(n_extant_populations<500) %>%
   ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_simplified,    
                                      fill=defined_populations_simplified)) +
-          geom_boxplot() + xlab("") + ylab("Indicator 2") +
+          geom_boxplot() + xlab("") + ylab("Proportion of mantained populations (indicator)") +
           geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
   theme_light() +
@@ -889,7 +887,7 @@ p3<- ind2_data %>%
     scale_color_manual(values=simplifiedmethods_colors,
                     breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
     theme(legend.position = "none") +
-    ylab("Indicator 2") +
+    ylab("Proportion of mantained populations (indicator)") +
     xlab("Number of mantained populations") +
     theme(text = element_text(size = 13))
 p3
@@ -926,25 +924,28 @@ summary(m2)
 ```
 
 
-### Single plot 3 panels for the effect of method to define populations on indicator 2 and number of pops
+### Single plot 3 panels for the effect of method to define populations on Proportion of mantained populations (indicator) and number of pops
 
-Plot in three panels
+Plot in three panels. 
 ```{r, out.height="380px", out.width="1130px"}
-## plot for indicator 2 without axis labels
+## plot for Proportion of mantained populations (indicator) without axis labels
 p2<-ind2_data %>% 
   filter(n_extant_populations<500) %>%
-  ggplot(aes(x=defined_populations_simplified, y=indicator2, color=defined_populations_simplified)) +
-          geom_boxplot() + xlab("") + ylab("Indicator 2") +
+  ggplot(aes(x=defined_populations_simplified, y=indicator2, color=defined_populations_simplified,
+                                                             fill=defined_populations_simplified)) +
+          geom_boxplot() + xlab("") + ylab("Proportion of mantained populations (indicator)") +
           geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
   theme_light() +
   theme(panel.border = element_blank(), legend.position="none", axis.text.y = element_blank(),
         plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) + 
+  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
+                    breaks=levels(as.factor(ind2_data$defined_populations_simplified))) +
   scale_color_manual(values=simplifiedmethods_colors,
                     breaks=levels(as.factor(ind2_data$defined_populations_simplified))) +
   theme(text = element_text(size = 13))
-p2
 
+# plot
 plot_grid(p1, p2, p3, ncol=3, rel_widths = c(2,1,1), align = "h", labels=c("a)", "b)", "c)"))  
 
 ```
@@ -1201,7 +1202,7 @@ indicator1 %>%
       theme(panel.spacing = unit(1.5, "lines"))
 ```
 
-## Values of indicator 1 and indicator 2 for multiassessed species
+## Values of indicator 1 and Proportion of mantained populations (indicator) for multiassessed species
 
 ```{r}
 #subset only with taxa assessed multiple times:
@@ -1229,7 +1230,7 @@ only_multi %>%
 
 ```
 
-Now check how indicator 2 changes across the multiassessments.
+Now check how Proportion of mantained populations (indicator) changes across the multiassessments.
 To be able to visualize the missing data, the following plot changes NA to -1.
 ```{r}
 only_multi %>% 
