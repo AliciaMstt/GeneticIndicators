@@ -509,7 +509,7 @@ xlab("") +
 ylab("Number of taxa") +
 labs(fill="Ne available \n(from genetic data)")  +
 theme_light() +
-theme(text = element_text(size = 14), legend.position = "right", panel.border = element_blank())
+theme(text = element_text(size = 13), legend.position = "right", panel.border = element_blank())
 
 p1
 
@@ -526,14 +526,14 @@ p2<-metadata %>%
     xlab("") +
     ylab("Number of taxa") +
     theme_light() +
-    theme(text = element_text(size = 14), legend.position = "right", panel.border = element_blank())
+    theme(text = element_text(size = 13), legend.position = "right", panel.border = element_blank())
 p2
 ```
 
 
-What kind of Nc data?
+What kind of Nc data? (dodge bars)
 ```{r}
-p3<-ind1_data %>%
+ind1_data %>%
   filter(!is.na(NcType)) %>%
   ggplot(aes(x=country_assessment, fill=NcType))+
   geom_bar(position = "dodge") +
@@ -544,60 +544,14 @@ p3<-ind1_data %>%
   ylab("Number of populations") +
   labs(fill="Type of Nc data \nby population") +
   theme_light() +
-  theme(text = element_text(size = 14), legend.position = "right", panel.border = element_blank())
-p3
+  theme(text = element_text(size = 13), legend.position = "right", panel.border = element_blank())
+
  
 ```
+What kind of Nc data? (fill bars)
 
-Distribution of Nc, Ne and types of Ne in a single figure with 3 panels:
-
-
-```{r, out.width="1000px", out.height="350px"}
-# plot
-plot_grid(p1, p2, p3, ncol=1, rel_heights = c(1,1,1.3), rel_widths = c(1,1,1.3), align = "v", labels=c("a)", "b)", "c)"), vjust = .7)  
-```
-
-**Same than above, but using percentages instead of count data**
-
-Ne available by taxa?
 ```{r}
-p1.1<- metadata %>% 
-  filter(!is.na(ne_pops_exists)) %>% 
-  filter(ne_pops_exists!="other_genetic_info") %>%
-    ggplot(aes(x=country_assessment, fill=ne_pops_exists)) + 
-  geom_bar(position="fill") +
-scale_fill_manual(labels=c("no", "yes"),
-                      breaks=c("no_genetic_data", "ne_available"),
-                      values=c("#ff7f0e", "#2ca02c")) +
-xlab("") +
-ylab("Proportion of taxa") +
-labs(fill="Ne available \n(from genetic data)")  +
-theme_light() +
-theme(text = element_text(size = 14), legend.position = "right", panel.border = element_blank())
-
-p1.1
-
-```
-
-Nc available?
-```{r}
-p2.1<-metadata %>%
-  filter(!is.na(nc_pops_exists)) %>%
-    ggplot(aes(x=country_assessment, fill=nc_pops_exists)) +
-    geom_bar(position = "fill") +
-    scale_fill_manual(values=c("#ff7f0e", "#2ca02c")) + 
-    labs(fill="Nc available") +
-    xlab("") +
-    ylab("Proportion of taxa") +
-    theme_light() +
-    theme(text = element_text(size = 14), legend.position = "right", panel.border = element_blank())
-p2.1
-```
-
-
-What kind of Nc data?
-```{r}
-p3.1<-ind1_data %>%
+p3<-ind1_data %>%
   filter(!is.na(NcType)) %>%
   ggplot(aes(x=country_assessment, fill=NcType))+
   geom_bar(position = "fill") +
@@ -608,26 +562,94 @@ p3.1<-ind1_data %>%
   ylab("Proportion of populations") +
   labs(fill="Type of Nc data \nby population") +
   theme_light() +
-  theme(text = element_text(size = 14), legend.position = "right", panel.border = element_blank())
-p3.1
+  theme(text = element_text(size = 13), legend.position = "right", panel.border = element_blank())
+p3
  
 ```
 
-Distribution of Nc, Ne and types of Ne in a single figure with 3 panels and proportions instead of count:
+## Missing data on extant and extinct populations
 
+We have NA in indicator 2 because in some cases the number of extinct populations is unknown, therefore the operation cannot be computed. 
 
-```{r, out.width="1000px", out.height="350px"}
-# plot
-plot_grid(p1.1, p2.1, p3.1, ncol=1, rel_widths = c(1,1,1), align = "v", labels=c("a)", "b)", "c)"), vjust = .7)  
+### Counts
+Total records with NA in extant populations:
+```{r}
+sum(is.na(ind2_data$n_extant_populations))
 ```
+
+Taxa with NA in extant populations:
+```{r}
+ind2_data %>%
+  filter(is.na(n_extant_populations)) %>%
+    select(country_assessment, taxonomic_group, taxon, n_extant_populations, n_extint_populations)
+```
+
+Total taxa with NA in **extinct** populations:
+```{r}
+sum(is.na(ind2_data$n_extint_populations))
+```
+
+Do taxa with NA for extant also have NA for extinct?
+
+```{r}
+ind2_data$taxon[is.na(ind2_data$n_extant_populations)] %in% ind2_data$taxon[is.na(ind2_data$n_extint_populations)]
+```
+
+So out of the `r nrow(ind2_data)`, we have **`r sum(is.na(ind2_data$n_extint_populations))` records with NA in n_extinct** and **`r sum(is.na(ind2_data$n_extant_populations))` records with NA in n_extant**. Of them, `r sum(ind2_data$taxon[is.na(ind2_data$n_extant_populations)] %in% ind2_data$taxon[is.na(ind2_data$n_extint_populations)])` have NA in both n_extant and n_extinct.
+
+
+### Plot missing data extinct populations
+```{r}
+p4<-ind2_data %>%
+  ggplot(aes(x=country_assessment, fill=is.na(n_extint_populations))) +
+  geom_bar() +
+  scale_fill_manual(labels=c("number of populations known", "missing data"),
+                    values=c("#2ca02c", "#ff7f0e")) + 
+  labs(fill="Extinct populations") +
+  xlab("") + ylab("Number of taxa") +
+  theme_light() +
+  theme(text = element_text(size = 13), legend.position = "right", panel.border = element_blank())
+p4
+```
+
+
+### Plot missing data extinct populations by country
+
+Missing data in number of extinct populations by method to define populations:
+
+```{r}
+ind2_data %>%
+  ggplot(aes(x=defined_populations_nicenames, fill=is.na(n_extint_populations)))+
+  geom_bar() +
+  coord_flip()+ 
+  scale_fill_manual(labels=c("number of populations known", "missing data"),
+                    values=c("#2ca02c", "#ff7f0e")) + 
+  labs(fill="Extinct populations") +
+  xlab("") + ylab("Number of taxa") +
+  facet_wrap(country_assessment ~., nrow = 3, scales="free_x") +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="top")
+  
+```
+
+## Distribution of Nc, Ne, types of Nc and missing extinct pops in a single figure with 4 panels:
+
+
 
 Distribution of Nc, Ne and types of Ne in a single figure with 3 panels, using count for a & b, and proportions for c:
 
 
-```{r, out.width="1000px", out.height="350px"}
+```{r, out.width="900px", out.height="1100px"}
 # plot
-plot_grid(p1, p2, p3.1, ncol=1, rel_widths = c(1,1,1), align = "v", labels=c("a)", "b)", "c)"), vjust = .7)  
+plot_grid(p1 + theme(legend.justification = c(0,.5)), # legend.justification aligns legends
+          p2 + theme(legend.justification = c(0,.5)),
+          p3 + theme(legend.justification = c(0,.5)),
+          p4 + theme(legend.justification = c(0,.5)),
+          ncol=1, rel_widths = c(1,1,1,1), align = "v", labels=c("a)", "b)", "c)", "d)"), vjust = .7)  
 ```
+
+
+
 
 ## Method to define populations used by country (alluvial)
 
@@ -946,70 +968,6 @@ panel_figure
 
 ```
 
-
-## Missing data on extant and extinct populations
-
-We have NA in indicator 2 because in some cases the number of extinct populations is unknown, therefore the operation cannot be computed. 
-
-### Counts
-Total records with NA in extant populations:
-```{r}
-sum(is.na(ind2_data$n_extant_populations))
-```
-
-Taxa with NA in extant populations:
-```{r}
-ind2_data %>%
-  filter(is.na(n_extant_populations)) %>%
-    select(country_assessment, taxonomic_group, taxon, n_extant_populations, n_extint_populations)
-```
-
-Total taxa with NA in **extinct** populations:
-```{r}
-sum(is.na(ind2_data$n_extint_populations))
-```
-
-Do taxa with NA for extant also have NA for extinct?
-
-```{r}
-ind2_data$taxon[is.na(ind2_data$n_extant_populations)] %in% ind2_data$taxon[is.na(ind2_data$n_extint_populations)]
-```
-
-So out of the `r nrow(ind2_data)`, we have **`r sum(is.na(ind2_data$n_extint_populations))` records with NA in n_extinct** and **`r sum(is.na(ind2_data$n_extant_populations))` records with NA in n_extant**. Of them, `r sum(ind2_data$taxon[is.na(ind2_data$n_extant_populations)] %in% ind2_data$taxon[is.na(ind2_data$n_extint_populations)])` have NA in both n_extant and n_extinct.
-
-
-### Plot missing data extinct populations
-```{r}
-ind2_data %>%
-  ggplot(aes(x=country_assessment, fill=is.na(n_extint_populations))) +
-  geom_bar() +
-  scale_fill_manual(labels=c("number of populations known", "missing data"),
-                    values=c("#2ca02c", "#ff7f0e")) + 
-  labs(fill="Extinct populations") +
-  xlab("") + ylab("Number of taxa") +
-  theme_light() +
-  theme(panel.border = element_blank())
-```
-
-
-### Plot missing data extinct populations by country
-
-Missing data in number of extinct populations by method to define populations:
-
-```{r}
-ind2_data %>%
-  ggplot(aes(x=defined_populations_nicenames, fill=is.na(n_extint_populations)))+
-  geom_bar() +
-  coord_flip()+ 
-  scale_fill_manual(labels=c("number of populations known", "missing data"),
-                    values=c("#2ca02c", "#ff7f0e")) + 
-  labs(fill="Extinct populations") +
-  xlab("") + ylab("Number of taxa") +
-  facet_wrap(country_assessment ~., nrow = 3, scales="free_x") +
-  theme_light() +
-  theme(panel.border = element_blank(), legend.position="top")
-  
-```
 ## Indicator 1 by type of range
 
 Indicator 1 by type of range in the entire dataset:
