@@ -127,62 +127,80 @@ if("taxon" %in% colnames(kobo_output)){
   
   close(output_conn) # Close the output file connection
   
+  required_columns <- c("genus", "species", "subspecies_variety", "GBIF_taxonID", "NCBI_taxonID", 
+                        "national_taxonID", "populationID", "PopulationName", "Origin", "IntroductionYear", 
+                        "Ne", "NeLower", "NeUpper", "NeYear", "GeneticMarkers", "GeneticMarkersOther", 
+                        "MethodNe", "SourceNe", "NcType", "NcYear", "NcMethod", "NcRange", "NcRangeDetails", 
+                        "NcPoint", "NcLower", "NcUpper", "SourceNc", "Comments")
+  
   # Further process files in the target directory
   attached_df <- data.frame()
   result_files <- list.files(path = target_dir, pattern = "\\.(txt|csv)$", full.names = TRUE) # List all text and CSV files
   for(file_path in result_files) {
     # Process each result file
     # Convert delimiter to tab and read the file
-    new_file_path <- file_path
-    file_name_without_extension <- tools::file_path_sans_ext(basename(new_file_path))
-    delimiter <- detect_delimiter(new_file_path)
-    convert_delimiter(new_file_path, delimiter)
-    df <- read_delim(new_file_path, delim = '\t')
-
-    # Check if required column names exist, if one doesn't exist, create it empity. 
+    print(paste("Processing file:", file_path))
+    # Detect delimiter and read the file
+    delimiter <- detect_delimiter(file_path)
+    convert_delimiter(file_path, delimiter)
+    temp_df <- read_delim(file_path, delim = '\t', col_names = TRUE)
     
-    
-    df <- df %>%
-      rename(population = populationID, Name = PopulationName) %>% 
-              mutate(year_assesment=substr(end,1,4)) %>%      
-              mutate(across(starts_with("IntroductionYear"), as.character)) %>%
-      mutate(across(starts_with("NeYear"), as.character)) %>%
-      mutate(across(starts_with("NcYear"), as.character)) %>%
-      mutate(across(starts_with("NcRangeDetails"), as.character))
-    
-    
-    # Find matches in "kobo_output" and merge matching rows
-    matching_row <- kobo_output %>%
-    filter(X_uuid == file_name_without_extension) %>%
-    select(country_assessment, taxonomic_group, time_populations, taxon,multiassessment, 
-    scientific_authority, name_assessor, email_assessor, kobo_tabular, genus, species, 
-    X_validation_status, X_uuid)
-
-    if(nrow(matching_row) > 0) {
-      df$genus <- matching_row$genus[1]
-      df$species <- matching_row$species[1]
-      matching_row <- matching_row %>%
-        select(-genus, -species)
-      df <- bind_cols(matching_row, df)
+    # Check if all required columns are present
+    if (all(required_columns %in% names(temp_df))) {
+      df <- temp_df
+      
+      
+      
+      # Find matches in "kobo_output" and merge matching rows
+      matching_row <- kobo_output %>%
+        filter(X_uuid == file_name_without_extension) %>%
+        select(country_assessment, taxonomic_group, time_populations, taxon,multiassessment, 
+               scientific_authority, name_assessor, email_assessor, kobo_tabular, genus, species, 
+               X_validation_status, X_uuid, end)
+      
+      if(nrow(matching_row) > 0) {
+        year_from_kobo <- substr(matching_row$end[1], 1, 4)
+        df$genus <- matching_row$genus[1]
+        df$species <- matching_row$species[1]
+        matching_row <- matching_row %>%
+          select(-genus, -species, -end)  
+        df <- bind_cols(matching_row, df)
+      } else {
+        year_from_kobo <- 2022  
+      }
+      
+      # Check if required column names exist, if one doesn't exist, create it empty.
+      df <- df %>%
+        rename(population = populationID, Name = PopulationName) %>% 
+        mutate(year_assesment = year_from_kobo) %>%
+        mutate(across(starts_with("IntroductionYear"), as.character)) %>%
+        mutate(across(starts_with("NeYear"), as.character)) %>%
+        mutate(across(starts_with("NcYear"), as.character)) %>%
+        mutate(across(starts_with("NcRangeDetails"), as.character))
+      
+      desired_order <- c(
+        "country_assessment", "taxonomic_group", "taxon", "scientific_authority", 
+        "genus", "year_assesment", "name_assessor", "email_assessor", "kobo_tabular", 
+        "time_populations", "X_validation_status", "X_uuid", "multiassessment", "population", 
+        "Name", "Origin", "IntroductionYear", "Ne", "NeLower", "NeUpper", 
+        "NeYear", "GeneticMarkers", "GeneticMarkersOther", "MethodNe", "SourceNe", 
+        "NcType", "NcYear", "NcMethod", "NcRange", "NcRangeDetails", "NcPoint", 
+        "NcLower", "NcUpper", "SourceNc", "Comments")
+      
+      df <- df %>% select(desired_order)
+      
+      # Write the modified DataFrame to new file paths (both tab and comma delimited)
+      copy_file_path <- sub("\\.txt$", "_copy.csv", file_path) 
+      write_delim(df, file_path, delim = '\t')
+      write_delim(df, copy_file_path, delim = ',')
+      
+      attached_df <- rbind(attached_df, df)
+      
+    } else {
+      print(paste("Skipping file due to missing columns:", file_path))
     }
-    
-desired_order <- c(
-  "country_assessment", "taxonomic_group", "taxon", "scientific_authority", 
-  "genus", "year_assesment", "name_assessor", "email_assessor", "kobo_tabular", 
-  "time_populations", "X_validation_status", "X_uuid", "multiassessment", "population", 
-  "Name", "Origin", "IntroductionYear", "Ne", "NeLower", "NeUpper", 
-  "NeYear", "GeneticMarkers", "GeneticMarkersOther", "MethodNe", "SourceNe", 
-  "NcType", "NcYear", "NcMethod", "NcRange", "NcRangeDetails", "NcPoint", 
-  "NcLower", "NcUpper", "SourceNc", "Comments")
-
-  df <- df %>% select(desired_order)
-
-    # Write the modified DataFrame to new file paths (both tab and comma delimited)
-    copy_file_path <- sub("\\.txt$", "_copy.csv", new_file_path) 
-    write_delim(df, new_file_path, delim = '\t')
-    write_delim(df, copy_file_path, delim = ',')
-  
-  attached_df <- rbind(attached_df, df)
   }
+  
   return(attached_df)
 }
+
