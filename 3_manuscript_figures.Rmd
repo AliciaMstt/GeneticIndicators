@@ -23,6 +23,7 @@ library(ggsankey)
 library(alluvial)
 library(viridis)
 library(cowplot)
+library(lme4)
 ```
 
 Load required functions. These custom fuctions are available at: https://github.com/AliciaMstt/GeneticIndicators
@@ -34,6 +35,7 @@ source("get_indicator3_data.R")
 source("get_metadata.R")
 source("transform_to_Ne.R")
 source("estimate_indicator1.R")
+source("get_attached_data.R")
 ```
 
 Other custom functions:
@@ -90,6 +92,7 @@ simplifiedmethods_colors<-c("#b34656", #"adaptive_traits management_units"
 ```
 
 ## Get data 
+
 Get indicators and metadata data from clean kobo output
 ```{r, echo=TRUE}
 # Get data:
@@ -110,6 +113,14 @@ head(ind3_data[,c(1:3, 9:11)])
 # extract metadata, show most relevant columns
 metadata<-get_metadata(kobo_output=kobo_clean)
 head(metadata[,c(1:3, 12, 25,26, 64)])
+```
+
+Get population data for those species assessed using the text template instead of Kobo (PENDING):
+```{r, eval=FALSE}
+ind1_data_templates<- get_attached_data(root_dir = "attachments_2023_08_16_14_07_30", # the directory after unziping the kobo attachments download  
+                  target_dir = "processed_templates", # directory were the processed templates will be written
+                  kobo_output = kobo_clean)
+
 ```
 
 
@@ -147,7 +158,7 @@ estimate_indicator1
 indicator1<-estimate_indicator1(ind1_data = ind1_data)
 ```
 
-### Proportion of maintained populations (indicator) (proportion of populations within species which are maintained)
+### Proportion of maintained populations (indicator 2) = proportion of populations within species which are maintained.
 
 Proportion of maintained populations (indicator) is the he proportion of populations within species which are maintained. This can be estimated based on the `n_extant_populations` and `n_extint_populations`, as follows:
 
@@ -156,7 +167,7 @@ ind2_data$indicator2<- ind2_data$n_extant_populations / (ind2_data$n_extant_popu
 head(ind2_data$indicator2)
 ```
 
-### Indicator 3 (number of taxa with genetic monitoring squemes)
+### Number of taxa with genetic monitoring squemes (indicator3)
 
 Indicator 3 refers to the number (count) of taxa by country in which genetic monitoring is occurring. This is stored in the variable `temp_gen_monitoring` as a "yes/no" answer for each taxon, so to estimate the indicator, we only need to count how many said "yes", keeping only one of the records when the taxon was multiassessed:
 
@@ -690,9 +701,9 @@ alluvial(foralluvial[,1:3], freq = foralluvial$n,
 
 ## Effect of method used to define populations on number of populations and Proportion of maintained populations (indicator) 
 
-### Number of maintained populations by country and method
+The analyses and plots below us a subset of data filtering outliers (>500 populations) and using the simplified methods (see above). Multiassessed species are considered independently (each assessment is a data point).
 
-Plot Number of maintained populations by country and method
+### Plot Number of maintained populations by country and method
 
 ```{r}
 ind2_data %>% 
@@ -724,19 +735,21 @@ ind2_data %>%
 levels(ind2_data$country_assessment)
 ```
 
-### Number of maintained populations by method
+### (a) Does the number of maintained pops vary with method used? 
 
 Plot number of populations by method
 ```{r, out.height="500px", out.width="1064px"}
 # Prepare data for plot with nice labels:
 # sample size of TOTAL populations
 sample_size <- ind2_data %>%
-                    filter(!is.na(indicator2)) %>% 
+                    filter(!is.na(n_extant_populations)) %>% 
+                    filter(n_extant_populations<500) %>%
                     group_by(defined_populations_nicenames) %>% summarize(num=n())
 
 # custom axis
 ## new dataframe
 df<-ind2_data %>% 
+  filter(!is.na(n_extant_populations)) %>% 
   filter(n_extant_populations<500) %>%
     # add sampling size 
   left_join(sample_size) %>%
@@ -763,41 +776,38 @@ df<-ind2_data %>%
   scale_x_discrete(limits=rev) +  
   theme(text = element_text(size = 13))
 p1
+
 ```
 
-Prepare data for ANOVA:
+Prepare data for model (remove outliers and NA in desired variable) and check n:
 ```{r}
-# subset data without massive outlier
-ind2_data_anova<- ind2_data %>% 
-                         filter(n_extant_populations<1000)
+# remove missing data 
+data_for_model<-ind2_data %>% 
+                      filter(!is.na(n_extant_populations)) %>%
+                      filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
 
-# summary of n per variable
-table(ind2_data_anova$defined_populations_simplified)
+# check n per method
+table(data_for_model$defined_populations_simplified)
+
+# total n
+nrow(data_for_model)
+
 ```
 
-One way ANOVA on the effect of the methods to define populations on the number of populations
+Run model asking: Does the number of maintained pops vary with method used? Test controlling for variation in the number of maintaiend populations among countries:
 
 ```{r}
-# One way ANOVA method
-res.anova.extant<-aov(n_extant_populations ~ defined_populations_simplified, data=ind2_data_anova)
-res.anova.extant
+m1<-glmer(data_for_model$n_extant_populations ~ data_for_model$defined_populations_simplified + 
+            (1|data_for_model$country_assessment), family ="poisson")
 ```
 
-Summary:
+See results:
 ```{r}
-summary(res.anova.extant)
-```
-
-Check for pairs that are statistically different (Tukey Honest Significant Differences, p < 0.05):
-```{r}
-# only padj < 0.05
-x<-TukeyHSD(res.anova.extant)
-x<-as.data.frame(x[[1]])
-x[x$`p adj`<0.05, ]
+summary(m1)
 ```
 
 
-### Proportion of maintained populations (indicator) by method
+### Does the proportion of maintained populations (indicator2) vary with method used?
 
 Plot
 
@@ -806,12 +816,14 @@ Plot
 # sample size of TOTAL populations
 sample_size <- ind2_data %>%
                     filter(!is.na(indicator2)) %>% 
+                    filter(n_extant_populations<500) %>% 
                     group_by(defined_populations_nicenames) %>% summarize(num=n())
 
 # custom axis
 ## new dataframe
 df<-ind2_data %>% 
   filter(n_extant_populations<500) %>%
+  filter(!is.na(indicator2)) %>% 
     # add sampling size 
   left_join(sample_size) %>%
   mutate(myaxis = paste0(defined_populations_nicenames, " (n= ", num, ")")) %>%
@@ -824,8 +836,8 @@ df<-ind2_data %>%
 ## plot for Proportion of maintained populations (indicator)
 p2<- df %>%
   filter(n_extant_populations<500) %>%
-  ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_simplified,    
-                                     fill=defined_populations_simplified)) +
+  ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_nicenames,    
+                                     fill=defined_populations_nicenames)) +
           geom_boxplot() + xlab("") + ylab("Proportion of maintained populations (indicator)") +
           geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
@@ -833,54 +845,52 @@ p2<- df %>%
   theme(panel.border = element_blank(), legend.position="none",
         plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) 
   scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
-                    breaks=levels(as.factor(ind2_data$defined_populations_simplified))) +
+                    breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
   scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(ind2_data$defined_populations_simplified))) +
+                    breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
   scale_x_discrete(limits=rev) +
   theme(text = element_text(size = 13))
 p2
 
 ```
 
-Prepare data
+Prepare data for model (remove outliers and NA in desired variable) and check n:
 ```{r}
-# subset data without massive outlier
-ind2_data_anova<- ind2_data %>% 
-  filter(indicator2<1000)
+# remove missing data 
+data_for_model<-ind2_data %>% 
+                      filter(!is.na(indicator2)) %>%
+                      filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
 
-# summary of n per variable
-table(ind2_data_anova$defined_populations_simplified)
+# check n per method
+table(data_for_model$defined_populations_simplified)
+
+# total n
+nrow(data_for_model)
+
 ```
 
-One way ANOVA 
-```{r}
-# One way ANOVA method
-res.anova.indicator2<-aov(indicator2 ~ defined_populations_simplified, data=ind2_data_anova)
-summary(res.anova.indicator2)
-```
+Run model asking: Does indicator 2 vary with method used? Controlling for variation in indicator2 among countries:
 
-Summary:
 
 ```{r}
-summary(res.anova.indicator2)
+m2<-glm(data_for_model$indicator2 ~ data_for_model$defined_populations_simplified + 
+            data_for_model$country_assessment, family ="quasibinomial")
 ```
 
-
-Check for pairs that are statistically different (Tukey Honest Significant Differences, p < 0.05):
+See results:
 ```{r}
-# only padj < 0.05
-x<-TukeyHSD(res.anova.indicator2)
-x<-as.data.frame(x[[1]])
-x[x$`p adj`<0.05, ]
+summary(m2)
 ```
 
-### Number of pops vs indicator2
+### (c) Is there a relationship between number of maintained populations and Indicator2, overall, and/or with some methods?
 
-Scatter plot of indicator2 and extant pops
+Scatter plot of indicator2 vs extant pops
 ```{r}
 p3<- ind2_data %>%
-  # filter outliers with too many pops
+  # filter outliers with too many pops and missing data
   filter(n_extant_populations<500) %>%
+  filter(!is.na(indicator2)) %>%
+  filter(!is.na(n_extant_populations)) %>%
   
   # plot
     ggplot(aes(x=n_extant_populations, y=indicator2, color=defined_populations_nicenames)) +
@@ -894,61 +904,144 @@ p3<- ind2_data %>%
     theme(text = element_text(size = 13))
 p3
 
-
-
 ```
 
-Prepare data
+Prepare data for model (remove outliers and NA in desired variable) and check n:
 ```{r}
 # remove missing data 
-ind2_data_wo_missing<-ind2_data %>% 
+data_for_model<-ind2_data %>% 
                       filter(!is.na(indicator2)) %>%
+                      filter(!is.na(n_extant_populations)) %>%
                       filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
 
+# check number of methods
+length(unique(data_for_model$defined_populations_simplified))
+
 # check n per method
-table(ind2_data_wo_missing$defined_populations_simplified)
+table(data_for_model$defined_populations_simplified)
+
+# total n
+nrow(data_for_model)
 
 ```
 
-Run GLM  model
+Run GLM  model including method. Note: the number of mantained populations varies a lot among countries, but it’s in the predictor here, not response, so don’t really need country as random factor.
+
+This model will be unbalanced and it is more parametarized, but it would be the ideal if our dataset were larger:
 ```{r}
 # run model
-m2 <- glm(ind2_data_wo_missing$indicator2 ~ ind2_data_wo_missing$n_extant_populations + 
-            ind2_data_wo_missing$defined_populations_simplified + 
-            ind2_data_wo_missing$n_extant_populations*ind2_data_wo_missing$defined_populations_simplified, family = "quasibinomial")
-m2
+m3 <- glm(data_for_model$indicator2 ~ data_for_model$n_extant_populations + 
+            data_for_model$defined_populations_simplified + 
+            data_for_model$n_extant_populations*data_for_model$defined_populations_simplified, family = "quasibinomial")
 ```
 
 Summary:
 
 ```{r}
-summary(m2)
+summary(m3)
 ```
+
+
+We run a similar model than above, but limited to relationship of interest:
+glm(indicator2 ~ N_maintained_pops, family = “quasibinomial”). 
+
+
+```{r}
+m3 <- glm(data_for_model$indicator2 ~ data_for_model$n_extant_populations, family = "quasibinomial")
+m3
+```
+
+Summary:
+```{r}
+summary(m3)
+```
+
+Because “what’s a population and how do you define them?” is such an important question, we can also test the effect of methods alone. First, subset the data to only those taxa where a single method was used: 
+
+```{r}
+ind2_single_methods<-ind2_data %>% 
+                      filter(!is.na(indicator2)) %>% 
+                      filter(n_extant_populations<500) %>%  # doesn't make a difference in the test below, but useful for 
+                      filter(defined_populations_simplified=="genetic_clusters" | 
+                             defined_populations_simplified=="geographic_boundaries" |
+                             defined_populations_simplified=="eco_biogeo_proxies" | 
+                             defined_populations_simplified=="management_units")
+
+
+# check number of methods
+length(unique(ind2_single_methods$defined_populations_simplified))
+
+# check n by method
+table(ind2_single_methods$defined_populations_simplified)
+
+# check n total
+nrow(ind2_single_methods)
+ 
+```
+
+Run model:
+
+```{r}
+# run model
+m4 <- glm(ind2_single_methods$indicator2 ~ ind2_single_methods$n_extant_populations + 
+            ind2_single_methods$defined_populations_simplified + 
+            ind2_single_methods$n_extant_populations*ind2_single_methods$defined_populations_simplified, family = "quasibinomial")
+```
+
+Summary:
+
+```{r}
+summary(m4)
+```
+
 
 
 ### Single plot 3 panels for the effect of method to define populations on Proportion of maintained populations (indicator) and number of pops
 
 Plot in three panels. 
 ```{r, out.height="380px", out.width="1130px"}
-## plot for Proportion of maintained populations (indicator) without axis labels
-p2<-ind2_data %>% 
+## plot for Proportion of maintained populations (indicator) only with n in axis labels
+
+# sample size 
+sample_size <- ind2_data %>%
+                    filter(!is.na(indicator2)) %>% 
+                    filter(n_extant_populations<500) %>% 
+                    group_by(defined_populations_nicenames) %>% summarize(num=n())
+
+# custom axis
+## new dataframe
+df<-ind2_data %>% 
   filter(n_extant_populations<500) %>%
-  ggplot(aes(x=defined_populations_simplified, y=indicator2, color=defined_populations_simplified,
-                                                             fill=defined_populations_simplified)) +
+  filter(!is.na(indicator2)) %>% 
+    # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(defined_populations_nicenames, " (n= ", num, ")")) %>%
+#myaxis needs levels in the same order than defined_populations_nicenames
+  mutate(myaxis = factor(myaxis, 
+                  levels=levels(as.factor(myaxis))[c(1,11,2:10,12)])) # reorders levels
+## Change levels of myaxis to keep only the n
+levels(df$myaxis)<-sub(".*(\\(n= \\d+\\))", "\\1", levels(df$myaxis)) # extract "(n = number)"
+
+
+p2.1<- df %>%
+  filter(n_extant_populations<500) %>%
+  ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_nicenames,    
+                                     fill=defined_populations_nicenames)) +
           geom_boxplot() + xlab("") + ylab("Proportion of maintained populations (indicator)") +
           geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
   theme_light() +
-  theme(panel.border = element_blank(), legend.position="none", axis.text.y = element_blank(),
-        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) + 
+  theme(panel.border = element_blank(), legend.position="none",
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) 
   scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
-                    breaks=levels(as.factor(ind2_data$defined_populations_simplified))) +
+                    breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
   scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(ind2_data$defined_populations_simplified))) +
+                    breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
+  scale_x_discrete(limits=rev) +
   theme(text = element_text(size = 13))
 
 # plot
-plot_grid(p1, p2, p3, ncol=3, rel_widths = c(2,1,1), align = "h", labels=c("a)", "b)", "c)"))  
+plot_grid(p1, p2.1, p3, ncol=3, rel_widths = c(1.7,1,1), align = "h", labels=c("a)", "b)", "c)"))  
 
 ```
 
@@ -956,15 +1049,15 @@ Option 2:
 ```{r}
 # panel labels
 p1<-p1+ggtitle("a)")
-p2<-p2+ggtitle("b)")
+p2.1<-p2.1+ggtitle("b)")
 p3<-p3+ggtitle("c)")
 
 # nested plot!
 panel_figure <- plot_grid(
-  plot_grid(p1, p2, ncol = 2, rel_widths = c(1.5,1)),  # Arranging p1 and p2 in 2 columns
+  plot_grid(p1, p2.1, ncol = 2, rel_widths = c(1.5,1)),  # Arranging p1 and p2 in 2 columns
   p3,                            # Placing p3 centered below p1 and p2
   ncol = 1,                      # Single column layout
-  rel_heights = c(2, 1)          # Adjust the relative heights of rows
+  rel_heights = c(1.3, 2)          # Adjust the relative heights of rows
 )
 
 panel_figure
