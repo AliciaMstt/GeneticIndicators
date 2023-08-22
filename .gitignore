@@ -1,3 +1,13 @@
-# ignore knitted version of scripts done during review and intereaction with colleagues
 
-/knitr_outputs
+# ignore output directories
+attachments_*/
+knitr_and_outputs/
+processed_templates/
+
+# ignore raw data files
+International_Genetic_Indicator_testing_V_4.0*
+
+#Mac ghosts
+.DS_Store
+.RData
+.Rhistory
