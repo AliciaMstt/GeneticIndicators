@@ -2,19 +2,18 @@
 
 
 # Define a function to process files
-get_attached_data <- function(root_dir, target_dir, kobo_output) {
+process_attached_files <- function(target_dir, kobo_output) {
 
 ## What this function does
 #  If information of more than 25 populations was be used to collect data for Ne >500 indicator (Section 5 of the Kobo form) 
 # it is possible to use a template to upload data instead of using the kobo form. 
-# This functions processes the data stored in this files, and formats it as the output of running the function get_indicator1_data.R  
+# This functions processes the data stored in a one of those files, and formats it as the output of running the function get_indicator1_data.R  
+
 
 ## Arguments:
-# root_dir = path to the directory resulting from downloading the Kobo Attachments and unziping it. 
-            # Normally this directory is called "attachments" and has many subdirectories with a long alphanumeric name, 
-            # corresponding to the Xuuid of the record. 
-  
-# target_dir = path to the directory where you want to save the output of running this function 
+# target_dir = path to the directory where the files are saved. 
+              # Normaly this would be the result of get_attached_files.R creating the directory and moving the files there
+              # files within this directory MUST be named with the Xuuid.
 # kobo_output = a data frame result with the raw (hundred of columns) Kobo output as downloaded from Kobo 
 
 ## Needed libraries:
