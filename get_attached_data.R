@@ -58,6 +58,20 @@ if("taxon" %in% colnames(kobo_output)){
     mutate(multiassessment= if_else(
       X_uuid %in% kobo_output_duplicates$X_uuid, "multiassessment", "single_assessment"))
   
+  ## Process data already including taxon column and multiassessment
+  kobo_output <- kobo_output %>% 
+  
+  # create variable with year in which assessment was done (based on date the form was completed)
+  mutate(year_assesment=substr(end,1,4)) %>%
+    
+    # make sure some variables that seem numbers are actually character,
+    # because there may be character and integer values depending on how data was written)
+    # for example in IntroductionYear, NeYear and NcYear...
+    mutate(across(starts_with("IntroductionYear"), as.character)) %>%
+    mutate(across(starts_with("NeYear"), as.character)) %>%
+    mutate(across(starts_with("NcYear"), as.character)) %>%
+    mutate(across(starts_with("NcRangeDetails"), as.character))
+  
   #### 2) Inner functions that would be used to process the files 
   
   ## Inner function to extract maximum numeric value from a string
@@ -89,8 +103,8 @@ if("taxon" %in% colnames(kobo_output)){
     })
   }
   
-  ### 4) Get the attachments files that need processing
-  print("First step: processing subdirectories looking for .txt and .csv files with population data")
+  ### 3) Get the attachments files that need processing
+  print("###           FIRST STEP: processing subdirectories looking for .txt and .csv files with population data")
   
   # Search for directories and create objects for outputs
   subfolders <- list.dirs(path = root_dir, recursive = TRUE) # List all subfolders
@@ -123,8 +137,7 @@ if("taxon" %in% colnames(kobo_output)){
         } else {
           # If no match was found, copy the file to 'No_coincidence' folder and log the non-match
           print(paste("Processing file:", file))
-          print(paste0("the uuid of the file was NOT found in the kobo metadata and the file was copied to ", target_dir, '/No_coincidence'))
-          print("uuids likely mean that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure")
+          print(paste0("the uuid of the file was NOT found in the kobo metadata and the file was copied to ", target_dir, '/No_coincidence', ". This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure"))
           no_coincidence_folder <- file.path(target_dir, 'No_coincidence')
           dir.create(no_coincidence_folder, showWarnings = FALSE)
           file.copy(from = file, to = file.path(no_coincidence_folder, new_file_name), overwrite = TRUE)
@@ -137,16 +150,15 @@ if("taxon" %in% colnames(kobo_output)){
   close(output_conn) # Close the output file connection
   
   ### 4) Further process files in the target directory to make output look like the output of get_indicator1_data()
-  print("Second step: processing text files to check their format is correct")
+  print("###           SECOND STEP:: processing text files to check their format is correct")
   
-  # columns that should exist
-  required_columns <- c("genus", "species", "subspecies_variety", "GBIF_taxonID", "NCBI_taxonID", 
-                        "national_taxonID", "populationID", "PopulationName", "Origin", "IntroductionYear", 
+  # columns with population data that should exist
+  required_pop_columns <- c("populationID", "PopulationName", "Origin", "IntroductionYear", 
                         "Ne", "NeLower", "NeUpper", "NeYear", "GeneticMarkers", "GeneticMarkersOther", 
                         "MethodNe", "SourceNe", "NcType", "NcYear", "NcMethod", "NcRange", "NcRangeDetails", 
                         "NcPoint", "NcLower", "NcUpper", "SourceNc", "Comments")
   
-  # Further process files in the target directory
+  # get files in the target directory
   attached_df <- data.frame()
   result_files <- list.files(path = target_dir, pattern = "\\.(txt|csv)$", full.names = TRUE) # List all text and CSV files
   
@@ -159,39 +171,107 @@ if("taxon" %in% colnames(kobo_output)){
     convert_delimiter(file_path, delimiter)
     temp_df <- read_delim(file_path, delim = '\t', col_names = TRUE, show_col_types = FALSE)
     
-    # Check if all required columns are present
-    if (all(required_columns %in% names(temp_df))) {
-      print("all requiered columns are present in the file")
-      df <- temp_df
-   
-      # Find matches in "kobo_output" and merge matching rows
-      matching_row <- kobo_output %>%
-        filter(X_uuid == file_name_without_extension) %>%
-        select(country_assessment, taxonomic_group, time_populations, taxon,multiassessment, 
-               scientific_authority, name_assessor, email_assessor, kobo_tabular, genus, species, 
-               X_validation_status, X_uuid, end)
+    ### 4.1) Check if all required columns are present, if missing, create them
+    if(all(required_pop_columns %in% names(temp_df))) {
+      print("all requiered population columns are present in the file :)")
+      # create working df
+      df <- temp_df 
       
-      if(nrow(matching_row) > 0) { # what is this for?
-        year_from_kobo <- substr(matching_row$end[1], 1, 4)
-        df$genus <- matching_row$genus[1]
-        df$species <- matching_row$species[1]
-        matching_row <- matching_row %>%
-          select(-genus, -species, -end)  
-        df <- bind_cols(matching_row, df)
+         } else {
+            ## tell the user and create missing columns as empty
+            # create workig df
+            df <- temp_df
+              
+            # check name of missing columns
+             missing_columns<-required_pop_columns[!(required_pop_columns %in% names(df))]
+             
+             # tell the user which columns are missing 
+             print(paste("the following column is missing in the file and it will be created as an empity variable:",  missing_columns))
+         
+             # create empty variable for each missing column
+             # Loop through the missing_variables vector and add each column
+             for (col_name in missing_columns) {
+               df <- df %>%
+                 mutate(!!col_name := NA)  # !! operator is used to "unquote" and interpret the col_name as a column name
+             }
+         }
+    
+    
+    ### 4.2)  Join population data and metadata (the file metadata will be replaced from the metadata captured in kobo to assure it is correct)
+    # Keep only population data columns and add X_uuid columm
+    df <- df %>%
+      select(all_of(required_pop_columns)) %>%
+      mutate(X_uuid = file_name_without_extension)
+    
+    # Find matches in "kobo_output" to then merge metadata matching rows with population data
+    matching_row <- kobo_output %>%
+      filter(X_uuid == file_name_without_extension) %>%
+      select(country_assessment, taxonomic_group, time_populations, taxon, multiassessment, 
+             scientific_authority, name_assessor, email_assessor, kobo_tabular, genus, species, subspecies_variety,
+             X_validation_status, X_uuid, year_assesment, GBIF_taxonID, NCBI_taxonID, 
+             national_taxonID)
+    
+    # Join kobo_out metadata and file population data
+    df<-left_join(df, matching_row, by = "X_uuid")
+    
+    ## Further clean population data
+    ## Make sure numeric columns are numbers
+    for(x in c("Ne", "NeLower", "NeUpper", "NcPoint", "NcLower", "NcUpper")){
+      if(class(df[[x]])=="character"){
+        print(paste("column", x, "is stored as character, so we will convert the decimal separator from ',' to '.' and then use as.numeric()"))
+        ## numeric variables appear as character if the decimal separator "," was used in the original file instead of "."
+        # change "," for "."
+        df[[x]]<-gsub(pattern=",", replacement=".", df[[x]])
+        # transform to numeric
+        df[[x]]<-as.numeric(df[[x]])
       } else {
-        year_from_kobo <- 2022  ## What is this for??
-      }
-      
-      # Check if required column names exist, if one doesn't exist, create it empty.
+        df[[x]]<-as.numeric(df[[x]])}
+    }
+    
+    ### 4.3) Rename and fill columns that should not be empty, if needed
+    
+    # Rename populationId and name column to match desired ind1_data names if they exits
+    if ("populationID" %in% colnames(df) && "PopulationName" %in% colnames(df)) {
       df <- df %>%
-        rename(population = populationID, Name = PopulationName) %>% 
-        mutate(year_assesment = year_from_kobo) %>%
-        mutate(across(starts_with("IntroductionYear"), as.character)) %>%
-        mutate(across(starts_with("NeYear"), as.numeric)) %>%
-        mutate(across(starts_with("NcYear"), as.numeric)) %>%
-        mutate(across(starts_with("NcRangeDetails"), as.numeric))
+        rename(population = populationID, Name = PopulationName)
+         }
+   
+      # if population id was not filled, add it.
+      df <- df %>%
+      mutate(population = ifelse(is.na(population), paste0("pop", row_number()), population)) %>%
       
-      desired_order <- c(
+      # if NcPoint data was provided then NcType should exist
+      mutate(NcType = ifelse(is.na(NcPoint), NcType, "Nc_point")) %>%
+    
+      # if NcRange data was provided then NcType should exist 
+      mutate(NcType = ifelse(is.na(NcRange), NcRange, "Nc_range"))
+    
+    
+  
+  # # Alicia: With the changes I made above (processing kobofile), I think this is not needed anymore        
+  #     if(nrow(matching_row) > 0) { # what is this for?
+  #       year_from_kobo <- substr(matching_row$end[1], 1, 4)
+  #       df$genus <- matching_row$genus[1]
+  #       df$species <- matching_row$species[1]
+  #       matching_row <- matching_row %>%
+  #         select(-genus, -species, -end)  
+  #       df <- bind_cols(matching_row, df)
+  #     } else {
+  #       year_from_kobo <- 2022  ## What is this for??
+  #     }
+  #     
+  #     # Check if required population columns exist, if one doesn't exist, create it empty.
+  #     df <- df %>%
+  #       rename(population = populationID, Name = PopulationName) %>% 
+  # #     mutate(year_assesment = year_from_kobo) %>% # this is not needed becasue it is extracted form kobo_out
+  #       mutate(across(starts_with("IntroductionYear"), as.character)) %>%
+  #       mutate(across(starts_with("NeYear"), as.numeric)) %>%
+  #       mutate(across(starts_with("NcYear"), as.numeric)) %>%
+  #       mutate(across(starts_with("NcRangeDetails"), as.numeric))
+  #     
+   
+  ### 4.4) Change columns to desired order  
+       desired_order <- c(
         "country_assessment", "taxonomic_group", "taxon", "scientific_authority", 
         "genus", "year_assesment", "name_assessor", "email_assessor", "kobo_tabular", 
         "time_populations", "X_validation_status", "X_uuid", "multiassessment", "population", 
@@ -202,28 +282,18 @@ if("taxon" %in% colnames(kobo_output)){
       
       df <- df %>% select(desired_order)
       
-      for(x in c("Ne", "NeLower", "NeUpper", "NcPoint", "NcLower", "NcUpper")){
-        if(class(df[[x]])=="character"){
-          print(paste(x, "is character, we need to convert the decimal separator from ',' to '.'"))
-          ## numeric variables appear as character if the decimal separator "," was used in the original file instead of "."
-          # change "," for "."
-          df[[x]]<-gsub(pattern=",", replacement=".", df[[x]])
-          # transform to numeric
-          df[[x]]<-as.numeric(df[[x]])
-        } else {
-          df[[x]]<-as.numeric(df[[x]])}
-        }
+
+      
+  ### 5) Save data
       
       # Write the modified DataFrame to new file paths (both tab and comma delimited)
       copy_file_path <- sub("\\.txt$", "_copy.csv", file_path) 
       write_delim(df, file_path, delim = '\t')
       write_delim(df, copy_file_path, delim = ',')
-      
+    
+      # add to object df to return at end of loop  
       attached_df <- rbind(attached_df, df)
       
-    } else {
-      print(paste("Skipping file due to missing columns:", file_path))
-    }
   }
   
   return(attached_df)
