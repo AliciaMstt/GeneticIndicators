@@ -19,10 +19,10 @@ get_attached_files <- function(root_dir, target_dir, kobo_output) {
 # kobo_output = a data frame result with the raw (hundred of columns) Kobo output as downloaded from Kobo 
 
 ## Needed libraries:
-#  library(dplyr)
-#  library(readr)
-#  library(stringr)
-#  library(tools)
+  # library(dplyr)
+  # library(readr)
+  # library(stringr)
+  # library(tools)
   
   
   ## Create target directory overwriting previous content
@@ -130,16 +130,23 @@ if("taxon" %in% colnames(kobo_output)){
         subfolder_name <- basename(subfolder) # this equals the Xuuid in Kobo
         file_name_without_extension <- subfolder_name
         extension <- tools::file_ext(file)
-        new_file_name <- paste0(subfolder_name, ".", extension)
         
         # Look for a match in kobo_output
         matching_row <- kobo_output %>%
           filter(X_uuid == file_name_without_extension)
+  
+        
+        ## Move to corresponding directory depending on match
         
         if (nrow(matching_row) > 0) {
           # If match found, copy the file to target directory and log the match
           print(paste("Processing file:", file))
           print(paste("the uuid of the file was found in the kobo metadata and the file was copied to", target_dir))
+          
+          # new file name
+          new_file_name <- paste0(matching_row$country_assessment, "_", matching_row$taxon, "_",
+                                  subfolder_name, ".", extension)
+          # copy file
           file.copy(from = file, to = file.path(target_dir, new_file_name), overwrite = TRUE)
           cat(paste("match +", file_name_without_extension), file = output_conn, sep = "\n")
           
@@ -148,6 +155,11 @@ if("taxon" %in% colnames(kobo_output)){
           print(paste("Processing file:", file))
           print(paste0("the uuid of the file was NOT found in the kobo metadata and the file was copied to ", target_dir, '/No_coincidence', ". This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure"))
           no_coincidence_folder <- file.path(target_dir, 'No_coincidence')
+          
+          # new file name
+          new_file_name <- paste0(subfolder_name, ".", extension)
+          
+          # copy to no_coincidence
           dir.create(no_coincidence_folder, showWarnings = FALSE)
           file.copy(from = file, to = file.path(no_coincidence_folder, new_file_name), overwrite = TRUE)
           cat(file_name_without_extension, file = output_conn, sep = "\n")
