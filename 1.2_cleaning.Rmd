@@ -21,11 +21,13 @@ library(dplyr)
 library(utile.tools)
 library(stringr)
 library(ggplot2)
+library(readr)
 ```
 
-Useful functions
+Useful custom functions
 ```{r}
 source("get_attached_files.R")
+source("process_attached_files.R")
 
 # not in
 "%!in%" <- function(x, y)!('%in%'(x,y))
@@ -34,7 +36,7 @@ source("get_attached_files.R")
 
 Get Kobo raw output data:
 ```{r}
-kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-08-21-13-27-33.csv", sep=";", header=TRUE) %>%
+kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-08-23-07-19-11.csv", sep=";", header=TRUE) %>%
 
 ## add  taxon column
 mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE))) %>%
@@ -444,7 +446,11 @@ write.csv(kobo_clean, "kobo_output_clean.csv", row.names = FALSE, fileEncoding =
 
 ## Check and if needed correct population data provided in the templates
 
-If information of more than 25 populations was be used to collect data for Ne >500 indicator (Section 5 of the Kobo form), it is possible to use a template to upload data instead of using the kobo form. The function below parses kobo attachments directories to look for files with population data, matches them against their metadata (captured in kobo) and stores them in an target directory.
+If information of more than 25 populations was be used to collect data for Ne >500 indicator (Section 5 of the Kobo form), it is possible to use a template to upload data instead of using the kobo form. This section of the cleaning script processes those files to create a single clean object as expected to estimate indicator 1 (Ne >500).
+
+### Get files 
+
+The function below parses kobo attachments directories to look for files with population data, matches them against their metadata (captured in kobo) and stores them in an target directory.
 
 ```{r}
 source("get_attached_files.R")
@@ -452,7 +458,7 @@ source("get_attached_files.R")
 target_dir = "processed_templates" # directory were the processed templates will be written
 
 # run function
-get_attached_files(root_dir = "attachments_2023_08_16_14_07_30", # the directory after unziping the kobo attachments download  
+get_attached_files(root_dir = "attachments_2023_08_23", # the directory after unziping the kobo attachments download  
                   target_dir = target_dir, # directory were the processed templates will be written
                   kobo_output = kobo_clean)
 
@@ -462,7 +468,8 @@ Check which files were saved:
 
 ```{r}
 result_files<-list.files(target_dir) %>% 
-  str_subset("^(?!file_names\\.txt$).*\\.txt$")
+  str_subset("^(?!file_names\\.txt$).*\\.txt$") # exclude the file "file_names.txt"
+result_files
 ```
 How many?
 ```{r}
@@ -473,9 +480,9 @@ How many files were expected based on the kobo_output answers?
 
 ```{r}
 expected<-kobo_clean %>% 
-            #  filter(taxon %!in% to_check$taxon) %>% 
+               filter(taxon %!in% to_check$taxon) %>% 
                filter(kobo_tabular=="tabular") %>% 
-               select(country_assessment, name_assessor, taxon, X_uuid, map_populations_URL)
+               select(country_assessment, name_assessor, taxon, X_uuid, map_populations_URL, end)
 
 nrow(expected)
 ```
@@ -491,12 +498,42 @@ missing<-expected[expected$X_uuid %!in% str_match(result_files, "_([0-9a-f-]{36}
 missing
 ```
 
-How many are in No_coincidence? (This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But we can manually check each file if we are unsure):
+How many files were sent to  No_coincidence? (This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But we can manually check each file if we are unsure):
 
 ```{r}
 list.files(paste0(target_dir,"/No_coincidence"))
 ```
 
+
+### Check and, if needed clean attachment data.
+
+```{r}
+
+  
+source("process_attached_files.R")
+
+# files separated by "\t": australia, france, japan, US
+df<-data.frame()
+for(i in result_files[c(1:2, 16:17, 18:20, 21:24)]){ # change numbers to reflect files with the desired delim
+  file<-paste0(target_dir,"/", i)
+  cat(paste("##     processing file: \n",
+            "    ", file, " \n", " \n"))
+  temp<-process_attached_files(file_path=file, kobo_output=kobo_clean, delim = '\t')
+  df<-rbind(df, temp)
+  cat(" \n")
+}
+
+## files separated by ";" belgium 
+for(i in result_files[c(3:15)]){
+  file<-paste0(target_dir,"/", i)
+  cat(paste("##     processing file: \n",
+            "    ", file, " \n", " \n"))
+  temp<-process_attached_files(file_path=file, kobo_output=kobo_clean, delim = ";")
+  df<-rbind(df, temp)
+  cat(" \n")
+}
+  
+```
 
 
 

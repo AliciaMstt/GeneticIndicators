@@ -1648,14 +1648,16 @@ within this script to ensure reproducibility.</p>
 library(dplyr)
 library(utile.tools)
 library(stringr)
-library(ggplot2)</code></pre>
-<p>Useful functions</p>
+library(ggplot2)
+library(readr)</code></pre>
+<p>Useful custom functions</p>
 <pre class="r"><code>source(&quot;get_attached_files.R&quot;)
+source(&quot;process_attached_files.R&quot;)
 
 # not in
 &quot;%!in%&quot; &lt;- function(x, y)!(&#39;%in%&#39;(x,y))</code></pre>
 <p>Get Kobo raw output data:</p>
-<pre class="r"><code>kobo_output&lt;-read.csv(file=&quot;International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-08-21-13-27-33.csv&quot;, sep=&quot;;&quot;, header=TRUE) %&gt;%
+<pre class="r"><code>kobo_output&lt;-read.csv(file=&quot;International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-08-23-07-19-11.csv&quot;, sep=&quot;;&quot;, header=TRUE) %&gt;%
 
 ## add  taxon column
 mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE))) %&gt;%
@@ -2109,7 +2111,12 @@ templates</h2>
 <p>If information of more than 25 populations was be used to collect
 data for Ne &gt;500 indicator (Section 5 of the Kobo form), it is
 possible to use a template to upload data instead of using the kobo
-form. The function below parses kobo attachments directories to look for
+form. This section of the cleaning script processes those files to
+create a single clean object as expected to estimate indicator 1 (Ne
+&gt;500).</p>
+<div id="get-files" class="section level3">
+<h3>Get files</h3>
+<p>The function below parses kobo attachments directories to look for
 files with population data, matches them against their metadata
 (captured in kobo) and stores them in an target directory.</p>
 <pre class="r"><code>source(&quot;get_attached_files.R&quot;)
@@ -2117,114 +2124,237 @@ files with population data, matches them against their metadata
 target_dir = &quot;processed_templates&quot; # directory were the processed templates will be written
 
 # run function
-get_attached_files(root_dir = &quot;attachments_2023_08_16_14_07_30&quot;, # the directory after unziping the kobo attachments download  
+get_attached_files(root_dir = &quot;attachments_2023_08_23&quot;, # the directory after unziping the kobo attachments download  
                   target_dir = target_dir, # directory were the processed templates will be written
                   kobo_output = kobo_clean)</code></pre>
-<pre><code>## [1] &quot;the kobo_output data already contained a taxon column, that was used instead of creating a new one&quot;
-## [1] &quot;###            Processing subdirectories looking for .txt and .csv files with population data     ###&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/018d6a54-b069-4bdb-845c-85249bdf2bbb/bartramstonecrop-CMupdated-15_37_2.txt&quot;
+<pre><code>## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/018d6a54-b069-4bdb-845c-85249bdf2bbb/bartramstonecrop-CMupdated-15_37_2.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/0c73afc5-678f-4690-a2ea-3af8987521bb/AustraliaNotechisscutatusGlennShea-14_6_53.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/0c73afc5-678f-4690-a2ea-3af8987521bb/AustraliaNotechisscutatusGlennShea-14_6_53.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/11bc7f83-c0e5-415a-b9ed-9e0b5c63ab3d/populations_data_Primula_sieboldii-10_30_24.csv&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/11bc7f83-c0e5-415a-b9ed-9e0b5c63ab3d/populations_data_Primula_sieboldii-10_30_24.csv 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/126bc473-9f32-4038-85d6-4172db492c94/Belgium_Scorzonera_humilis_Luis_Castillo_populations_data-16_5_41.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/126bc473-9f32-4038-85d6-4172db492c94/Belgium_Scorzonera_humilis_Luis_Castillo_populations_data-16_5_41.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/1483ad83-a129-4254-981c-8ccb1bebab65/Swertia_pseudochinensis_Japan_Fumiko-Ishihama-15_39_8.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/1483ad83-a129-4254-981c-8ccb1bebab65/Swertia_pseudochinensis_Japan_Fumiko-Ishihama-15_39_8.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/167fb798-49dc-4370-95fa-7db2d922da41/Belgium_Pelophylax_lessonae_populations_data-13_40_50.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/167fb798-49dc-4370-95fa-7db2d922da41/Belgium_Pelophylax_lessonae_populations_data-13_40_50.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/246ec40b-52d6-4f20-90cb-432e6d4fd090/Vireo_atricapilla-13_17_54.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/246ec40b-52d6-4f20-90cb-432e6d4fd090/Vireo_atricapilla-13_17_54.txt 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/255026e4-63eb-4511-a7a5-a73b2f6475ce/unitedstatesrhynchosporacrinipestaylorstack-15_25_3.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/255026e4-63eb-4511-a7a5-a73b2f6475ce/unitedstatesrhynchosporacrinipestaylorstack-15_25_3.txt 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/27c6fc64-0ff3-4cc1-a120-e03933157b2b/Calotriton-asper_France_Iris-Lang-18_9_18.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/27c6fc64-0ff3-4cc1-a120-e03933157b2b/Calotriton-asper_France_Iris-Lang-18_9_18.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/2c62d331-38db-4f90-b4ed-8fe60ba9ce57/RGCT-23_53_34.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/2c62d331-38db-4f90-b4ed-8fe60ba9ce57/RGCT-23_53_34.txt 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/3052229d-69f0-4913-b8f5-affbdae58684/population_data_golden-paintbrush-2018-19_29_48.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/3052229d-69f0-4913-b8f5-affbdae58684/population_data_golden-paintbrush-2018-19_29_48.txt 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/3201ddb0-7017-4420-b560-4c34d1759767/AustraliaLitoriabooroolongensisCatherineGrueber-21_33_0.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/3201ddb0-7017-4420-b560-4c34d1759767/AustraliaLitoriabooroolongensisCatherineGrueber-21_33_0.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/38033c59-e546-4074-8044-0b615767837a/USGeorgiaBully-15_22_42.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/38033c59-e546-4074-8044-0b615767837a/USGeorgiaBully-15_22_42.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/3c9892f2-b001-4c73-9974-a9bbe1b1b6e6/Belgium_Mentha_pulegium_Luis_Castillo_populations_data-18_49_49.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/3c9892f2-b001-4c73-9974-a9bbe1b1b6e6/Belgium_Mentha_pulegium_Luis_Castillo_populations_data-18_49_49.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/3d40e09e-4829-45cf-8023-7ed2c30eec6b/population_data_golden-paintbrush-2018-CMupdated-15_1_30.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/3d40e09e-4829-45cf-8023-7ed2c30eec6b/population_data_golden-paintbrush-2018-CMupdated-15_1_30.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/41ba0efb-de24-44b5-806c-b5472b574eb7/swedensalmosalarviktoriakoppa-14_33_9.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/41ba0efb-de24-44b5-806c-b5472b574eb7/swedensalmosalarviktoriakoppa-14_33_9.txt 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/444fec06-60b1-4b7c-9c70-1541a23b922b/swedenpelobatesfuscusviktoriakoppa-23_18_24.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/444fec06-60b1-4b7c-9c70-1541a23b922b/swedenpelobatesfuscusviktoriakoppa-23_18_24.txt 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/51e5eec1-1442-48f9-b4e3-0e5b9651b432/populations_data_Primula_sieboldii-10_30_24.csv&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/51e5eec1-1442-48f9-b4e3-0e5b9651b432/populations_data_Primula_sieboldii-10_30_24.csv 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/524becc3-ceff-4404-9931-48d60ebee340/populations_data_apache_trout-14_21_31-11_4_39.csv&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/524becc3-ceff-4404-9931-48d60ebee340/populations_data_apache_trout-14_21_31-11_4_39.csv 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/543af6c3-03d8-4389-9516-cedd021080c0/Belgium_Coronella_austriaca_Luis_Castillo-21_47_41.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/543af6c3-03d8-4389-9516-cedd021080c0/Belgium_Coronella_austriaca_Luis_Castillo-21_47_41.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/57f44b3b-2f6f-4217-9d15-3272ab2d22bf/Belgium_Triturus_cristatus_Luis_Castillo-17_46_18.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/57f44b3b-2f6f-4217-9d15-3272ab2d22bf/Belgium_Triturus_cristatus_Luis_Castillo-17_46_18.txt 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/5a7a958a-de21-4555-abe3-0517512f90d6/swedencanthophorusimpressusviktoriakoppa-23_8_13.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/5a7a958a-de21-4555-abe3-0517512f90d6/swedencanthophorusimpressusviktoriakoppa-23_8_13.txt 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/674a87f8-9f29-43d6-b951-a1fecb5e590d/francecapraibexlang-1_2_20.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/674a87f8-9f29-43d6-b951-a1fecb5e590d/francecapraibexlang-1_2_20.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/6fd4cd1f-51a3-4a32-a7a6-97845e843d1a/unitedstatesrhynchosporacrinipestaylorstack-15_24_50.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/6fd4cd1f-51a3-4a32-a7a6-97845e843d1a/unitedstatesrhynchosporacrinipestaylorstack-15_24_50.txt 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/74a0fcc3-ae70-454f-b4bc-79db1ab01350/BelgiumDactylorhizasphagnicolaLuisCastillo-22_56_45.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/74a0fcc3-ae70-454f-b4bc-79db1ab01350/BelgiumDactylorhizasphagnicolaLuisCastillo-22_56_45.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/7edb2e6e-2273-430c-9ff3-41ff5db0a3c8/unitedstatesgraptopetalumbartramiitaylorstack-13_11_42.txt&quot;
-## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/867bdbf5-8e36-4acd-a968-221882d2f544/Belgium_Natrix_helvetica_Luis_Castillo-7_36_54.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/7e6dae7a-2c2c-4cec-a42a-346f2237a841/Belgium_Salamandra_salamandra_Luis_Castillo-18_14_45.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/8f5bf252-a877-4b52-8ea6-ad69324bb994/UnitedStatesChrysopsisfloridanaSheelaTurbek-11_55_4.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/7edb2e6e-2273-430c-9ff3-41ff5db0a3c8/unitedstatesgraptopetalumbartramiitaylorstack-13_11_42.txt 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/954d9b63-78e2-4eb7-86bc-862f43055795/ALVA_AU_NcTable-18_59_11.txt&quot;
-## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/a2a41170-03ed-4c52-a3f0-cb247d38a7b1/Belgium_Salamandra_salamandra_Luis_Castillo-18_34_46.txt&quot;
-## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/b6c5419c-1c13-4a68-b788-b98700565799/USRioGrandeCutthroatTrout-19_38_52.txt&quot;
-## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/cc4f5e1c-cc34-47fa-be80-f7e9c19b4796/Belgium_Lucanus_cervus_Luis_Castillo_populations_data-18_7_12.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/867bdbf5-8e36-4acd-a968-221882d2f544/Belgium_Natrix_helvetica_Luis_Castillo-7_36_54.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/cf6d6047-5fd5-4028-808c-0749d3ab0512/Belgium_Rhodeus_sericeus_Luis_Castillo-16_47_18.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/8f5bf252-a877-4b52-8ea6-ad69324bb994/UnitedStatesChrysopsisfloridanaSheelaTurbek-11_55_4.txt 
+## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/954d9b63-78e2-4eb7-86bc-862f43055795/ALVA_AU_NcTable-18_59_11.txt 
+## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/a2a41170-03ed-4c52-a3f0-cb247d38a7b1/Belgium_Salamandra_salamandra_Luis_Castillo-18_34_46.txt 
+## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/b6c5419c-1c13-4a68-b788-b98700565799/USRioGrandeCutthroatTrout-19_38_52.txt 
+## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/b9147bcf-bb30-42d9-b4bd-8dc6182537e9/Belgium_Triturus_cristatus_Luis_Castillo-18_13_29.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/d511dfdb-82bc-4a29-b739-4f0eb9c92e31/populations_data_Illigera_luzonensis-10_40_45.csv&quot;
-## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/d939ac91-8d2d-46f1-a0e2-555523fdadb4/Dryobates_borealis_Funk-13_51_34.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/cc4f5e1c-cc34-47fa-be80-f7e9c19b4796/Belgium_Lucanus_cervus_Luis_Castillo_populations_data-18_7_12.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/dbe1eacb-ff88-4386-970f-dcdb08822ed4/swedengymnadenianigraviktoriakoppa-21_9_6.txt&quot;
-## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/dfb84b12-2aba-4311-aa29-2483e8281ca1/Primula_sieboldii_Japan_Fumiko-Ishihama-15_41_22.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/cf6d6047-5fd5-4028-808c-0749d3ab0512/Belgium_Rhodeus_sericeus_Luis_Castillo-16_47_18.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/e3267487-af31-4b3d-9cdd-d1df0c3ad6eb/swedenlissotritonvulgarisviktoriakoppa-20_57_27.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/d511dfdb-82bc-4a29-b739-4f0eb9c92e31/populations_data_Illigera_luzonensis-10_40_45.csv 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/e3a6fb81-1aab-4965-a0ab-d332a402eb59/swedentrituruscristatusviktoriaköppä-23_33_6.txt&quot;
-## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/ea550e1b-0a63-4f73-9785-8c019353b693/Illigera_luzonensis_Japan_Fumiko-Ishihama-15_42_40.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/d939ac91-8d2d-46f1-a0e2-555523fdadb4/Dryobates_borealis_Funk-13_51_34.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/ef5272d3-82e3-40d1-826a-d633fafd892e/populations_data_Swertia_pseudochinensis-9_26_0.csv&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/dbe1eacb-ff88-4386-970f-dcdb08822ed4/swedengymnadenianigraviktoriakoppa-21_9_6.txt 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/f455e01d-3525-4cd2-b825-7d0102ee7772/swedenhalichoerusgrypusviktoriakoppa-22_38_29.txt&quot;
-## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/fc33594e-9b81-4dee-81fd-13f6a3b87911/Belgium_Rana_arvalis_Luis_Castillo-20_59_58.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/dfb84b12-2aba-4311-aa29-2483e8281ca1/Primula_sieboldii_Japan_Fumiko-Ishihama-15_41_22.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/fd17c864-c7e2-42ad-8a35-ab389ba152e2/Belgium_Wahlenbergia_hederacea_Luis_Castillo_populations_data-17_22_8.txt&quot;
-## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/fd26a87d-ae79-4254-ba80-57ec36444744/swedenepidaleacalamitaviktoriaköppä-12_2_50.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/e3267487-af31-4b3d-9cdd-d1df0c3ad6eb/swedenlissotritonvulgarisviktoriakoppa-20_57_27.txt 
 ## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
-## [1] &quot;Processing file: attachments_2023_08_16_14_07_30/b777f0bf79924d45ab7157705a420e5d/ff9fc0ed-87d0-4f70-8083-d92dade3fe62/Belgium_Alytes_obstetricans_Luis_Castillo-23_33_8.txt&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/e3a6fb81-1aab-4965-a0ab-d332a402eb59/swedentrituruscristatusviktoriaköppä-23_33_6.txt 
+## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/ea550e1b-0a63-4f73-9785-8c019353b693/Illigera_luzonensis_Japan_Fumiko-Ishihama-15_42_40.txt 
+## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/ef5272d3-82e3-40d1-826a-d633fafd892e/populations_data_Swertia_pseudochinensis-9_26_0.csv 
+## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/f455e01d-3525-4cd2-b825-7d0102ee7772/swedenhalichoerusgrypusviktoriakoppa-22_38_29.txt 
+## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/fc33594e-9b81-4dee-81fd-13f6a3b87911/Belgium_Rana_arvalis_Luis_Castillo-20_59_58.txt 
+## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/fd17c864-c7e2-42ad-8a35-ab389ba152e2/Belgium_Wahlenbergia_hederacea_Luis_Castillo_populations_data-17_22_8.txt 
+## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/fd26a87d-ae79-4254-ba80-57ec36444744/swedenepidaleacalamitaviktoriaköppä-12_2_50.txt 
+## [1] &quot;the uuid of the file was NOT found in the kobo metadata and the file was copied to processed_templates/No_coincidence. This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure&quot;
+## 
+##  ########        Processing file: 
+##  attachments_2023_08_23/b777f0bf79924d45ab7157705a420e5d/ff9fc0ed-87d0-4f70-8083-d92dade3fe62/Belgium_Alytes_obstetricans_Luis_Castillo-23_33_8.txt 
 ## [1] &quot;the uuid of the file was found in the kobo metadata and the file was copied to processed_templates&quot;</code></pre>
 <p>Check which files were saved:</p>
 <pre class="r"><code>result_files&lt;-list.files(target_dir) %&gt;% 
-  str_subset(&quot;^(?!file_names\\.txt$).*\\.txt$&quot;)</code></pre>
+  str_subset(&quot;^(?!file_names\\.txt$).*\\.txt$&quot;) # exclude the file &quot;file_names.txt&quot;
+result_files</code></pre>
+<pre><code>##  [1] &quot;australia_Litoria booroolongensis_3201ddb0-7017-4420-b560-4c34d1759767.txt&quot;    
+##  [2] &quot;australia_Notechis scutatus_0c73afc5-678f-4690-a2ea-3af8987521bb.txt&quot;          
+##  [3] &quot;belgium_Alytes obstetricans_ff9fc0ed-87d0-4f70-8083-d92dade3fe62.txt&quot;          
+##  [4] &quot;belgium_Coronella austriaca_543af6c3-03d8-4389-9516-cedd021080c0.txt&quot;          
+##  [5] &quot;belgium_Dactylorhiza sphagnicola_74a0fcc3-ae70-454f-b4bc-79db1ab01350.txt&quot;     
+##  [6] &quot;belgium_Lucanus cervus_cc4f5e1c-cc34-47fa-be80-f7e9c19b4796.txt&quot;               
+##  [7] &quot;belgium_Mentha pulegium_3c9892f2-b001-4c73-9974-a9bbe1b1b6e6.txt&quot;              
+##  [8] &quot;belgium_Natrix helvetica_867bdbf5-8e36-4acd-a968-221882d2f544.txt&quot;             
+##  [9] &quot;belgium_Pelophylax lessonae_167fb798-49dc-4370-95fa-7db2d922da41.txt&quot;          
+## [10] &quot;belgium_Rana arvalis_fc33594e-9b81-4dee-81fd-13f6a3b87911.txt&quot;                 
+## [11] &quot;belgium_Rhodeus sericeus_cf6d6047-5fd5-4028-808c-0749d3ab0512.txt&quot;             
+## [12] &quot;belgium_Salamandra salamandra_7e6dae7a-2c2c-4cec-a42a-346f2237a841.txt&quot;        
+## [13] &quot;belgium_Scorzonera humilis_126bc473-9f32-4038-85d6-4172db492c94.txt&quot;           
+## [14] &quot;belgium_Triturus cristatus_b9147bcf-bb30-42d9-b4bd-8dc6182537e9.txt&quot;           
+## [15] &quot;belgium_Wahlenbergia hederacea_fd17c864-c7e2-42ad-8a35-ab389ba152e2.txt&quot;       
+## [16] &quot;france_Calotriton asper_27c6fc64-0ff3-4cc1-a120-e03933157b2b.txt&quot;              
+## [17] &quot;france_Capra ibex_674a87f8-9f29-43d6-b951-a1fecb5e590d.txt&quot;                    
+## [18] &quot;japan_Illigera luzonensis_ea550e1b-0a63-4f73-9785-8c019353b693.txt&quot;            
+## [19] &quot;japan_Primula sieboldii_dfb84b12-2aba-4311-aa29-2483e8281ca1.txt&quot;              
+## [20] &quot;japan_Swertia pseudochinensis_1483ad83-a129-4254-981c-8ccb1bebab65.txt&quot;        
+## [21] &quot;united_states_Castilleja levisecta_3d40e09e-4829-45cf-8023-7ed2c30eec6b.txt&quot;   
+## [22] &quot;united_states_Graptopetalum bartramii_018d6a54-b069-4bdb-845c-85249bdf2bbb.txt&quot;
+## [23] &quot;united_states_Picoides borealis_d939ac91-8d2d-46f1-a0e2-555523fdadb4.txt&quot;      
+## [24] &quot;united_states_Sideroxylon thornei_38033c59-e546-4074-8044-0b615767837a.txt&quot;</code></pre>
 <p>How many?</p>
 <pre class="r"><code>length(result_files)</code></pre>
-<pre><code>## [1] 22</code></pre>
+<pre><code>## [1] 24</code></pre>
 <p>How many files were expected based on the kobo_output answers?</p>
 <pre class="r"><code>expected&lt;-kobo_clean %&gt;% 
-            #  filter(taxon %!in% to_check$taxon) %&gt;% 
+               filter(taxon %!in% to_check$taxon) %&gt;% 
                filter(kobo_tabular==&quot;tabular&quot;) %&gt;% 
-               select(country_assessment, name_assessor, taxon, X_uuid, map_populations_URL)
+               select(country_assessment, name_assessor, taxon, X_uuid, map_populations_URL, end)
 
 nrow(expected)</code></pre>
 <pre><code>## [1] 38</code></pre>
@@ -2240,36 +2370,204 @@ nrow(expected)</code></pre>
 missing</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["country_assessment"],"name":[1],"type":["chr"],"align":["left"]},{"label":["name_assessor"],"name":[2],"type":["chr"],"align":["left"]},{"label":["taxon"],"name":[3],"type":["chr"],"align":["left"]},{"label":["X_uuid"],"name":[4],"type":["chr"],"align":["left"]},{"label":["map_populations_URL"],"name":[5],"type":["chr"],"align":["left"]}],"data":[{"1":"united_states","2":"Sheela Turbek","3":"Chrysopsis floridana","4":"1b1a22d3-5000-4bf3-9e0b-3196014109fe","5":"","_rn_":"4"},{"1":"united_states","2":"Emma Spence","3":"Toxolasma lividum","4":"e7a67f42-cc28-47cc-be82-be9cbae72e5f","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2F079d1e29-4ad0-4e25-b000-cc4e689120f0%2FMap_TOLI-10_51_31.png","_rn_":"5"},{"1":"united_states","2":"Lily Durkee","3":"Glyptemys muhlenbergii","4":"821883bf-55b6-44ac-b1ce-e8af35e230cc","5":"","_rn_":"6"},{"1":"united_states","2":"Sean Hoban","3":"Oncorhynchus apache","4":"524becc3-ceff-4404-9931-48d60ebee340","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2F524becc3-ceff-4404-9931-48d60ebee340%2Fapache_trout_map-11_0_14.JPG","_rn_":"8"},{"1":"united_states","2":"Taylor Stack","3":"Pseudemys rubriventris","4":"78fc47a4-c14a-433e-b5ca-292c619f8a50","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2Faed25247-e5ed-4dd5-93f5-652b5723165c%2FNorthern_Red-bellied_cooter_range-10_38_17.png","_rn_":"10"},{"1":"united_states","2":"Taylor Stack","3":"Rhynchospora crinipes","4":"2de1cf01-26d9-48ad-a35d-43c2b1b8dfe0","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2F6fd4cd1f-51a3-4a32-a7a6-97845e843d1a%2FHairy-peduncled_beakrush_range-16_7_51.png","_rn_":"14"},{"1":"sweden","2":"Viktoria Köppä","3":"Triturus cristatus","4":"020c7679-7dfb-488f-b8b0-ed8283cfb5b0","5":"","_rn_":"15"},{"1":"sweden","2":"Viktoria Köppä","3":"Epidalea calamita","4":"36210ca0-2fec-4e13-a617-3c1f90741f22","5":"","_rn_":"16"},{"1":"united_states","2":"Taylor Stack","3":"Rhynchospora crinipes","4":"00d9deec-844d-4dbd-b439-2b060c60f1e1","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2F255026e4-63eb-4511-a7a5-a73b2f6475ce%2FHairy-peduncled_beakrush_range-16_7_44.png","_rn_":"18"},{"1":"united_states","2":"Austin Koontz","3":"Alasmidonta varicosa","4":"2836fb5e-21c9-456e-9df8-7ae0d2656fc3","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2F954d9b63-78e2-4eb7-86bc-862f43055795%2FMap-14_44_28.pdf","_rn_":"19"},{"1":"united_states","2":"Erica Robertson","3":"Vireo atricapilla","4":"91bf443a-426d-45af-a5f6-8e368063c31e","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2F36db5bfe-b071-45ec-8c91-7d52fa949c3a%2FBlack-capped_vireo-11_41_22.png","_rn_":"20"},{"1":"united_states","2":"Caitlin Miller","3":"Oncorhynchus clarkii virginalis","4":"7721b5b2-622c-46d9-a356-fb8599d8509f","5":"","_rn_":"21"},{"1":"sweden","2":"Viktoria Köppä","3":"Salmo salar","4":"7f82d9c4-814e-40b0-a01e-4744fa370458","5":"","_rn_":"23"},{"1":"united_states","2":"Emma Spence","3":"Toxolasma lividum","4":"ae031359-4550-4c31-bd6f-f51c667579c4","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2Fae031359-4550-4c31-bd6f-f51c667579c4%2FMap_TOLI-11_18_32.png","_rn_":"29"},{"1":"belgium","2":"Luis Castillo","3":"Triturus cristatus","4":"b9147bcf-bb30-42d9-b4bd-8dc6182537e9","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2F57f44b3b-2f6f-4217-9d15-3272ab2d22bf%2FTriturus_cristatus_map-17_47_46.png","_rn_":"31"},{"1":"belgium","2":"Luis Castillo","3":"Salamandra salamandra","4":"7e6dae7a-2c2c-4cec-a42a-346f2237a841","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2Fa2a41170-03ed-4c52-a3f0-cb247d38a7b1%2FSalamandra_salamandra_map-18_37_37.png","_rn_":"32"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["country_assessment"],"name":[1],"type":["chr"],"align":["left"]},{"label":["name_assessor"],"name":[2],"type":["chr"],"align":["left"]},{"label":["taxon"],"name":[3],"type":["chr"],"align":["left"]},{"label":["X_uuid"],"name":[4],"type":["chr"],"align":["left"]},{"label":["map_populations_URL"],"name":[5],"type":["chr"],"align":["left"]},{"label":["end"],"name":[6],"type":["chr"],"align":["left"]}],"data":[{"1":"united_states","2":"Sheela Turbek","3":"Chrysopsis floridana","4":"1b1a22d3-5000-4bf3-9e0b-3196014109fe","5":"","6":"2023-06-26T11:41:05.899-04:00","_rn_":"4"},{"1":"united_states","2":"Emma Spence","3":"Toxolasma lividum","4":"e7a67f42-cc28-47cc-be82-be9cbae72e5f","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2F079d1e29-4ad0-4e25-b000-cc4e689120f0%2FMap_TOLI-10_51_31.png","6":"2023-06-23T11:32:02.840-05:00","_rn_":"5"},{"1":"united_states","2":"Lily Durkee","3":"Glyptemys muhlenbergii","4":"821883bf-55b6-44ac-b1ce-e8af35e230cc","5":"","6":"2023-07-12T11:25:02.864-04:00","_rn_":"6"},{"1":"united_states","2":"Sean Hoban","3":"Oncorhynchus apache","4":"524becc3-ceff-4404-9931-48d60ebee340","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2F524becc3-ceff-4404-9931-48d60ebee340%2Fapache_trout_map-11_0_14.JPG","6":"2023-04-09T11:08:28.686-05:00","_rn_":"8"},{"1":"united_states","2":"Taylor Stack","3":"Pseudemys rubriventris","4":"78fc47a4-c14a-433e-b5ca-292c619f8a50","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2Faed25247-e5ed-4dd5-93f5-652b5723165c%2FNorthern_Red-bellied_cooter_range-10_38_17.png","6":"2023-06-22T12:54:33.371-05:00","_rn_":"10"},{"1":"united_states","2":"Taylor Stack","3":"Rhynchospora crinipes","4":"2de1cf01-26d9-48ad-a35d-43c2b1b8dfe0","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2F6fd4cd1f-51a3-4a32-a7a6-97845e843d1a%2FHairy-peduncled_beakrush_range-16_7_51.png","6":"2023-07-12T15:42:16.027-06:00","_rn_":"14"},{"1":"sweden","2":"Viktoria Köppä","3":"Triturus cristatus","4":"020c7679-7dfb-488f-b8b0-ed8283cfb5b0","5":"","6":"2023-07-27T14:09:04.112+02:00","_rn_":"15"},{"1":"sweden","2":"Viktoria Köppä","3":"Epidalea calamita","4":"36210ca0-2fec-4e13-a617-3c1f90741f22","5":"","6":"2023-08-01T00:39:27.277+02:00","_rn_":"16"},{"1":"united_states","2":"Taylor Stack","3":"Rhynchospora crinipes","4":"00d9deec-844d-4dbd-b439-2b060c60f1e1","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2F255026e4-63eb-4511-a7a5-a73b2f6475ce%2FHairy-peduncled_beakrush_range-16_7_44.png","6":"2023-07-12T15:42:27.302-06:00","_rn_":"18"},{"1":"united_states","2":"Austin Koontz","3":"Alasmidonta varicosa","4":"2836fb5e-21c9-456e-9df8-7ae0d2656fc3","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2F954d9b63-78e2-4eb7-86bc-862f43055795%2FMap-14_44_28.pdf","6":"2023-07-26T12:28:07.108-05:00","_rn_":"19"},{"1":"united_states","2":"Erica Robertson","3":"Vireo atricapilla","4":"91bf443a-426d-45af-a5f6-8e368063c31e","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2F36db5bfe-b071-45ec-8c91-7d52fa949c3a%2FBlack-capped_vireo-11_41_22.png","6":"2023-07-12T23:07:41.503-06:00","_rn_":"20"},{"1":"united_states","2":"Caitlin Miller","3":"Oncorhynchus clarkii virginalis","4":"7721b5b2-622c-46d9-a356-fb8599d8509f","5":"","6":"2023-06-28T11:33:07.198-05:00","_rn_":"21"},{"1":"sweden","2":"Viktoria Köppä","3":"Salmo salar","4":"7f82d9c4-814e-40b0-a01e-4744fa370458","5":"","6":"2023-08-01T00:30:06.454+02:00","_rn_":"23"},{"1":"united_states","2":"Emma Spence","3":"Toxolasma lividum","4":"ae031359-4550-4c31-bd6f-f51c667579c4","5":"https://kc.kobotoolbox.org/media/original?media_file=amastretta%2Fattachments%2Fb777f0bf79924d45ab7157705a420e5d%2Fae031359-4550-4c31-bd6f-f51c667579c4%2FMap_TOLI-11_18_32.png","6":"2023-06-23T11:30:42.157-05:00","_rn_":"29"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
-<p>How many are in No_coincidence? (This likely means that the species
-assessment was corrected in kobo and the system does not delete the old
-file. But we can manually check each file if we are unsure):</p>
+<p>How many files were sent to No_coincidence? (This likely means that
+the species assessment was corrected in kobo and the system does not
+delete the old file. But we can manually check each file if we are
+unsure):</p>
 <pre class="r"><code>list.files(paste0(target_dir,&quot;/No_coincidence&quot;))</code></pre>
-<pre><code>##  [1] &quot;11bc7f83-c0e5-415a-b9ed-9e0b5c63ab3d.csv&quot;
-##  [2] &quot;246ec40b-52d6-4f20-90cb-432e6d4fd090.txt&quot;
-##  [3] &quot;255026e4-63eb-4511-a7a5-a73b2f6475ce.txt&quot;
-##  [4] &quot;2c62d331-38db-4f90-b4ed-8fe60ba9ce57.txt&quot;
-##  [5] &quot;3052229d-69f0-4913-b8f5-affbdae58684.txt&quot;
-##  [6] &quot;41ba0efb-de24-44b5-806c-b5472b574eb7.txt&quot;
-##  [7] &quot;444fec06-60b1-4b7c-9c70-1541a23b922b.txt&quot;
-##  [8] &quot;51e5eec1-1442-48f9-b4e3-0e5b9651b432.csv&quot;
-##  [9] &quot;57f44b3b-2f6f-4217-9d15-3272ab2d22bf.txt&quot;
-## [10] &quot;5a7a958a-de21-4555-abe3-0517512f90d6.txt&quot;
-## [11] &quot;6fd4cd1f-51a3-4a32-a7a6-97845e843d1a.txt&quot;
-## [12] &quot;7edb2e6e-2273-430c-9ff3-41ff5db0a3c8.txt&quot;
-## [13] &quot;8f5bf252-a877-4b52-8ea6-ad69324bb994.txt&quot;
-## [14] &quot;954d9b63-78e2-4eb7-86bc-862f43055795.txt&quot;
-## [15] &quot;a2a41170-03ed-4c52-a3f0-cb247d38a7b1.txt&quot;
-## [16] &quot;b6c5419c-1c13-4a68-b788-b98700565799.txt&quot;
-## [17] &quot;d511dfdb-82bc-4a29-b739-4f0eb9c92e31.csv&quot;
-## [18] &quot;dbe1eacb-ff88-4386-970f-dcdb08822ed4.txt&quot;
-## [19] &quot;e3267487-af31-4b3d-9cdd-d1df0c3ad6eb.txt&quot;
-## [20] &quot;e3a6fb81-1aab-4965-a0ab-d332a402eb59.txt&quot;
-## [21] &quot;ef5272d3-82e3-40d1-826a-d633fafd892e.csv&quot;
-## [22] &quot;f455e01d-3525-4cd2-b825-7d0102ee7772.txt&quot;
-## [23] &quot;fd26a87d-ae79-4254-ba80-57ec36444744.txt&quot;</code></pre>
+<pre><code>##  [1] &quot;11bc7f83-c0e5-415a-b9ed-9e0b5c63ab3d_populations_data_Primula_sieboldii-10_30_24.csv&quot;           
+##  [2] &quot;246ec40b-52d6-4f20-90cb-432e6d4fd090_Vireo_atricapilla-13_17_54.txt&quot;                            
+##  [3] &quot;255026e4-63eb-4511-a7a5-a73b2f6475ce_unitedstatesrhynchosporacrinipestaylorstack-15_25_3.txt&quot;   
+##  [4] &quot;2c62d331-38db-4f90-b4ed-8fe60ba9ce57_RGCT-23_53_34.txt&quot;                                         
+##  [5] &quot;3052229d-69f0-4913-b8f5-affbdae58684_population_data_golden-paintbrush-2018-19_29_48.txt&quot;       
+##  [6] &quot;41ba0efb-de24-44b5-806c-b5472b574eb7_swedensalmosalarviktoriakoppa-14_33_9.txt&quot;                 
+##  [7] &quot;444fec06-60b1-4b7c-9c70-1541a23b922b_swedenpelobatesfuscusviktoriakoppa-23_18_24.txt&quot;           
+##  [8] &quot;51e5eec1-1442-48f9-b4e3-0e5b9651b432_populations_data_Primula_sieboldii-10_30_24.csv&quot;           
+##  [9] &quot;57f44b3b-2f6f-4217-9d15-3272ab2d22bf_Belgium_Triturus_cristatus_Luis_Castillo-17_46_18.txt&quot;     
+## [10] &quot;5a7a958a-de21-4555-abe3-0517512f90d6_swedencanthophorusimpressusviktoriakoppa-23_8_13.txt&quot;      
+## [11] &quot;6fd4cd1f-51a3-4a32-a7a6-97845e843d1a_unitedstatesrhynchosporacrinipestaylorstack-15_24_50.txt&quot;  
+## [12] &quot;7edb2e6e-2273-430c-9ff3-41ff5db0a3c8_unitedstatesgraptopetalumbartramiitaylorstack-13_11_42.txt&quot;
+## [13] &quot;8f5bf252-a877-4b52-8ea6-ad69324bb994_UnitedStatesChrysopsisfloridanaSheelaTurbek-11_55_4.txt&quot;   
+## [14] &quot;954d9b63-78e2-4eb7-86bc-862f43055795_ALVA_AU_NcTable-18_59_11.txt&quot;                              
+## [15] &quot;a2a41170-03ed-4c52-a3f0-cb247d38a7b1_Belgium_Salamandra_salamandra_Luis_Castillo-18_34_46.txt&quot;  
+## [16] &quot;b6c5419c-1c13-4a68-b788-b98700565799_USRioGrandeCutthroatTrout-19_38_52.txt&quot;                    
+## [17] &quot;d511dfdb-82bc-4a29-b739-4f0eb9c92e31_populations_data_Illigera_luzonensis-10_40_45.csv&quot;         
+## [18] &quot;dbe1eacb-ff88-4386-970f-dcdb08822ed4_swedengymnadenianigraviktoriakoppa-21_9_6.txt&quot;             
+## [19] &quot;e3267487-af31-4b3d-9cdd-d1df0c3ad6eb_swedenlissotritonvulgarisviktoriakoppa-20_57_27.txt&quot;       
+## [20] &quot;e3a6fb81-1aab-4965-a0ab-d332a402eb59_swedentrituruscristatusviktoriaköppä-23_33_6.txt&quot;          
+## [21] &quot;ef5272d3-82e3-40d1-826a-d633fafd892e_populations_data_Swertia_pseudochinensis-9_26_0.csv&quot;       
+## [22] &quot;f455e01d-3525-4cd2-b825-7d0102ee7772_swedenhalichoerusgrypusviktoriakoppa-22_38_29.txt&quot;         
+## [23] &quot;fd26a87d-ae79-4254-ba80-57ec36444744_swedenepidaleacalamitaviktoriaköppä-12_2_50.txt&quot;</code></pre>
+</div>
+<div id="check-and-if-needed-clean-attachment-data." class="section level3">
+<h3>Check and, if needed clean attachment data.</h3>
+<pre class="r"><code>source(&quot;process_attached_files.R&quot;)
+
+# files separated by &quot;\t&quot;: australia, france, japan, US
+df&lt;-data.frame()
+for(i in result_files[c(1:2, 16:17, 18:20, 21:24)]){ # change numbers to reflect files with the desired delim
+  file&lt;-paste0(target_dir,&quot;/&quot;, i)
+  cat(paste(&quot;##     processing file: \n&quot;,
+            &quot;    &quot;, file, &quot; \n&quot;, &quot; \n&quot;))
+  temp&lt;-process_attached_files(file_path=file, kobo_output=kobo_clean, delim = &#39;\t&#39;)
+  df&lt;-rbind(df, temp)
+  cat(&quot; \n&quot;)
+}</code></pre>
+<pre><code>## ##     processing file: 
+##       processed_templates/australia_Litoria booroolongensis_3201ddb0-7017-4420-b560-4c34d1759767.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+## [1] &quot;If there is no Nc data, NcMethod and NcType should be NA, this was not the case so NA were introduced to replace the value. Check original data to make sure it is correct&quot;</code></pre>
+<pre><code>## Note: Using an external vector in selections is ambiguous.
+## ℹ Use `all_of(desired_order)` instead of `desired_order` to silence this message.
+## ℹ See &lt;https://tidyselect.r-lib.org/reference/faq-external-vector.html&gt;.
+## This message is displayed once per session.</code></pre>
+<pre><code>##  
+## ##     processing file: 
+##       processed_templates/australia_Notechis scutatus_0c73afc5-678f-4690-a2ea-3af8987521bb.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+## [1] &quot;varible NeLower is stored as character and should be numeric, so this function will: 1) check if there are (), for instance `86 (95% CI)`, and remove them keeping only the value outside (). 2) convert the decimal separator from &#39;,&#39; to &#39;.&#39;; and 3) use as.numeric(). Check the original data to make sure the transformation was correct&quot;
+## [1] &quot;varible NeUpper is stored as character and should be numeric, so this function will: 1) check if there are (), for instance `86 (95% CI)`, and remove them keeping only the value outside (). 2) convert the decimal separator from &#39;,&#39; to &#39;.&#39;; and 3) use as.numeric(). Check the original data to make sure the transformation was correct&quot;
+## [1] &quot;If there is no Nc data, NcMethod and NcType should be NA, this was not the case so NA were introduced to replace the value. Check original data to make sure it is correct&quot;
+##  
+## ##     processing file: 
+##       processed_templates/france_Calotriton asper_27c6fc64-0ff3-4cc1-a120-e03933157b2b.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+## [1] &quot;If there is no Nc data, NcMethod and NcType should be NA, this was not the case so NA were introduced to replace the value. Check original data to make sure it is correct&quot;
+##  
+## ##     processing file: 
+##       processed_templates/france_Capra ibex_674a87f8-9f29-43d6-b951-a1fecb5e590d.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+##  
+## ##     processing file: 
+##       processed_templates/japan_Illigera luzonensis_ea550e1b-0a63-4f73-9785-8c019353b693.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+##  
+## ##     processing file: 
+##       processed_templates/japan_Primula sieboldii_dfb84b12-2aba-4311-aa29-2483e8281ca1.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+## [1] &quot;If there is no Nc data, NcMethod and NcType should be NA, this was not the case so NA were introduced to replace the value. Check original data to make sure it is correct&quot;
+##  
+## ##     processing file: 
+##       processed_templates/japan_Swertia pseudochinensis_1483ad83-a129-4254-981c-8ccb1bebab65.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+## [1] &quot;If there is no Nc data, NcMethod and NcType should be NA, this was not the case so NA were introduced to replace the value. Check original data to make sure it is correct&quot;
+##  
+## ##     processing file: 
+##       processed_templates/united_states_Castilleja levisecta_3d40e09e-4829-45cf-8023-7ed2c30eec6b.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+##  
+## ##     processing file: 
+##       processed_templates/united_states_Graptopetalum bartramii_018d6a54-b069-4bdb-845c-85249bdf2bbb.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+## [1] &quot;NcPoint data was provided so NcType should exist but was not provided, setting NcType = `Nc_point` for all pops&quot;
+## [1] &quot;If there is no Nc data, NcMethod and NcType should be NA, this was not the case so NA were introduced to replace the value. Check original data to make sure it is correct&quot;
+##  
+## ##     processing file: 
+##       processed_templates/united_states_Picoides borealis_d939ac91-8d2d-46f1-a0e2-555523fdadb4.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+## [1] &quot;NcPoint data was provided so NcType should exist but was not provided, setting NcType = `Nc_point` for all pops&quot;
+##  
+## ##     processing file: 
+##       processed_templates/united_states_Sideroxylon thornei_38033c59-e546-4074-8044-0b615767837a.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+## [1] &quot;NcPoint data was provided so NcType should exist but was not provided, setting NcType = `Nc_point` for all pops&quot;
+## [1] &quot;NcRange data was provided so NcType should exist but was not provided, setting NcType = `Nc_range` for all pops&quot;
+## </code></pre>
+<pre class="r"><code>## files separated by &quot;;&quot; belgium 
+for(i in result_files[c(3:15)]){
+  file&lt;-paste0(target_dir,&quot;/&quot;, i)
+  cat(paste(&quot;##     processing file: \n&quot;,
+            &quot;    &quot;, file, &quot; \n&quot;, &quot; \n&quot;))
+  temp&lt;-process_attached_files(file_path=file, kobo_output=kobo_clean, delim = &quot;;&quot;)
+  df&lt;-rbind(df, temp)
+  cat(&quot; \n&quot;)
+}</code></pre>
+<pre><code>## ##     processing file: 
+##       processed_templates/belgium_Alytes obstetricans_ff9fc0ed-87d0-4f70-8083-d92dade3fe62.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+##  
+## ##     processing file: 
+##       processed_templates/belgium_Coronella austriaca_543af6c3-03d8-4389-9516-cedd021080c0.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+##  
+## ##     processing file: 
+##       processed_templates/belgium_Dactylorhiza sphagnicola_74a0fcc3-ae70-454f-b4bc-79db1ab01350.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+##  
+## ##     processing file: 
+##       processed_templates/belgium_Lucanus cervus_cc4f5e1c-cc34-47fa-be80-f7e9c19b4796.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+## [1] &quot;If there is no Nc data, NcMethod and NcType should be NA, this was not the case so NA were introduced to replace the value. Check original data to make sure it is correct&quot;
+##  
+## ##     processing file: 
+##       processed_templates/belgium_Mentha pulegium_3c9892f2-b001-4c73-9974-a9bbe1b1b6e6.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+##  
+## ##     processing file: 
+##       processed_templates/belgium_Natrix helvetica_867bdbf5-8e36-4acd-a968-221882d2f544.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+##  
+## ##     processing file: 
+##       processed_templates/belgium_Pelophylax lessonae_167fb798-49dc-4370-95fa-7db2d922da41.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+## [1] &quot;NcRange data was provided so NcType should exist but was not provided, setting NcType = `Nc_range` for all pops&quot;
+## [1] &quot;If there is no Nc data, NcMethod and NcType should be NA, this was not the case so NA were introduced to replace the value. Check original data to make sure it is correct&quot;
+##  
+## ##     processing file: 
+##       processed_templates/belgium_Rana arvalis_fc33594e-9b81-4dee-81fd-13f6a3b87911.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+## [1] &quot;If there is no Nc data, NcMethod and NcType should be NA, this was not the case so NA were introduced to replace the value. Check original data to make sure it is correct&quot;
+##  
+## ##     processing file: 
+##       processed_templates/belgium_Rhodeus sericeus_cf6d6047-5fd5-4028-808c-0749d3ab0512.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+##  
+## ##     processing file: 
+##       processed_templates/belgium_Salamandra salamandra_7e6dae7a-2c2c-4cec-a42a-346f2237a841.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+## [1] &quot;If there is no Nc data, NcMethod and NcType should be NA, this was not the case so NA were introduced to replace the value. Check original data to make sure it is correct&quot;
+##  
+## ##     processing file: 
+##       processed_templates/belgium_Scorzonera humilis_126bc473-9f32-4038-85d6-4172db492c94.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+##  
+## ##     processing file: 
+##       processed_templates/belgium_Triturus cristatus_b9147bcf-bb30-42d9-b4bd-8dc6182537e9.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+## [1] &quot;If there is no Nc data, NcMethod and NcType should be NA, this was not the case so NA were introduced to replace the value. Check original data to make sure it is correct&quot;
+##  
+## ##     processing file: 
+##       processed_templates/belgium_Wahlenbergia hederacea_fd17c864-c7e2-42ad-8a35-ab389ba152e2.txt  
+##   
+## [1] &quot;all requiered population columns are present in the file :)&quot;
+## </code></pre>
+</div>
 </div>
 <div id="session-info-for-reproducibility-purposes" class="section level2">
 <h2>Session Info for reproducibility purposes:</h2>
@@ -2289,21 +2587,22 @@ file. But we can manually check each file if we are unsure):</p>
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-## [1] ggplot2_3.4.1     stringr_1.4.0     utile.tools_0.2.7 dplyr_1.0.9      
-## [5] tidyr_1.2.0      
+## [1] readr_2.1.2       ggplot2_3.4.1     stringr_1.4.0     utile.tools_0.2.7
+## [5] dplyr_1.0.9       tidyr_1.2.0      
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] pillar_1.7.0     bslib_0.3.1      compiler_4.2.1   jquerylib_0.1.4 
-##  [5] tools_4.2.1      digest_0.6.29    gtable_0.3.0     jsonlite_1.8.0  
-##  [9] evaluate_0.15    lifecycle_1.0.3  tibble_3.1.7     pkgconfig_2.0.3 
-## [13] rlang_1.0.6      cli_3.6.0        DBI_1.1.3        rstudioapi_0.13 
-## [17] yaml_2.3.5       xfun_0.31        fastmap_1.1.0    withr_2.5.0     
-## [21] knitr_1.39       generics_0.1.3   vctrs_0.5.2      sass_0.4.1      
-## [25] grid_4.2.1       tidyselect_1.1.2 glue_1.6.2       R6_2.5.1        
-## [29] fansi_1.0.3      rmarkdown_2.14   purrr_0.3.4      magrittr_2.0.3  
-## [33] scales_1.2.0     ellipsis_0.3.2   htmltools_0.5.5  assertthat_0.2.1
-## [37] colorspace_2.0-3 utf8_1.2.2       stringi_1.7.6    munsell_0.5.0   
-## [41] crayon_1.5.1</code></pre>
+##  [5] tools_4.2.1      bit_4.0.4        digest_0.6.29    gtable_0.3.0    
+##  [9] jsonlite_1.8.0   evaluate_0.15    lifecycle_1.0.3  tibble_3.1.7    
+## [13] pkgconfig_2.0.3  rlang_1.0.6      cli_3.6.0        DBI_1.1.3       
+## [17] rstudioapi_0.13  parallel_4.2.1   yaml_2.3.5       xfun_0.31       
+## [21] fastmap_1.1.0    withr_2.5.0      knitr_1.39       hms_1.1.1       
+## [25] generics_0.1.3   vctrs_0.5.2      sass_0.4.1       bit64_4.0.5     
+## [29] grid_4.2.1       tidyselect_1.1.2 glue_1.6.2       R6_2.5.1        
+## [33] fansi_1.0.3      vroom_1.5.7      rmarkdown_2.14   tzdb_0.3.0      
+## [37] purrr_0.3.4      magrittr_2.0.3   scales_1.2.0     ellipsis_0.3.2  
+## [41] htmltools_0.5.5  assertthat_0.2.1 colorspace_2.0-3 utf8_1.2.2      
+## [45] stringi_1.7.6    munsell_0.5.0    crayon_1.5.1</code></pre>
 </div>
 
 
