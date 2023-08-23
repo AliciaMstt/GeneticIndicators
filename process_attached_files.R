@@ -178,7 +178,9 @@ process_attached_files <- function(file_path, kobo_output, delim){
         mutate(NcMethod = ifelse(condition, NA , NcMethod),
                NcType = ifelse(condition, NA , NcType))
                
-      
+      # change all "" (empty) cells to NA
+      df <- df %>%
+      mutate_all(list(~na_if(.,"")))
     
   ### 4) Change columns to desired order  
        desired_order <- c(
