@@ -53,21 +53,23 @@ get_attached_files <- function(root_dir, target_dir, kobo_output) {
     files <- list.files(path = subfolder, pattern = "\\.(txt|csv)$", full.names = TRUE)
     if(length(files) > 0){
       for(file in files){
+        # Log which file is being processed 
+        cat("\n ########        Processing file:", "\n", file, "\n") # adding \n creates a nice space between files to facilitate reading the log
+        
         # Extract details like subfolder name, file extension, and new file name
         subfolder_name <- basename(subfolder) # this equals the Xuuid in Kobo
-        file_name_without_extension <- subfolder_name
+        Xuuid_subfolder <- subfolder_name
         extension <- tools::file_ext(file)
         
-        # Look for a match in kobo_output
+        # Look for a match of the subfolder Xuuid and the record Xuuid in kobo_output
         matching_row <- kobo_output %>%
-          filter(X_uuid == file_name_without_extension)
+          filter(X_uuid == Xuuid_subfolder)
   
         
         ## Move to corresponding directory depending on match
         
         if (nrow(matching_row) > 0) {
           # If match found, copy the file to target directory and log the match
-          cat("\n ########        Processing file:", "\n", file) # this creates a nice space between files to facilitate reading the log
           print(paste("the uuid of the file was found in the kobo metadata and the file was copied to", target_dir))
           
           # new file name
@@ -75,21 +77,20 @@ get_attached_files <- function(root_dir, target_dir, kobo_output) {
                                   subfolder_name, ".", extension)
           # copy file
           file.copy(from = file, to = file.path(target_dir, new_file_name), overwrite = TRUE)
-          cat(paste("match +", file_name_without_extension), file = output_conn, sep = "\n")
+          cat(paste("match +", Xuuid_subfolder), file = output_conn, sep = "\n")
           
         } else {
           # If no match was found, copy the file to 'No_coincidence' folder and log the non-match
-          print(paste("Processing file:", file))
           print(paste0("the uuid of the file was NOT found in the kobo metadata and the file was copied to ", target_dir, '/No_coincidence', ". This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But check if you are unsure"))
           no_coincidence_folder <- file.path(target_dir, 'No_coincidence')
           
-          # new file name
-          new_file_name <- paste0(subfolder_name, ".", extension)
+          # new file name (add the Xuuid at the start)
+          new_file_name <- paste(subfolder_name, basename(file), sep="_")
           
           # copy to no_coincidence
           dir.create(no_coincidence_folder, showWarnings = FALSE)
           file.copy(from = file, to = file.path(no_coincidence_folder, new_file_name), overwrite = TRUE)
-          cat(file_name_without_extension, file = output_conn, sep = "\n")
+          cat(Xuuid_subfolder, file = output_conn, sep = "\n")
         }
       }
     }
