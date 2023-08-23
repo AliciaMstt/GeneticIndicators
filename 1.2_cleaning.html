@@ -2377,7 +2377,8 @@ missing</code></pre>
 the species assessment was corrected in kobo and the system does not
 delete the old file. But we can manually check each file if we are
 unsure):</p>
-<pre class="r"><code>list.files(paste0(target_dir,&quot;/No_coincidence&quot;))</code></pre>
+<pre class="r"><code>no_coincidence&lt;-data.frame(file=list.files(paste0(target_dir,&quot;/No_coincidence&quot;)))
+no_coincidence$file</code></pre>
 <pre><code>##  [1] &quot;11bc7f83-c0e5-415a-b9ed-9e0b5c63ab3d_populations_data_Primula_sieboldii-10_30_24.csv&quot;           
 ##  [2] &quot;246ec40b-52d6-4f20-90cb-432e6d4fd090_Vireo_atricapilla-13_17_54.txt&quot;                            
 ##  [3] &quot;255026e4-63eb-4511-a7a5-a73b2f6475ce_unitedstatesrhynchosporacrinipestaylorstack-15_25_3.txt&quot;   
@@ -2401,6 +2402,45 @@ unsure):</p>
 ## [21] &quot;ef5272d3-82e3-40d1-826a-d633fafd892e_populations_data_Swertia_pseudochinensis-9_26_0.csv&quot;       
 ## [22] &quot;f455e01d-3525-4cd2-b825-7d0102ee7772_swedenhalichoerusgrypusviktoriakoppa-22_38_29.txt&quot;         
 ## [23] &quot;fd26a87d-ae79-4254-ba80-57ec36444744_swedenepidaleacalamitaviktoriaköppä-12_2_50.txt&quot;</code></pre>
+<p>Manually check no_coincidence files:</p>
+<pre class="r"><code># create column for commeents
+no_coincidence$comments&lt;-rep(NA, nrow(no_coincidence))
+
+
+## Manually check records
+
+# populations_data_Primula_sieboldii-10_30_24.csv
+no_coincidence &lt;- no_coincidence %&gt;%
+  mutate(comments = ifelse(
+         file==&quot;11bc7f83-c0e5-415a-b9ed-9e0b5c63ab3d_populations_data_Primula_sieboldii-10_30_24.csv&quot;,
+         &quot;Primula_sieboldii was submitted in another file with a matching Xuuid&quot;, comments))
+
+# Vireo_atricapilla-13_17_54.txt
+kobo_clean %&gt;%
+  filter(taxon==&quot;Vireo atricapilla&quot;) %&gt;%
+  select(country_assessment, kobo_tabular, pop_tabular_file, pop_tabular_file_URL, X__version__)
+
+# comment
+no_coincidence &lt;- no_coincidence %&gt;%
+    mutate(comments = ifelse(
+         file==&quot;246ec40b-52d6-4f20-90cb-432e6d4fd090_Vireo_atricapilla-13_17_54.txt&quot;,
+         &quot;Vireo atricapilla was evaluated in the US with the Xuuid 91bf443a-426d-45af-a5f6-8e368063c31e&quot;, comments))
+
+    mutate(comments = ifelse(
+         file==&quot;&quot;,
+         &quot;&quot;, comments)) %&gt;%
+    mutate(comments = ifelse(
+         file==&quot;&quot;,
+         &quot;&quot;, comments)) %&gt;%
+    mutate(comments = ifelse(
+         file==&quot;&quot;,
+         &quot;&quot;, comments)) %&gt;%
+    mutate(comments = ifelse(
+         file==&quot;&quot;,
+         &quot;&quot;, comments)) %&gt;%
+    mutate(comments = ifelse(
+         file==&quot;&quot;,
+         &quot;&quot;, comments)) %&gt;%</code></pre>
 </div>
 <div id="check-and-if-needed-clean-attachment-data." class="section level3">
 <h3>Check and, if needed clean attachment data.</h3>
@@ -2567,6 +2607,13 @@ for(i in result_files[c(3:15)]){
 ##   
 ## [1] &quot;all requiered population columns are present in the file :)&quot;
 ## </code></pre>
+<pre class="r"><code>ind1_data_from_templates&lt;-df</code></pre>
+<p>Check data looks as it should:</p>
+<pre class="r"><code>class(ind1_data_from_templates$NcPoint)</code></pre>
+<pre><code>## [1] &quot;numeric&quot;</code></pre>
+<p>Save indicator 1 data extracted from the tabular kobo templates into
+a file with indicator 1 data format:</p>
+<pre class="r"><code>write.csv(ind1_data_from_templates, &quot;ind1_data_from_templates.csv&quot;, row.names = FALSE)</code></pre>
 </div>
 </div>
 <div id="session-info-for-reproducibility-purposes" class="section level2">

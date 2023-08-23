@@ -16,6 +16,7 @@ Load required libraries:
 ```{r, warning=FALSE, message=FALSE}
 library(tidyr)
 library(dplyr)
+library(readr)
 library(utile.tools)
 library(stringr)
 library(ggplot2)
@@ -35,7 +36,6 @@ source("get_indicator3_data.R")
 source("get_metadata.R")
 source("transform_to_Ne.R")
 source("estimate_indicator1.R")
-source("get_attached_data.R")
 ```
 
 Other custom functions:
@@ -115,12 +115,15 @@ metadata<-get_metadata(kobo_output=kobo_clean)
 head(metadata[,c(1:3, 12, 25,26, 64)])
 ```
 
-Get population data for those species assessed using the text template instead of Kobo (PENDING):
-```{r, eval=FALSE}
-ind1_data_templates<- get_attached_data(root_dir = "attachments_2023_08_16_14_07_30", # the directory after unziping the kobo attachments download  
-                  target_dir = "processed_templates", # directory were the processed templates will be written
-                  kobo_output = kobo_clean)
+Get population data for those species assessed using the tabular text template instead of Kobo. This file was produced by the script `1.2_cleaning.Rmd`
+```{r}
+ind1_data_from_templates<-read.csv(file="ind1_data_from_templates.csv")
 
+```
+
+Add data recorded using the population template to the ind1_data already in the nice format.
+```{r}
+ind1_data<-rbind(ind1_data, ind1_data_from_templates)
 ```
 
 

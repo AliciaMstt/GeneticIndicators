@@ -501,8 +501,54 @@ missing
 How many files were sent to  No_coincidence? (This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But we can manually check each file if we are unsure):
 
 ```{r}
-list.files(paste0(target_dir,"/No_coincidence"))
+no_coincidence<-data.frame(file=list.files(paste0(target_dir,"/No_coincidence")))
+no_coincidence$file
 ```
+
+Manually check no_coincidence files:
+
+```{r, eval=FALSE}
+# create column for commeents
+no_coincidence$comments<-rep(NA, nrow(no_coincidence))
+
+
+## Manually check records
+
+# populations_data_Primula_sieboldii-10_30_24.csv
+no_coincidence <- no_coincidence %>%
+  mutate(comments = ifelse(
+         file=="11bc7f83-c0e5-415a-b9ed-9e0b5c63ab3d_populations_data_Primula_sieboldii-10_30_24.csv",
+         "Primula_sieboldii was submitted in another file with a matching Xuuid", comments))
+
+# Vireo_atricapilla-13_17_54.txt
+kobo_clean %>%
+  filter(taxon=="Vireo atricapilla") %>%
+  select(country_assessment, kobo_tabular, pop_tabular_file, pop_tabular_file_URL, X__version__)
+
+# comment
+no_coincidence <- no_coincidence %>%
+    mutate(comments = ifelse(
+         file=="246ec40b-52d6-4f20-90cb-432e6d4fd090_Vireo_atricapilla-13_17_54.txt",
+         "Vireo atricapilla was evaluated in the US with the Xuuid 91bf443a-426d-45af-a5f6-8e368063c31e", comments))
+
+    mutate(comments = ifelse(
+         file=="",
+         "", comments)) %>%
+    mutate(comments = ifelse(
+         file=="",
+         "", comments)) %>%
+    mutate(comments = ifelse(
+         file=="",
+         "", comments)) %>%
+    mutate(comments = ifelse(
+         file=="",
+         "", comments)) %>%
+    mutate(comments = ifelse(
+         file=="",
+         "", comments)) %>%
+
+```
+
 
 
 ### Check and, if needed clean attachment data.
@@ -532,7 +578,23 @@ for(i in result_files[c(3:15)]){
   df<-rbind(df, temp)
   cat(" \n")
 }
+
+ind1_data_from_templates<-df
   
+```
+
+
+Check data looks as it should:
+
+```{r}
+class(ind1_data_from_templates$NcPoint)
+```
+
+
+Save indicator 1 data extracted from the tabular kobo templates into a file with indicator 1 data format:
+
+```{r}
+write.csv(ind1_data_from_templates, "ind1_data_from_templates.csv", row.names = FALSE)
 ```
 
 
