@@ -11,10 +11,11 @@ process_attached_files <- function(file_path, kobo_output, delim){
 
 
 ## Arguments:
-# target_file = a df product of reading the file that needs to be processed 
+# target_file = path to a file that needs to be processed 
               # Normaly the path to this file would be the "target_dir", the result of get_attached_files.R creating the directory and moving the files there
-              # The file MUST be named with the Xuuid.txt (as resulting from running get_attached_files.R)
+              # The file MUST include the Xuuid in the file name  (as resulting from running get_attached_files.R)
 # kobo_output = a data frame result with the raw (hundreds of columns) Kobo output as downloaded from Kobo 
+# delim = delimiter of the file ("," ";", "\t", etc) to be passed to read_delim()
 
 ## Needed libraries:
 #  library(dplyr)
