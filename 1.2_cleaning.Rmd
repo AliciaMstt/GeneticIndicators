@@ -429,6 +429,24 @@ happy_message<-"congratulations! there are no more taxa with issues to be correc
 
 ```
 
+## Change Managment Unitis for Dispersal-buffer in Method to define populations.
+
+The method "management units" to define populations was interpreted differently by countries. Namely, Belgium called "management units" a method in which they created a buffer polygons based on reported dispersal distances for each species around observation points, which are used as occurrence points. Polygons that overlap are fused together, and the resulting polygon, along with the points falling within its area, are considered a single population. However, for other countries "management units" refers to managed populations in the wild, sometimes enclosed, for instance as part of hunting schemes. Since we would be evaluating the effect of method on the indicators, we decided to separate management units into real management units and dispersal buffers, accordingly to which methods were used. This is also reflected in the versions of the Kobo form.
+
+```{r}
+# select management_units that need to be changed to "dispersal_buffer" 
+  # look for "managegment_units" in belgium and change that text to "dispersal_buffer" keeping any_text before or after
+kobo_clean$defined_populations <- ifelse(kobo_clean$country_assessment == "belgium",
+                                         gsub("management_units", "dispersal_buffer", kobo_clean$defined_populations),
+                                         kobo_clean$defined_populations)
+
+  
+# Check resutls look as expected:
+grep("dispersal_buffer", levels(as.factor(kobo_clean$defined_populations)), value=TRUE)
+
+```
+
+
 ## Save the clean koboutput version:
 
 Remove from the clean version any remaining taxa with issues

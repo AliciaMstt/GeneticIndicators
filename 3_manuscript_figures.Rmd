@@ -72,12 +72,13 @@ IUCNcolors_regional<-c("darkorchid2", "brown2", "darkorange", "yellow", "green",
 taxoncolors<-cividis(12) # same than using cividis(length(levels(as.factor(metadata$taxonomic_group))))
 
 ## Colors for simplified methods to define populations 
-# assuming the levels (see how this was created in the section "Simplify combinations of methods to define populations"): of running levels(as.factor(ind2_data$defined_populations_simplified))
+# assuming the levels (see how this was created in the section "Simplify combinations of methods to define populations"): of running levels(as.factor(ind2_data$defined_populations_simplified)) (after new order)
 
 # get a set of colors to highlight genetic and geographic with similar colors
 
 simplifiedmethods_colors<-c("#b34656", #"adaptive_traits management_units"
                             "#b34656", # "management_units" 
+                            "#FFA07A", #"dispersal_buffer"
                             "#7f611b", # "eco_biogeo_proxies"
                             "#668cd1", # "genetic_clusters"     
                             "#668cd1", # "genetic_clusters eco_biogeo_proxies"     
@@ -200,11 +201,11 @@ Save indicators data and metadata to csv files, useful for analyses outside R.
 
 ```{r}
 # save processed data
-write.csv(ind1_data, "ind1_data.csv", row.names = FALSE, fileEncoding = "UTF-8")
-write.csv(indicators_full, "indicators_full.csv", row.names = FALSE, fileEncoding = "UTF-8")
-write.csv(ind2_data, "ind2_data.csv", row.names = FALSE, fileEncoding = "UTF-8")
-write.csv(ind3_data, "ind3_data.csv", row.names = FALSE, fileEncoding = "UTF-8")
-write.csv(metadata, "metadata.csv", row.names = FALSE, fileEncoding = "UTF-8")
+write.csv(ind1_data, "ind1_data.csv", row.names = FALSE)
+write.csv(indicators_full, "indicators_full.csv", row.names = FALSE)
+write.csv(ind2_data, "ind2_data.csv", row.names = FALSE)
+write.csv(ind3_data, "ind3_data.csv", row.names = FALSE)
+write.csv(metadata, "metadata.csv", row.names = FALSE)
 
 ```
 
@@ -295,6 +296,7 @@ levels(as.factor(ind2_data$defined_populations_simplified))
 
 # nice methods names in original order
 nice_names_or <- c("adaptive traits & management units",
+                   "dispersal buffer",
                     "eco- biogeographic proxies",
                    "genetic clusters",
                    "genetic clusters & eco- biogeographic proxies",
@@ -310,6 +312,7 @@ nice_names_or <- c("adaptive traits & management units",
 # nice names in better order for plotting
 nice_names <- c("adaptive traits & management units",
                  "management units",
+                 "dispersal buffer",
                   "eco- biogeographic proxies",
                    "genetic clusters",
                    "genetic clusters & eco- biogeographic proxies",

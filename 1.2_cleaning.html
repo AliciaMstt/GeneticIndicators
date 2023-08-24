@@ -2097,6 +2097,37 @@ happy_message&lt;-&quot;congratulations! there are no more taxa with issues to b
  write.csv(happy_message, &quot;kobo_output_tocheck_remaining_issues.csv&quot;, row.names = FALSE, fileEncoding = &quot;UTF-8&quot;)
 }</code></pre>
 </div>
+<div id="change-managment-unitis-for-dispersal-buffer-in-method-to-define-populations." class="section level2">
+<h2>Change Managment Unitis for Dispersal-buffer in Method to define
+populations.</h2>
+<p>The method “management units” to define populations was interpreted
+differently by countries. Namely, Belgium called “management units” a
+method in which they created a buffer polygons based on reported
+dispersal distances for each species around observation points, which
+are used as occurrence points. Polygons that overlap are fused together,
+and the resulting polygon, along with the points falling within its
+area, are considered a single population. However, for other countries
+“management units” refers to managed populations in the wild, sometimes
+enclosed, for instance as part of hunting schemes. Since we would be
+evaluating the effect of method on the indicators, we decided to
+separate management units into real management units and dispersal
+buffers, accordingly to which methods were used. This is also reflected
+in the versions of the Kobo form.</p>
+<pre class="r"><code># select management_units that need to be changed to &quot;dispersal_buffer&quot; 
+  # look for &quot;managegment_units&quot; in belgium and change that text to &quot;dispersal_buffer&quot; keeping any_text before or after
+kobo_clean$defined_populations &lt;- ifelse(kobo_clean$country_assessment == &quot;belgium&quot;,
+                                         gsub(&quot;management_units&quot;, &quot;dispersal_buffer&quot;, kobo_clean$defined_populations),
+                                         kobo_clean$defined_populations)
+
+  
+# Check resutls look as expected:
+grep(&quot;dispersal_buffer&quot;, levels(as.factor(kobo_clean$defined_populations)), value=TRUE)</code></pre>
+<pre><code>## [1] &quot;dispersal_buffer&quot;                      
+## [2] &quot;dispersal_buffer other&quot;                
+## [3] &quot;eco_biogeo_proxies dispersal_buffer&quot;   
+## [4] &quot;genetic_clusters dispersal_buffer&quot;     
+## [5] &quot;geographic_boundaries dispersal_buffer&quot;</code></pre>
+</div>
 <div id="save-the-clean-koboutput-version" class="section level2">
 <h2>Save the clean koboutput version:</h2>
 <p>Remove from the clean version any remaining taxa with issues</p>
