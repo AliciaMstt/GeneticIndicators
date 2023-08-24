@@ -813,7 +813,7 @@ summary(m1)
 ```
 
 
-### Does the proportion of maintained populations (indicator2) vary with method used?
+### (b) Does the proportion of maintained populations (indicator2) vary with method used?
 
 Plot
 
@@ -879,8 +879,7 @@ Run model asking: Does indicator 2 vary with method used? Controlling for variat
 
 
 ```{r}
-m2<-glm(data_for_model$indicator2 ~ data_for_model$defined_populations_simplified + 
-            data_for_model$country_assessment, family ="quasibinomial")
+m2<-glm(data_for_model$indicator2 ~ data_for_model$defined_populations_simplified, family ="quasibinomial")
 ```
 
 See results:
