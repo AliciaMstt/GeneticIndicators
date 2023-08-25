@@ -614,25 +614,27 @@ missing
 
 ### Check and, if needed clean attachment data.
 
-The function `process_attached_files()` processes the original attachment files to make them compatible with how population data is expected to estimate the Ne >500 indicator. You can check the details in the function code. 
+The function [`process_attached_files()`](process_attached_files.R) processes the original attachment files to make them compatible with how population data is expected to estimate the Ne >500 indicator. You can check the details in the function code. 
 
-Importantly, it checks the columns that  **should be numbers**, but they may have been stored as characters because "," "-" "(" or other characters may have been typed. The function will try to correct this, which **may change the original data**. Please manually check any file flagged as transformed (log below) to ensure everything is correct. These are the transformations that the function does and you should check:
+Importantly, it checks the columns that  **should be numbers**, but they may have been stored as characters because "," "-" "(" or other characters may have been typed. The function will try to correct this, which **may change the original data**. Please manually check any file flagged as transformed (log below) to ensure everything is correct. 
 
-**1) check if there are `()`, and remove them keeping only the value outside `()`.**
+These are the transformations that the function does and you should check:
+
+**1) In numeric variables (Nc, Ne and their bounds): check if there are `()`, and remove them keeping only the value outside `()`.**
 
 Example: `86 (95% CI)` will be transformed to: `86`
 
-**2) convert `,` to `''` (nothing) IF more than 3 digits followed the `,` (ie we assumed `,` is separating thousands), OR convert `,` to `.` IF 2 digits followed the `,` (ie we assumed `,` is separating decimal points)**
+**2) In numeric variables (Nc, Ne and their bounds): convert `,` to `''` (nothing) IF more than 3 digits followed the `,` (ie we assumed `,` is separating thousands), OR convert `,` to `.` IF 2 digits followed the `,` (ie we assumed `,` is separating decimal points)**
 
 Example:
 "3,00" "5000,000" "666"  will be transformed to: "3.00" "5000000" "666" 
 
-**3) use as.numeric().**
+**3) In numeric variables (Nc, Ne and their bounds): use as.numeric().**
 
 Example:
 NcPoint expects ONLY numbers, an no other character. Therefore 400-600 stored in NcPoint will be transformed to NA. And there would be a warning saying "NAs introduced by coercion". In this example, if you want to keep "400-600" then you should have filled the column NcRange with in this case less_5000_by_much.
 
-**4) NcType and NcRange should only have values from the specified categories, any other value will be changed to NA**
+**4)NcType and NcRange should only have values from the specified categories, any other value will be changed to NA**
 
 Example:
 * NcRange values could only be 'less_5000', 'less_5000_bymuch', 'more_5000', 'more_5000_bymuch', 'range_includes_5000'. If the assessor types "600-8000" this will be transformed to NA.

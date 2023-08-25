@@ -2404,35 +2404,39 @@ missing</code></pre>
 </div>
 <div id="check-and-if-needed-clean-attachment-data." class="section level3">
 <h3>Check and, if needed clean attachment data.</h3>
-<p>The function <code>process_attached_files()</code> processes the
-original attachment files to make them compatible with how population
-data is expected to estimate the Ne &gt;500 indicator. You can check the
-details in the function code.</p>
+<p>The function <a href="process_attached_files.R"><code>process_attached_files()</code></a>
+processes the original attachment files to make them compatible with how
+population data is expected to estimate the Ne &gt;500 indicator. You
+can check the details in the function code.</p>
 <p>Importantly, it checks the columns that <strong>should be
 numbers</strong>, but they may have been stored as characters because
 “,” “-” “(” or other characters may have been typed. The function will
 try to correct this, which <strong>may change the original
 data</strong>. Please manually check any file flagged as transformed
-(log below) to ensure everything is correct. These are the
-transformations that the function does and you should check:</p>
-<p><strong>1) check if there are <code>()</code>, and remove them
-keeping only the value outside <code>()</code>.</strong></p>
+(log below) to ensure everything is correct.</p>
+<p>These are the transformations that the function does and you should
+check:</p>
+<p><strong>1) In numeric variables (Nc, Ne and their bounds): check if
+there are <code>()</code>, and remove them keeping only the value
+outside <code>()</code>.</strong></p>
 <p>Example: <code>86 (95% CI)</code> will be transformed to:
 <code>86</code></p>
-<p><strong>2) convert <code>,</code> to <code>&#39;&#39;</code> (nothing) IF
-more than 3 digits followed the <code>,</code> (ie we assumed
-<code>,</code> is separating thousands), OR convert <code>,</code> to
-<code>.</code> IF 2 digits followed the <code>,</code> (ie we assumed
-<code>,</code> is separating decimal points)</strong></p>
+<p><strong>2) In numeric variables (Nc, Ne and their bounds): convert
+<code>,</code> to <code>&#39;&#39;</code> (nothing) IF more than 3 digits
+followed the <code>,</code> (ie we assumed <code>,</code> is separating
+thousands), OR convert <code>,</code> to <code>.</code> IF 2 digits
+followed the <code>,</code> (ie we assumed <code>,</code> is separating
+decimal points)</strong></p>
 <p>Example: “3,00” “5000,000” “666” will be transformed to: “3.00”
 “5000000” “666”</p>
-<p><strong>3) use as.numeric().</strong></p>
+<p><strong>3) In numeric variables (Nc, Ne and their bounds): use
+as.numeric().</strong></p>
 <p>Example: NcPoint expects ONLY numbers, an no other character.
 Therefore 400-600 stored in NcPoint will be transformed to NA. And there
 would be a warning saying “NAs introduced by coercion”. In this example,
 if you want to keep “400-600” then you should have filled the column
 NcRange with in this case less_5000_by_much.</p>
-<p><strong>4) NcType and NcRange should only have values from the
+<p><strong>4)NcType and NcRange should only have values from the
 specified categories, any other value will be changed to NA</strong></p>
 <p>Example: * NcRange values could only be ‘less_5000’,
 ‘less_5000_bymuch’, ‘more_5000’, ‘more_5000_bymuch’,
