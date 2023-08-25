@@ -3,6 +3,7 @@ title: "Data exploration and cleaning"
 output:
   html_document:
     df_print: paged
+    toc: true
   word_document: default
   pdf_document: default
 ---
@@ -22,12 +23,14 @@ library(utile.tools)
 library(stringr)
 library(ggplot2)
 library(readr)
+library(readxl)
 ```
 
 Useful custom functions
 ```{r}
-source("get_attached_files.R")
 source("process_attached_files.R")
+source("download_kobo_attachment.R")
+source("recover_nocoincidence_files.R")
 
 # not in
 "%!in%" <- function(x, y)!('%in%'(x,y))
@@ -279,7 +282,7 @@ ok_GBIF<-c(ok_GBIF,
 ```
 
 
-### and object with all GBIF issues together
+### an object with all GBIF issues together
 
 If there are any remaining taxa with weird GBIF ids put them together in a single object.
 
@@ -387,7 +390,7 @@ ok_taxon_name<-c("Coregonus albula morphotype trybomi",
                  "Glyptemys muhlenbergii Northern Population")
 ```
 
-### and object with all taxon names issues together
+### an object with all taxon names issues together
 
 If there are any remaining taxa with weird taxon names put them together in a single object.
 
@@ -462,34 +465,127 @@ Export clean version
 write.csv(kobo_clean, "kobo_output_clean.csv", row.names = FALSE, fileEncoding = "UTF-8")
 ```
 
-## Check and if needed correct population data provided in the templates
+## Get and if needed correct population data provided in the templates
 
 If information of more than 25 populations was be used to collect data for Ne >500 indicator (Section 5 of the Kobo form), it is possible to use a template to upload data instead of using the kobo form. This section of the cleaning script processes those files to create a single clean object as expected to estimate indicator 1 (Ne >500).
 
 ### Get files 
 
-The function below parses kobo attachments directories to look for files with population data, matches them against their metadata (captured in kobo) and stores them in an target directory.
+Create directories to save files
+```{r}
+## original files
+
+original_files_dir="processed_files/original_files"
+
+  ## Create target directory overwriting previous content
+  # Remove existing target directory if it exists
+  if (dir.exists(original_files_dir)) {
+    # Remove all files and subdirectories within the target directory
+    files_to_remove <- list.files(original_files_dir, full.names = TRUE, recursive = TRUE)
+    file.remove(files_to_remove)
+    
+    # Remove the target directory itself
+    unlink(original_files_dir, recursive = TRUE)
+  }
+  # Recreate the target directory
+  dir.create(original_files_dir, recursive = TRUE, showWarnings = FALSE)
+  
+## processed (and likely corrected) files:
+processed_files_dir="processed_files/processed_files"
+
+  ## Create target directory overwriting previous content
+  # Remove existing target directory if it exists
+  if (dir.exists(processed_files_dir)) {
+    # Remove all files and subdirectories within the target directory
+    files_to_remove <- list.files(processed_files_dir, full.names = TRUE, recursive = TRUE)
+    file.remove(files_to_remove)
+    
+    # Remove the target directory itself
+    unlink(processed_files_dir, recursive = TRUE)
+  }
+  # Recreate the target directory
+  dir.create(processed_files_dir, recursive = TRUE, showWarnings = FALSE)
+  
+```
+
+The url to the attachment file is avaialbe in the kobo_output under the variable `pop_tabular_file_URL`. This url could be used to download each of the attachments. For this, it is necessary to provide a kobo username with reading permissions and its password. To avoid showing passwords and usernames within this script, you have to create a `credentials.txt` file and save it in the working directory of this script. The `credentials.txt` should have ONLY two rows and one column (no headers). The first row should be the kobo user name and the second your password. For instance in the following example `myusername` is the username and `12334` is the password:
+
+```{}
+myusername
+12334
+```
+
+The following code uses the credentials and the url stored in the kobo_output, for each of the records were population data was recorded using the tabular template and for which there is a url avaiable:
 
 ```{r}
-source("get_attached_files.R")
+# subset data
+  tabular_records<-kobo_clean %>%
+                filter(kobo_tabular=="tabular" & pop_tabular_file_URL!="") %>%
+                select(country_assessment, taxon, kobo_tabular, X_uuid, pop_tabular_file, pop_tabular_file_URL, X__version__,
+                       end, n_extant_populations)
 
-target_dir = "processed_templates" # directory were the processed templates will be written
+# credentials
+credentials<-read.delim("credentials.txt", header = FALSE)
 
-# run function
-get_attached_files(root_dir = "attachments_2023_08_23", # the directory after unziping the kobo attachments download  
-                  target_dir = target_dir, # directory were the processed templates will be written
-                  kobo_output = kobo_clean)
+for(i in 1:nrow(tabular_records)){
+# log species
+print(paste("Downloading data from record number", i, tabular_records$country_assessment[i], tabular_records$taxon[i], "file",  
+      tabular_records$pop_tabular_file[i]))
+  
+# build file name with, country , record xuuid and original file name separated by __ (to parse easyly)
+new_file_name  <- paste(tabular_records$country_assessment[i],
+                        tabular_records$X_uuid[i], 
+                        tabular_records$pop_tabular_file[i], sep= "__")
+
+# download data
+download_kobo_attachment(kobo_url = tabular_records$pop_tabular_file_URL[i],
+                         local_file_path  = file.path(original_files_dir, new_file_name),
+                         username = credentials[1,1],
+                         password = credentials[2,1])
+}
 
 ```
 
-Check which files were saved:
+Check which files were downloaded:
 
 ```{r}
-result_files<-list.files(target_dir) %>% 
-  str_subset("^(?!file_names\\.txt$).*\\.txt$") # exclude the file "file_names.txt"
+result_files<-list.files(original_files_dir)
 result_files
 ```
-How many?
+
+If there were files stored as .xlsx, we need to transform those to txt files before proceeding.
+```{r}
+# get excel files, if any
+excels<- grep(".xlsx", result_files, value = TRUE)
+excels
+
+
+if(length(excels)>0){
+  # If excel files exist, read and save each one with same but as txt file
+  
+  for(i in 1:length(excels)){
+  # Excel file path
+  file_path <- file.path(original_files_dir, excels[i])
+  
+  # Read the first sheet of the Excel file as a text file
+  data <- read_excel(file_path, sheet = 1, col_types = "text")
+  
+  # Save with same file name, changing the extension
+  write.table(data, 
+              file = file.path(original_files_dir, paste0(tools::file_path_sans_ext(excels[i]), ".txt")),
+              sep = "\t", quote = FALSE, row.names = FALSE)
+  }
+}
+
+```
+
+Result files should only be txt or csv files
+```{r}
+result_files<-grep("\\.(txt|csv)$", list.files(original_files_dir), value = TRUE)
+```
+
+
+How many attached files we have (sucessfully downloaded and transformed frome excel, if needed)?
 ```{r}
 length(result_files)
 ```
@@ -512,104 +608,167 @@ table(expected$country_assessment)
 
 Which are the missing files?
 ```{r}
-missing<-expected[expected$X_uuid %!in% str_match(result_files, "_([0-9a-f-]{36})\\.txt"),]
+missing<-expected[expected$X_uuid %!in% str_match(result_files, "(?<=__).*?(?=__)"),]  # get the Xuud ie the characters after the first "__" and the second "__".
 missing
 ```
 
-How many files were sent to  No_coincidence? (This likely means that the species assessment was corrected in kobo and the system does not delete the old file. But we can manually check each file if we are unsure):
-
-```{r}
-no_coincidence<-data.frame(file=list.files(paste0(target_dir,"/No_coincidence")))
-no_coincidence$file
-```
-
-Manually check no_coincidence files:
-
-```{r, eval=FALSE}
-# create column for commeents
-no_coincidence$comments<-rep(NA, nrow(no_coincidence))
-
-
-## Manually check records
-
-# populations_data_Primula_sieboldii-10_30_24.csv
-no_coincidence <- no_coincidence %>%
-  mutate(comments = ifelse(
-         file=="11bc7f83-c0e5-415a-b9ed-9e0b5c63ab3d_populations_data_Primula_sieboldii-10_30_24.csv",
-         "Primula_sieboldii was submitted in another file with a matching Xuuid", comments))
-
-# Vireo_atricapilla-13_17_54.txt
-kobo_clean %>%
-  filter(taxon=="Vireo atricapilla") %>%
-  select(country_assessment, kobo_tabular, pop_tabular_file, pop_tabular_file_URL, X__version__)
-
-# comment
-no_coincidence <- no_coincidence %>%
-    mutate(comments = ifelse(
-         file=="246ec40b-52d6-4f20-90cb-432e6d4fd090_Vireo_atricapilla-13_17_54.txt",
-         "Vireo atricapilla was evaluated in the US with the Xuuid 91bf443a-426d-45af-a5f6-8e368063c31e", comments))
-
-    mutate(comments = ifelse(
-         file=="",
-         "", comments)) %>%
-    mutate(comments = ifelse(
-         file=="",
-         "", comments)) %>%
-    mutate(comments = ifelse(
-         file=="",
-         "", comments)) %>%
-    mutate(comments = ifelse(
-         file=="",
-         "", comments)) %>%
-    mutate(comments = ifelse(
-         file=="",
-         "", comments)) %>%
-
-```
-
-
-
 ### Check and, if needed clean attachment data.
 
-```{r}
+The function `process_attached_files()` processes the original attachment files to make them compatible with how population data is expected to estimate the Ne >500 indicator. You can check the details in the function code. 
 
+Importantly, it checks the columns that  **should be numbers**, but they may have been stored as characters because "," "-" "(" or other characters may have been typed. The function will try to correct this, which **may change the original data**. Please manually check any file flagged as transformed (log below) to ensure everything is correct. These are the transformations that the function does and you should check:
+
+**1) check if there are `()`, and remove them keeping only the value outside `()`.**
+
+Example: `86 (95% CI)` will be transformed to: `86`
+
+**2) convert `,` to `''` (nothing) IF more than 3 digits followed the `,` (ie we assumed `,` is separating thousands), OR convert `,` to `.` IF 2 digits followed the `,` (ie we assumed `,` is separating decimal points)**
+
+Example:
+"3,00" "5000,000" "666"  will be transformed to: "3.00" "5000000" "666" 
+
+**3) use as.numeric().**
+
+Example:
+NcPoint expects ONLY numbers, an no other character. Therefore 400-600 stored in NcPoint will be transformed to NA. And there would be a warning saying "NAs introduced by coercion". In this example, if you want to keep "400-600" then you should have filled the column NcRange with in this case less_5000_by_much.
+
+**4) NcType and NcRange should only have values from the specified categories, any other value will be changed to NA**
+
+Example:
+* NcRange values could only be 'less_5000', 'less_5000_bymuch', 'more_5000', 'more_5000_bymuch', 'range_includes_5000'. If the assessor types "600-8000" this will be transformed to NA.
+
+* NcType values could only be 'Nc_point', 'Nc_range'. If the assessor types "qualitative" it will be changed to NA.
   
-source("process_attached_files.R")
 
-# files separated by "\t": australia, france, japan, US
+**Other less serious edits, but that you should also know about, are the following:**
+
+* Population ids should be pop1, pop2.... Since people could have written all sort of things, we change the populationID of records to pop1, pop2, format instead of whatever people wrote.
+* If NcPoint data was provided NcType should exist, but if NcType was not provided, we set `NcType = Nc_point` for all pops
+* If NcRange data was provided NcType should exist, but if NcType not provided, we set `NcType = Nc_range` for all pops
+* If there is no Nc data, NcMethod and NcType should be NA, this was not the case so NA were introduced to replace the value.
+* People made mistakes when capturing the metadata (species name, GBIF_taxonID etc) in the population file, so it is not the same than the metadata stored in kobo_output. Because we trust more the data captured in kobo, we replaced ALL the following columns of ALL files with the variables stored in kobo_output: country_assessment, taxonomic_group, time_populations, taxon, scientific_authority, name_assessor, email_assessor, kobo_tabular, genus, species, subspecies_variety, year_assesment, GBIF_taxonID, NCBI_taxonID, multiassessment, national_taxonID.
+
+Also, remember that excel files (if any), were transformed to .txt, so below we will only process the .txt and .csv files (see transformation above).
+
+Please check the logs below and manually check the original and the processed files to ensure everything is correct.
+
+
+```{r}
+# files separated by "\t": australia, france, japan, sweden, most US 
 df<-data.frame()
-for(i in result_files[c(1:2, 16:17, 18:20, 21:24)]){ # change numbers to reflect files with the desired delim
-  file<-paste0(target_dir,"/", i)
-  cat(paste("##     processing file: \n",
-            "    ", file, " \n", " \n"))
+for(i in c(1:2, 16:17, 18:20, 21, 26:28, 31:33,34,35)){ # change numbers to reflect indexes of the files with the desired delim in result_files[i]
+  file<-paste0(original_files_dir,"/", result_files[i])
+  cat(paste("##     processing element:", i, "\n",
+            "   file:", file, " \n", " \n"))
   temp<-process_attached_files(file_path=file, kobo_output=kobo_clean, delim = '\t')
+  
+  # save processed file
+  processed_file_path<-paste0(processed_files_dir,"/", "processed__", result_files[i])
+  write.csv(temp, processed_file_path, row.names = FALSE)
+  
+  # attach object to df with all results
   df<-rbind(df, temp)
-  cat(" \n")
+  
+  cat(" \n") # white space before next text message
 }
 
 ## files separated by ";" belgium 
-for(i in result_files[c(3:15)]){
-  file<-paste0(target_dir,"/", i)
-  cat(paste("##     processing file: \n",
-            "    ", file, " \n", " \n"))
-  temp<-process_attached_files(file_path=file, kobo_output=kobo_clean, delim = ";")
+for(i in c(3:15)){
+  file<-paste0(original_files_dir,"/", result_files[i])
+  cat(paste("##     processing element:", i, "\n",
+            "   file:", file, " \n", " \n"))
+  temp<-process_attached_files(file_path=file, kobo_output=kobo_clean, delim = ';')
+  
+  # save processed file
+  processed_file_path<-paste0(processed_files_dir,"/", "processed__", result_files[i])
+  write.csv(temp, processed_file_path, row.names = FALSE)
+  
+  # attach object to df with all results
   df<-rbind(df, temp)
-  cat(" \n")
+  
+  cat(" \n") # white space before next text message
 }
 
+
+## files separated by "," some Us
+for(i in c(29)){
+  file<-paste0(original_files_dir,"/", result_files[i])
+  cat(paste("##     processing element:", i, "\n",
+            "   file:", file, " \n", " \n"))
+  temp<-process_attached_files(file_path=file, kobo_output=kobo_clean, delim = ',')
+  
+  # save processed file
+  processed_file_path<-paste0(processed_files_dir,"/", "processed__", result_files[i])
+  write.csv(temp, processed_file_path, row.names = FALSE)
+  
+  # attach object to df with all results
+  df<-rbind(df, temp)
+  
+  cat(" \n") # white space before next text message
+}
+
+## US special cases not removing instruction lines (we need to use skip)
+for(i in c(30)){
+  file<-paste0(original_files_dir,"/", result_files[i])
+  cat(paste("##     processing element:", i, "\n",
+            "   file:", file, " \n", " \n"))
+  temp<-process_attached_files(file_path=file, kobo_output=kobo_clean, delim = '\t', skip=13)
+  
+  # save processed file
+  processed_file_path<-paste0(processed_files_dir,"/", "processed__", result_files[i])
+  write.csv(temp, processed_file_path, row.names = FALSE)
+  
+  # attach object to df with all results
+  df<-rbind(df, temp)
+  
+  cat(" \n") # white space before next text message
+}
+
+
+### all together
 ind1_data_from_templates<-df
   
 ```
 
+### Check final population data looks as it should. 
 
-Check data looks as it should:
+Are columns looking good?:
 
 ```{r}
+# columns look good?
+head(ind1_data_from_templates)
+
+```
+
+These variables should be numeric:
+
+```{r}
+# should be numeric
 class(ind1_data_from_templates$NcPoint)
+class(ind1_data_from_templates$NcLower)
+class(ind1_data_from_templates$NcUpper)
+class(ind1_data_from_templates$Ne)
+class(ind1_data_from_templates$NeLower)
+class(ind1_data_from_templates$NeUpper)
+
+```
+
+Are the expected levels found in NcRange? The only categories should be:   "less_5000"           "less_5000_bymuch"    "more_5000"           "more_5000_bymuch"    "range_includes_5000".
+ 
+```{r}
+# check levels
+levels(as.factor(ind1_data_from_templates$NcRange))
+
+```
+
+Are the expected levels found in NcType? The only categories should be:   "Nc_point" "Nc_range".
+```{r}
+# check levels
+levels(as.factor(ind1_data_from_templates$NcType))
 ```
 
 
-Save indicator 1 data extracted from the tabular kobo templates into a file with indicator 1 data format:
+### Save indicator 1 data extracted from the tabular kobo templates into a file with indicator 1 data format:
 
 ```{r}
 write.csv(ind1_data_from_templates, "ind1_data_from_templates.csv", row.names = FALSE)
