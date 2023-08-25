@@ -12,7 +12,7 @@ process_attached_files <- function(file_path, kobo_output, delim){
 
 ## Arguments:
 # target_file = path to a file that needs to be processed 
-              # Normaly the path to this file would be the "target_dir", the result of get_attached_files.R creating the directory and moving the files there
+              # Normaly the path to this file would be the "original_files_dir", the result of get_attached_files.R creating the directory and moving the files there
               # The file MUST include the Xuuid in the file name  (as resulting from running get_attached_files.R)
 # kobo_output = a data frame result with the raw (hundreds of columns) Kobo output as downloaded from Kobo 
 # delim = delimiter of the file ("," ";", "\t", etc) to be passed to read_delim()
@@ -29,9 +29,9 @@ process_attached_files <- function(file_path, kobo_output, delim){
   temp_df <- read_delim(file_path, delim = delim, col_names = TRUE, show_col_types = FALSE)
   
   ### Get Xuud from file name
-  Xuuid_filename<-str_match(file_path, "_([0-9a-f-]{36})\\.txt")[, 2] # what we want is in the 2nd column
-  
-  
+  # get the Xuud ie the characters after the first "__" and the second "__".
+  # [1,1] is used because we want the character result
+  Xuuid_filename<-str_match(file_path, "(?<=__).*?(?=__)")[1,1] 
   
   
   #######                 Separate data in kobo_output as in get_indicator1 function
@@ -131,13 +131,22 @@ process_attached_files <- function(file_path, kobo_output, delim){
     ## Make sure numeric columns are numbers
     for(x in c("Ne", "NeLower", "NeUpper", "NcPoint", "NcLower", "NcUpper")){
       if(class(df[[x]])=="character"){
-        print(paste("varible", x, "is stored as character and should be numeric, so this function will: 1) check if there are (), for instance `86 (95% CI)`, and remove them keeping only the value outside (). 2) convert the decimal separator from ',' to '.'; and 3) use as.numeric(). Check the original data to make sure the transformation was correct"))
-        ## remove () if they are:
+        print(cat("varible", x, "is stored as character and should be numeric, so this function will: \n
+                  1) check if there are (), for instance `86 (95% CI)`, and remove them keeping only the value outside ().\n 
+                  2) convert ',' to '' IF more than 3 digits followed the ',' (ie we assumed ',' is separating thousands), OR /n
+                     convert ',' to '.' IF 2 digits followed the ',' (ie we assumed ',' is separating decimal points) ; and \n
+                  3) use as.numeric(). \n
+                  You should check the original data to make sure the transformation was correct"))
+        ## 1) remove () if they are:
         df[[x]]<-gsub(pattern="\\s*\\([^\\)]+\\)", replacement="", df[[x]])
         
-        ## numeric variables appear as character if the decimal separator "," was used in the original file instead of "."
-        # change "," for "."
-        df[[x]]<-gsub(pattern=",", replacement=".", df[[x]])
+        ## 2) numeric variables appear as character if  "," was used in the original file 
+        
+        # Count characters after the first comma 
+        characters_after_comma <- nchar(sub("^[^,]*,", "", df[[x]]))
+        
+        # Change "," for "" if characters_after_comma >= 3, else replace with "."
+        df[[x]] <- ifelse(characters_after_comma >= 3, sub(",", "", df[[x]]), sub(",", ".", df[[x]]))
         
         ## transform to numeric
         df[[x]]<-as.numeric(df[[x]])
