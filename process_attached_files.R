@@ -2,7 +2,7 @@
 
 
 # Define a function to process files
-process_attached_files <- function(file_path, kobo_output, delim){
+process_attached_files <- function(file_path, kobo_output, delim, skip=0){
 
 ## What this function does
 #  If information of more than 25 populations was be used to collect data for Ne >500 indicator (Section 5 of the Kobo form) 
@@ -16,6 +16,7 @@ process_attached_files <- function(file_path, kobo_output, delim){
               # The file MUST include the Xuuid in the file name  (as resulting from running get_attached_files.R)
 # kobo_output = a data frame result with the raw (hundreds of columns) Kobo output as downloaded from Kobo 
 # delim = delimiter of the file ("," ";", "\t", etc) to be passed to read_delim()
+# skip = Number of lines to skip before reading data. To be pased to read_delim(). Default to 0.
 
 ## Needed libraries:
 #  library(dplyr)
@@ -24,9 +25,9 @@ process_attached_files <- function(file_path, kobo_output, delim){
 #  library(tools)
 
   ### Read file
-  
+  skip=skip
   delim = delim
-  temp_df <- read_delim(file_path, delim = delim, col_names = TRUE, show_col_types = FALSE)
+  temp_df <- read_delim(file_path, delim = delim, col_names = TRUE, show_col_types = FALSE, skip=skip)
   
   ### Get Xuud from file name
   # get the Xuud ie the characters after the first "__" and the second "__".
@@ -110,7 +111,7 @@ process_attached_files <- function(file_path, kobo_output, delim){
          }
     
     
-    ### 2)  Join population data and metadata (the file metadata will be replaced from the metadata captured in kobo to assure it is correct)
+    ### 2)  Join population data and metadata (the metadata variables in the attachment file will be replaced from the metadata captured in kobo to assure it is correct)
     # Keep only population data columns and add X_uuid columm
     df <- df %>%
       select(all_of(required_pop_columns)) %>%
