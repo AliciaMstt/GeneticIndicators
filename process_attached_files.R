@@ -128,7 +128,8 @@ process_attached_files <- function(file_path, kobo_output, delim, skip=0){
     # Join kobo_out metadata and file population data
     df<-left_join(df, matching_row, by = "X_uuid")
     
-    ## Further clean population data
+    ## Further clean population data:
+    
     ## Make sure numeric columns are numbers
     for(x in c("Ne", "NeLower", "NeUpper", "NcPoint", "NcLower", "NcUpper")){
       if(class(df[[x]])=="character"){
@@ -156,31 +157,63 @@ process_attached_files <- function(file_path, kobo_output, delim, skip=0){
         df[[x]]<-as.numeric(df[[x]])}
     }
     
-    ### 3) Rename and fill columns that should not be empty, if needed
-    
-    # Rename populationId and name column to match desired ind1_data names if they exits
-    if ("populationID" %in% colnames(df) && "PopulationName" %in% colnames(df)) {
-      df <- df %>%
-        rename(population = populationID, Name = PopulationName)
+      
+  ### 3) NcRange and NcType should have only the values specified in the template. Any other value would be changed to NA.
+      
+      ## NcRange
+      excpected_categories<-c("less_5000", "less_5000_bymuch", "more_5000", "more_5000_bymuch", "range_includes_5000", NA)
+      
+      condition<-df$NcRange %in% excpected_categories
+      
+      # message and change data
+      if(any(!condition)){ # check if there is at least one FALSE
+             print("NcRange values could only be 'less_5000', 'less_5000_bymuch', 'more_5000', 'more_5000_bymuch', 'range_includes_5000'. Other values were found and were changed to NA")
+        }
+     
+       df<- df %>%
+        mutate(NcRange = ifelse(condition, NcRange, NA))
+      
+      ## NcType
+      excpected_categories<-c("Nc_point", "Nc_range", NA)
+      
+      condition<-df$NcType %in% excpected_categories
+      
+      # message and change data
+      if(any(!condition)){ # check if there is at least one FALSE
+             print("NcType values could only be 'Nc_point', 'Nc_range'. Other values were found and were changed to NA")
          }
-   
-    ## Fix problematic columns
-    
-      # Population ids should be pop1, pop2.... Since people could have written all sort of things, change them all to pop1, pop2, format
+      
+      df<- df %>%
+        mutate(NcType = ifelse(condition, NcType, NA))
+      
+      
+  ### 4) Rename and fill columns that should not be empty, if needed
+      
+      # Rename populationId and name column to match desired ind1_data names if they exits
+      if ("populationID" %in% colnames(df) && "PopulationName" %in% colnames(df)) {
+        df <- df %>%
+          rename(population = populationID, Name = PopulationName)
+      }
+      
+      
+      ## Population ids should be pop1, pop2.... Since people could have written all sort of things, change them all to pop1, pop2, format
       df <- df %>%
-      mutate(population = paste0("pop", row_number()))
+        mutate(population = paste0("pop", row_number()))
+      
+      
+      ## Fix problematic conditionals columns
       
       # if NcPoint data was provided then NcType should exist
       condition<-!is.na(df$NcPoint) & is.na(df$NcType)
-      ifelse(condition, print("NcPoint data was provided so NcType should exist but was not provided, setting NcType = `Nc_point` for all pops"), "")
+      ifelse(condition, print("NcPoint data was provided so NcType should exist but was not provided, setting NcType = `Nc_point` for relevant pops"), "")
       df <- df %>%
-      mutate(NcType = ifelse(condition, "Nc_point", NcType))
-    
+        mutate(NcType = ifelse(condition, "Nc_point", NcType))
+      
       # if NcRange data was provided then NcType should exist 
       condition<-!is.na(df$NcRange) & is.na(df$NcType)
-      ifelse(condition, print("NcRange data was provided so NcType should exist but was not provided, setting NcType = `Nc_range` for all pops"), "")
+      ifelse(condition, print("NcRange data was provided so NcType should exist but was not provided, setting NcType = `Nc_range` for relevant pops"), "")
       df <- df %>%
-      mutate(NcType = ifelse(condition, "Nc_range", NcType))
+        mutate(NcType = ifelse(condition, "Nc_range", NcType))
       
       # If there is no Nc data, NcMethod and NcType should be NA
       condition<-is.na(df$NcRange) & is.na(df$NcRangeDetails) & is.na(df$NcPoint)
@@ -188,12 +221,15 @@ process_attached_files <- function(file_path, kobo_output, delim, skip=0){
       df <- df %>%
         mutate(NcMethod = ifelse(condition, NA , NcMethod),
                NcType = ifelse(condition, NA , NcType))
-               
-      # change all "" (empty) cells to NA
+      
+      
+      ## change all "" (empty) cells to NA
       df <- df %>%
-      mutate_all(list(~na_if(.,"")))
+        mutate_all(list(~na_if(.,"")))
+      
+      
     
-  ### 4) Change columns to desired order  
+  ### 5) Change columns to desired order  
        desired_order <- c(
         "country_assessment", "taxonomic_group", "taxon", "scientific_authority", 
         "genus", "year_assesment", "name_assessor", "email_assessor", "kobo_tabular", 
@@ -207,7 +243,7 @@ process_attached_files <- function(file_path, kobo_output, delim, skip=0){
       
 
       
-  ### 5) Return data
+  ### 6) Return data
       df   
   }
   
