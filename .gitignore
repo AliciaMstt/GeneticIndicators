@@ -3,6 +3,7 @@
 attachments_*/
 knitr_and_outputs/
 processed_templates/
+archive/
 
 # ignore raw data files
 International_Genetic_Indicator_testing_V_4.0*
@@ -11,3 +12,6 @@ International_Genetic_Indicator_testing_V_4.0*
 .DS_Store
 .RData
 .Rhistory
+
+# ignore credentials
+credentials.txt
