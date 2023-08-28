@@ -241,14 +241,14 @@ levels(indicator1$country_assessment)<-c("Australia", "Belgium", "Colombia", "Fr
 The methods used to define populations come from a check box question were one or more of the following categories can be selected: genetic_clusters, geographic_boundaries, eco_biogeo_proxies, adaptive_traits, management_units, other. As a consequence any combination of the former can be possible. Leading to the following frequency table:
 
 ```{r}
-table(ind2_data$defined_populations)
+table(indicators_full$defined_populations)
 ```
 
 It is hard to group the above methods, so we will keep the original groups with n >=19 in the above list, and tag the combinations that appear few times as as "low_freq_combinations".
 
 Which groups have n>=19?
 ```{r}
-x<-as.data.frame(table(ind2_data$defined_populations)[table(ind2_data$defined_populations) >= 19])
+x<-as.data.frame(table(indicators_full$defined_populations)[table(indicators_full$defined_populations) >= 19])
 colnames(x)[1]<-"method"
 
 x
@@ -257,8 +257,8 @@ x
 We can add this new column to the metadata and Proportion of maintained populations (indicator) data:
 
 ```{r} 
-### for ind2_data
-ind2_data<- ind2_data %>% 
+### for ind data
+indicators_full<- indicators_full %>% 
   mutate(defined_populations_simplified = case_when(
          # if the method is in the list of methods n>=19 then keep it
          defined_populations %in% x$method ~ defined_populations,
@@ -278,13 +278,13 @@ metadata<- metadata %>%
 Check n for simplified methods:
 
 ```{r}
-table(ind2_data$defined_populations_simplified)
+table(indicators_full$defined_populations_simplified)
 ```
 
 Table of equivalences:
 
 ```{r}
-ind2_data %>% 
+indicators_full %>% 
        select(defined_populations, defined_populations_simplified) %>% 
        filter(!duplicated(defined_populations))
 ```
@@ -292,7 +292,7 @@ ind2_data %>%
 Create nicer names for ploting
 ```{r}
 # original method names
-levels(as.factor(ind2_data$defined_populations_simplified))
+levels(as.factor(indicators_full$defined_populations_simplified))
 
 # nice methods names in original order
 nice_names_or <- c("adaptive traits & management units",
@@ -327,11 +327,11 @@ nice_names <- c("adaptive traits & management units",
 
 ### add them
 ## ind2
-ind2_data$defined_populations_nicenames<-as.factor(ind2_data$defined_populations_simplified)
+indicators_full$defined_populations_nicenames<-as.factor(indicators_full$defined_populations_simplified)
 # add new nice names
-levels(ind2_data$defined_populations_nicenames)<-nice_names_or
+levels(indicators_full$defined_populations_nicenames)<-nice_names_or
 # change to desired order
-ind2_data$defined_populations_nicenames<-factor(ind2_data$defined_populations_nicenames, 
+indicators_full$defined_populations_nicenames<-factor(indicators_full$defined_populations_nicenames, 
                                                 levels=nice_names)
 
 # metadata
@@ -593,33 +593,33 @@ We have NA in Proportion of maintained populations (indicator) because in some c
 ### Counts
 Total records with NA in extant populations:
 ```{r}
-sum(is.na(ind2_data$n_extant_populations))
+sum(is.na(indicators_full$n_extant_populations))
 ```
 
 Taxa with NA in extant populations:
 ```{r}
-ind2_data %>%
+indicators_full %>%
   filter(is.na(n_extant_populations)) %>%
     select(country_assessment, taxonomic_group, taxon, n_extant_populations, n_extint_populations)
 ```
 
 Total taxa with NA in **extinct** populations:
 ```{r}
-sum(is.na(ind2_data$n_extint_populations))
+sum(is.na(indicators_full$n_extint_populations))
 ```
 
 Do taxa with NA for extant also have NA for extinct?
 
 ```{r}
-ind2_data$taxon[is.na(ind2_data$n_extant_populations)] %in% ind2_data$taxon[is.na(ind2_data$n_extint_populations)]
+indicators_full$taxon[is.na(indicators_full$n_extant_populations)] %in% indicators_full$taxon[is.na(indicators_full$n_extint_populations)]
 ```
 
-So out of the `r nrow(ind2_data)`, we have **`r sum(is.na(ind2_data$n_extint_populations))` records with NA in n_extinct** and **`r sum(is.na(ind2_data$n_extant_populations))` records with NA in n_extant**. Of them, `r sum(ind2_data$taxon[is.na(ind2_data$n_extant_populations)] %in% ind2_data$taxon[is.na(ind2_data$n_extint_populations)])` have NA in both n_extant and n_extinct.
+So out of the `r nrow(indicators_full)`, we have **`r sum(is.na(indicators_full$n_extint_populations))` records with NA in n_extinct** and **`r sum(is.na(indicators_full$n_extant_populations))` records with NA in n_extant**. Of them, `r sum(indicators_full$taxon[is.na(indicators_full$n_extant_populations)] %in% indicators_full$taxon[is.na(indicators_full$n_extint_populations)])` have NA in both n_extant and n_extinct.
 
 
 ### Plot missing data extinct populations
 ```{r}
-p4<-ind2_data %>%
+p4<-indicators_full %>%
   ggplot(aes(x=country_assessment, fill=is.na(n_extint_populations))) +
   geom_bar() +
   scale_fill_manual(labels=c("number of populations known", "missing data"),
@@ -637,7 +637,7 @@ p4
 Missing data in number of extinct populations by method to define populations:
 
 ```{r}
-ind2_data %>%
+indicators_full %>%
   ggplot(aes(x=defined_populations_nicenames, fill=is.na(n_extint_populations)))+
   geom_bar() +
   coord_flip()+ 
@@ -712,7 +712,7 @@ The analyses and plots below us a subset of data filtering outliers (>500 popula
 ### Plot Number of maintained populations by country and method
 
 ```{r}
-ind2_data %>% 
+indicators_full %>% 
   filter(n_extant_populations<500) %>% # filter outliers
   # order countries vertically by similar number of pops
   mutate(country_assessment = factor(country_assessment, 
@@ -728,9 +728,9 @@ ind2_data %>%
   xlab("")  +
   ylab("Number of maintained populations") +
   scale_fill_manual(values=alpha(simplifiedmethods_colors, .3),
-                    breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
   scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
   scale_x_discrete(limits=rev) +
   theme_light() +
   theme(panel.border = element_blank(), legend.position="none",
@@ -738,7 +738,7 @@ ind2_data %>%
 
 
 
-levels(ind2_data$country_assessment)
+levels(indicators_full$country_assessment)
 ```
 
 ### (a) Does the number of maintained pops vary with method used? 
@@ -747,14 +747,14 @@ Plot number of populations by method
 ```{r, out.height="500px", out.width="1064px"}
 # Prepare data for plot with nice labels:
 # sample size of TOTAL populations
-sample_size <- ind2_data %>%
+sample_size <- indicators_full %>%
                     filter(!is.na(n_extant_populations)) %>% 
                     filter(n_extant_populations<500) %>%
                     group_by(defined_populations_nicenames) %>% summarize(num=n())
 
 # custom axis
 ## new dataframe
-df<-ind2_data %>% 
+df<-indicators_full %>% 
   filter(!is.na(n_extant_populations)) %>% 
   filter(n_extant_populations<500) %>%
     # add sampling size 
@@ -776,9 +776,9 @@ df<-ind2_data %>%
   theme(panel.border = element_blank(), legend.position="none",
         plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots
   scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
   scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
-                    breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
   scale_x_discrete(limits=rev) +  
   theme(text = element_text(size = 13))
 p1
@@ -788,7 +788,7 @@ p1
 Prepare data for model (remove outliers and NA in desired variable) and check n:
 ```{r}
 # remove missing data 
-data_for_model<-ind2_data %>% 
+data_for_model<-indicators_full %>% 
                       filter(!is.na(n_extant_populations)) %>%
                       filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
 
@@ -824,14 +824,14 @@ Plot
 ```{r}
 # Prepare data for plot with nice labels:
 # sample size of TOTAL populations
-sample_size <- ind2_data %>%
+sample_size <- indicators_full %>%
                     filter(!is.na(indicator2)) %>% 
                     filter(n_extant_populations<500) %>% 
                     group_by(defined_populations_nicenames) %>% summarize(num=n())
 
 # custom axis
 ## new dataframe
-df<-ind2_data %>% 
+df<-indicators_full %>% 
   filter(n_extant_populations<500) %>%
   filter(!is.na(indicator2)) %>% 
     # add sampling size 
@@ -855,9 +855,9 @@ p2<- df %>%
   theme(panel.border = element_blank(), legend.position="none",
         plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) 
   scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
-                    breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
   scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
   scale_x_discrete(limits=rev) +
   theme(text = element_text(size = 13))
 p2
@@ -867,7 +867,7 @@ p2
 Prepare data for model (remove outliers and NA in desired variable) and check n:
 ```{r}
 # remove missing data 
-data_for_model<-ind2_data %>% 
+data_for_model<-indicators_full %>% 
                       filter(!is.na(indicator2)) %>%
                       filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
 
@@ -899,7 +899,7 @@ summary(m2)
 
 Scatter plot of indicator2 vs extant pops
 ```{r}
-p3<- ind2_data %>%
+p3<- indicators_full %>%
   # filter outliers with too many pops and missing data
   filter(n_extant_populations<500) %>%
   filter(!is.na(indicator2)) %>%
@@ -910,7 +910,7 @@ p3<- ind2_data %>%
     geom_point() +
     theme_light() +
     scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
     theme(legend.position = "none") +
     ylab("Proportion of maintained populations (indicator)") +
     xlab("Number of maintained populations") +
@@ -922,7 +922,7 @@ p3
 Prepare data for model (remove outliers and NA in desired variable) and check n:
 ```{r}
 # remove missing data 
-data_for_model<-ind2_data %>% 
+data_for_model<-indicators_full %>% 
                       filter(!is.na(indicator2)) %>%
                       filter(!is.na(n_extant_populations)) %>%
                       filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
@@ -976,7 +976,7 @@ summary(m3)
 Because “what’s a population and how do you define them?” is such an important question, we can also test the effect of methods alone. First, subset the data to only those taxa where a single method was used: 
 
 ```{r}
-ind2_single_methods<-ind2_data %>% 
+ind2_single_methods<-indicators_full %>% 
                       filter(!is.na(indicator2)) %>% 
                       filter(n_extant_populations<500) %>%  # doesn't make a difference in the test below, but useful for 
                       filter(defined_populations_simplified=="genetic_clusters" | 
@@ -1026,14 +1026,14 @@ Plot in three panels.
 ## plot for Proportion of maintained populations (indicator) only with n in axis labels
 
 # sample size 
-sample_size <- ind2_data %>%
+sample_size <- indicators_full %>%
                     filter(!is.na(indicator2)) %>% 
                     filter(n_extant_populations<500) %>% 
                     group_by(defined_populations_nicenames) %>% summarize(num=n())
 
 # custom axis
 ## new dataframe
-df<-ind2_data %>% 
+df<-indicators_full %>% 
   filter(n_extant_populations<500) %>%
   filter(!is.na(indicator2)) %>% 
     # add sampling size 
@@ -1057,9 +1057,9 @@ p2.1<- df %>%
   theme(panel.border = element_blank(), legend.position="none",
         plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) 
   scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
-                    breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
   scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(ind2_data$defined_populations_nicenames))) +
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
   scale_x_discrete(limits=rev) +
   theme(text = element_text(size = 13))
 
