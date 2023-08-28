@@ -147,7 +147,7 @@ transform_to_Ne
 Use function to get Ne data from NcRange or NcPoint data, and their combination (Ne estimated from Ne if Ne is available, otherwise, from Nc)
 
 ```{r}
-ind1_data<-transform_to_Ne(ind1_data = ind1_data)
+ind1_data<-transform_to_Ne(ind1_data = ind1_data, ratio = 0.1)
 ```
 
 Remember what the function to estimate indicator 1 does:
@@ -326,7 +326,7 @@ nice_names <- c("adaptive traits & management units",
 
 
 ### add them
-## ind2
+## indicators
 indicators_full$defined_populations_nicenames<-as.factor(indicators_full$defined_populations_simplified)
 # add new nice names
 levels(indicators_full$defined_populations_nicenames)<-nice_names_or
@@ -342,6 +342,7 @@ metadata$defined_populations_nicenames<-factor(metadata$defined_populations_nice
 
 #check names match
 select(metadata, defined_populations_nicenames, defined_populations_simplified)
+levels(indicators_full$defined_populations_nicenames)
 ```
 
 
@@ -762,7 +763,7 @@ df<-indicators_full %>%
   mutate(myaxis = paste0(defined_populations_nicenames, " (n= ", num, ")")) %>%
 #myaxis needs levels in the same order than defined_populations_nicenames
   mutate(myaxis = factor(myaxis, 
-                  levels=levels(as.factor(myaxis))[c(1,11,2:10,12)])) # reorders levels
+                  levels=levels(as.factor(myaxis))[c(1,12,2:11,13)])) # reorders levels
 
 
 # plot for number of pops
@@ -839,7 +840,7 @@ df<-indicators_full %>%
   mutate(myaxis = paste0(defined_populations_nicenames, " (n= ", num, ")")) %>%
 #myaxis needs levels in the same order than defined_populations_nicenames
   mutate(myaxis = factor(myaxis, 
-                  levels=levels(as.factor(myaxis))[c(1,11,2:10,12)])) # reorders levels
+                  levels=levels(as.factor(myaxis))[c(1,12,2:11,13)])) # reorders levels
 
 
 
@@ -1041,7 +1042,7 @@ df<-indicators_full %>%
   mutate(myaxis = paste0(defined_populations_nicenames, " (n= ", num, ")")) %>%
 #myaxis needs levels in the same order than defined_populations_nicenames
   mutate(myaxis = factor(myaxis, 
-                  levels=levels(as.factor(myaxis))[c(1,11,2:10,12)])) # reorders levels
+                  levels=levels(as.factor(myaxis))[c(1,12,2:11,13)])) # reorders levels
 ## Change levels of myaxis to keep only the n
 levels(df$myaxis)<-sub(".*(\\(n= \\d+\\))", "\\1", levels(df$myaxis)) # extract "(n = number)"
 
