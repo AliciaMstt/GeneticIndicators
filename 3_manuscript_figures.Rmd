@@ -705,7 +705,7 @@ alluvial(foralluvial[,1:3], freq = foralluvial$n,
 ```
 
 
-## Effect of method used to define populations on number of populations and Proportion of maintained populations (indicator) 
+## Effect of method used to define populations on number of populations and PM and Ne>500 indicators
 
 The analyses and plots below us a subset of data filtering outliers (>500 populations) and using the simplified methods (see above). Multiassessed species are considered independently (each assessment is a data point).
 
@@ -798,6 +798,10 @@ table(data_for_model$defined_populations_simplified)
 # total n
 nrow(data_for_model)
 
+# re-level to use geographic boundaries as reference category for the analysis
+data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$defined_populations_simplified),
+                                                       ref="geographic_boundaries")
+
 ```
 
 Run model asking: Does the number of maintained pops vary with method used? Test controlling for variation in the number of maintaiend populations among countries:
@@ -873,6 +877,10 @@ table(data_for_model$defined_populations_simplified)
 # total n
 nrow(data_for_model)
 
+# re-level to use geographic boundaries as reference category for the analysis
+data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$defined_populations_simplified),
+                                                       ref="geographic_boundaries")
+
 ```
 
 Run model asking: Does indicator 2 vary with method used? Controlling for variation in indicator2 among countries:
@@ -928,6 +936,10 @@ table(data_for_model$defined_populations_simplified)
 # total n
 nrow(data_for_model)
 
+# re-level to use geographic boundaries as reference category for the analysis
+data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$defined_populations_simplified),
+                                                       ref="geographic_boundaries")
+
 ```
 
 Run GLM  model including method. Note: the number of mantained populations varies a lot among countries, but it’s in the predictor here, not response, so don’t really need country as random factor.
@@ -970,7 +982,8 @@ ind2_single_methods<-ind2_data %>%
                       filter(defined_populations_simplified=="genetic_clusters" | 
                              defined_populations_simplified=="geographic_boundaries" |
                              defined_populations_simplified=="eco_biogeo_proxies" | 
-                             defined_populations_simplified=="management_units")
+                             defined_populations_simplified=="management_units" |
+                             defined_populations_simplified=="dispersal_buffer")
 
 
 # check number of methods
@@ -981,6 +994,11 @@ table(ind2_single_methods$defined_populations_simplified)
 
 # check n total
 nrow(ind2_single_methods)
+
+# re-level to use geographic boundaries as reference category for the analysis
+ind2_single_methods$defined_populations_simplified<-relevel(as.factor(ind2_single_methods$defined_populations_simplified),
+                                                       ref="geographic_boundaries")
+
  
 ```
 
