@@ -1467,9 +1467,23 @@ ggplot(aes(x=country_assessment, fill=gen_studies)) +
 
 ## Summary table of mean indicator values and n
 
+The tables below show the indicator values and sampling size averaging them by country, taxonomic group, distribution type or IUCN global red list status. For this summary the mean of the multiassessed species was considering and counted as a single entry for the sampling size. 
+
+Codes for indicator names:
+
+- **PM.ind**: Proportion of Mantained populations indicator (indicator 2)
+- **Ne.ind**: Proportion of populations where Ne>500 indicator (indicator 1)
+- **Mon.ind**: Number of species where genetic diversity monitoring is taking place (indicator 3)
+
+Codes for summary stats:
+
+- **n**: sampling size (number of taxa assessed) without missing data
+- **mean**: mean value for the indicator value
+- **sd**: standar deviation for the indicator value
+
 Summary stats by country:
 ```{r}
-x<-indicators_full %>% 
+x<-indicators_averaged_one %>% 
                 group_by(country_assessment) %>%
                 summarise(n.PM.ind=sum(!is.na(indicator2)), 
                           mean.PM.ind=mean(indicator2, na.rm=TRUE),
@@ -1490,7 +1504,7 @@ kable(x, digits=3)
 Summary stats by taxonomic group:
 
 ```{r}
-x<-indicators_full %>% 
+x<-indicators_averaged_one %>% 
                 group_by(taxonomic_group) %>%
                 summarise(n.PM.ind=sum(!is.na(indicator2)), 
                           mean.PM.ind=mean(indicator2, na.rm=TRUE),
@@ -1508,7 +1522,7 @@ kable(x, digits=3)
 Detailed table:
 
 ```{r}
-x<-indicators_full %>% 
+x<-indicators_averaged_one %>% 
                 group_by(country_assessment, taxonomic_group) %>%
                 summarise(n.PM.ind=sum(!is.na(indicator2)), 
                           mean.PM.ind=mean(indicator2, na.rm=TRUE),
@@ -1528,7 +1542,7 @@ kable(x, digits=3)
 Summary stats:
 
 ```{r}
-x<-indicators_full %>% 
+x<-indicators_averaged_one %>% 
                 group_by(global_IUCN) %>%
                 summarise(n.PM.ind=sum(!is.na(indicator2)), 
                           mean.PM.ind=mean(indicator2, na.rm=TRUE),
@@ -1546,7 +1560,7 @@ kable(x, digits=3)
 Detailed table by IUCN category:
 
 ```{r}
-x<-indicators_full %>% 
+x<-indicators_averaged_one %>% 
                 group_by(country_assessment, global_IUCN) %>%
                 summarise(n.PM.ind=sum(!is.na(indicator2)), 
                           mean.PM.ind=mean(indicator2, na.rm=TRUE),
@@ -1566,7 +1580,7 @@ kable(x, digits=3)
 Summary stats:
 
 ```{r}
-x<-indicators_full %>% 
+x<-indicators_averaged_one %>% 
                 group_by(species_range) %>%
                 summarise(n.PM.ind=sum(!is.na(indicator2)), 
                           mean.PM.ind=mean(indicator2, na.rm=TRUE),
@@ -1584,7 +1598,7 @@ kable(x, digits=3)
 Detailed table by IUCN category:
 
 ```{r}
-x<-indicators_full %>% 
+x<-indicators_averaged_one %>% 
                 group_by(country_assessment, species_range) %>%
                 summarise(n.PM.ind=sum(!is.na(indicator2)), 
                           mean.PM.ind=mean(indicator2, na.rm=TRUE),
