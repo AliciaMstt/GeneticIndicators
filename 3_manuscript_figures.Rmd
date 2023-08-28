@@ -24,6 +24,7 @@ library(alluvial)
 library(viridis)
 library(cowplot)
 library(lme4)
+library(knitr)
 ```
 
 Load required functions. These custom fuctions are available at: https://github.com/AliciaMstt/GeneticIndicators
@@ -1463,6 +1464,140 @@ ggplot(aes(x=country_assessment, fill=gen_studies)) +
   xlab("")  +
       theme_light()
 ```
+
+## Summary table of mean indicator values and n
+
+Summary stats by country:
+```{r}
+x<-indicators_full %>% 
+                group_by(country_assessment) %>%
+                summarise(n.PM.ind=sum(!is.na(indicator2)), 
+                          mean.PM.ind=mean(indicator2, na.rm=TRUE),
+                          sd.PM.ind=sd(indicator2, na.rm=TRUE),
+                          n.Ne.ind=sum(!is.na(indicator1)), 
+                          mean.Ne.ind=mean(indicator1, na.rm=TRUE),
+                          sd.Ne.ind=sd(indicator1, na.rm=TRUE),
+                          Mon.ind=sum(temp_gen_monitoring=="yes"))
+
+# nice table
+kable(x, digits=3)
+
+```
+
+
+### Taxonomic groups
+
+Summary stats by taxonomic group:
+
+```{r}
+x<-indicators_full %>% 
+                group_by(taxonomic_group) %>%
+                summarise(n.PM.ind=sum(!is.na(indicator2)), 
+                          mean.PM.ind=mean(indicator2, na.rm=TRUE),
+                          sd.PM.ind=sd(indicator2, na.rm=TRUE),
+                          n.Ne.ind=sum(!is.na(indicator1)), 
+                          mean.Ne.ind=mean(indicator1, na.rm=TRUE),
+                          sd.Ne.ind=sd(indicator1, na.rm=TRUE),
+                          Mon.ind=sum(temp_gen_monitoring=="yes"))
+
+# nice table
+kable(x, digits=3)
+
+```
+
+Detailed table:
+
+```{r}
+x<-indicators_full %>% 
+                group_by(country_assessment, taxonomic_group) %>%
+                summarise(n.PM.ind=sum(!is.na(indicator2)), 
+                          mean.PM.ind=mean(indicator2, na.rm=TRUE),
+                          sd.PM.ind=sd(indicator2, na.rm=TRUE),
+                          n.Ne.ind=sum(!is.na(indicator1)), 
+                          mean.Ne.ind=mean(indicator1, na.rm=TRUE),
+                          sd.Ne.ind=sd(indicator1, na.rm=TRUE),
+                          Mon.ind=sum(temp_gen_monitoring=="yes"))
+
+# nice table
+kable(x, digits=3)
+```
+
+
+### IUCN 
+
+Summary stats:
+
+```{r}
+x<-indicators_full %>% 
+                group_by(global_IUCN) %>%
+                summarise(n.PM.ind=sum(!is.na(indicator2)), 
+                          mean.PM.ind=mean(indicator2, na.rm=TRUE),
+                          sd.PM.ind=sd(indicator2, na.rm=TRUE),
+                          n.Ne.ind=sum(!is.na(indicator1)), 
+                          mean.Ne.ind=mean(indicator1, na.rm=TRUE),
+                          sd.Ne.ind=sd(indicator1, na.rm=TRUE),
+                          Mon.ind=sum(temp_gen_monitoring=="yes"))
+
+# nice table
+kable(x, digits=3)
+
+```
+
+Detailed table by IUCN category:
+
+```{r}
+x<-indicators_full %>% 
+                group_by(country_assessment, global_IUCN) %>%
+                summarise(n.PM.ind=sum(!is.na(indicator2)), 
+                          mean.PM.ind=mean(indicator2, na.rm=TRUE),
+                          sd.PM.ind=sd(indicator2, na.rm=TRUE),
+                          n.Ne.ind=sum(!is.na(indicator1)), 
+                          mean.Ne.ind=mean(indicator1, na.rm=TRUE),
+                          sd.Ne.ind=sd(indicator1, na.rm=TRUE),
+                          Mon.ind=sum(temp_gen_monitoring=="yes"))
+
+# nice table
+kable(x, digits=3)
+```
+
+
+### Distribution type
+
+Summary stats:
+
+```{r}
+x<-indicators_full %>% 
+                group_by(species_range) %>%
+                summarise(n.PM.ind=sum(!is.na(indicator2)), 
+                          mean.PM.ind=mean(indicator2, na.rm=TRUE),
+                          sd.PM.ind=sd(indicator2, na.rm=TRUE),
+                          n.Ne.ind=sum(!is.na(indicator1)), 
+                          mean.Ne.ind=mean(indicator1, na.rm=TRUE),
+                          sd.Ne.ind=sd(indicator1, na.rm=TRUE),
+                          Mon.ind=sum(temp_gen_monitoring=="yes"))
+
+# nice table
+kable(x, digits=3)
+
+```
+
+Detailed table by IUCN category:
+
+```{r}
+x<-indicators_full %>% 
+                group_by(country_assessment, species_range) %>%
+                summarise(n.PM.ind=sum(!is.na(indicator2)), 
+                          mean.PM.ind=mean(indicator2, na.rm=TRUE),
+                          sd.PM.ind=sd(indicator2, na.rm=TRUE),
+                          n.Ne.ind=sum(!is.na(indicator1)), 
+                          mean.Ne.ind=mean(indicator1, na.rm=TRUE),
+                          sd.Ne.ind=sd(indicator1, na.rm=TRUE),
+                          Mon.ind=sum(temp_gen_monitoring=="yes"))
+
+# nice table
+kable(x, digits=3)
+```
+
 
 
 ## Session Info for reproducibility purposes:
