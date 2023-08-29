@@ -926,7 +926,7 @@ df<-indicators_full %>%
 p3<- df %>%
   ggplot(aes(x=myaxis, y=indicator1, color=defined_populations_nicenames,    
                                      fill=defined_populations_nicenames)) +
-          geom_boxplot() + xlab("") + ylab("Proportion of popuations with Ne>500") +
+          geom_boxplot() + xlab("") + ylab("Proportion of populations with Ne>500") +
           geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
   theme_light() +
@@ -1115,7 +1115,7 @@ p5<- indicators_full %>%
     scale_color_manual(values=simplifiedmethods_colors,
                     breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
     theme(legend.position = "none") +
-    ylab("Proportion of popuations with Ne>500") +
+    ylab("Proportion of populations with Ne>500") +
     xlab("Number of maintained populations") +
     theme(text = element_text(size = 13))
 p5
@@ -1296,7 +1296,7 @@ levels(df$myaxis)<-sub(".*(\\(n= \\d+\\))", "\\1", levels(df$myaxis)) # extract 
 p3.1<- df %>%
   ggplot(aes(x=myaxis, y=indicator1, color=defined_populations_nicenames,    
              fill=defined_populations_nicenames)) +
-  geom_boxplot() + xlab("") + ylab("Proportion of popuations with Ne>500") +
+  geom_boxplot() + xlab("") + ylab("Proportion of populations with Ne>500") +
   geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
   theme_light() +
@@ -1328,28 +1328,32 @@ plot_grid(p4, p5, ncol=2, align = "h", labels=c("a)", "b)"))
 
 ## Indicator 1 and indicator 2 by type of range
 
-All the following plots below consider the average of multiassessed species, so that they are shown only once.
+All the following plots and analyses consider the average of multiassessed species, so that they are shown only once.
 
 ### Indicator 1 (Ne>5000)
-Indicator 1 by type of range in the entire dataset:
+
+Plot Indicator 1 by type of range in the entire dataset. Filtering "unknown" or NA in species range:
 
 ```{r indicator1 by range}
 # get sample size by desired category
 sample_size <- indicators_averaged_one  %>%
                     filter(!is.na(indicator1_mean)) %>% 
+                    filter(species_range =="wide_ranging" | species_range =="restricted") %>% 
                     group_by(species_range) %>% summarize(num=n())
 
 # plot
 p1<-indicators_averaged_one %>% 
+    filter(!is.na(indicator1_mean)) %>% 
+    filter(species_range =="wide_ranging" | species_range =="restricted") %>% 
   # add sampling size 
-  left_join(sample_size) %>%
+  left_join(sample_size) %>% 
   mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
 
   # plot
   ggplot(aes(x=myaxis, y=indicator1_mean , fill=species_range)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of popuations with Ne>500") +
+      xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
       scale_fill_manual(breaks=c("wide_ranging", "restricted", "unknown"),
                        labels=c("wide ranging", "restricted", "unknown"),
@@ -1358,7 +1362,7 @@ p1<-indicators_averaged_one %>%
       theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20))
 p1
 ```
-Indicator 1 by country and type of range
+Plot Indicator 1 by country and type of range
 
 ```{r indicator1 by country and range}
 ### Duplicate dataframe to have a column with "all data" for faceting
@@ -1370,13 +1374,13 @@ df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "Franc
 ## plot
 df  %>% 
   # filter out "unknown" range
-  filter(species_range!="unknown") %>%
+  filter(species_range =="wide_ranging" | species_range =="restricted") %>% 
   
 # plot
 ggplot(aes(x=species_range, y=indicator1_mean , fill=species_range)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of popuations with Ne>500") +
+      xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
       scale_x_discrete(breaks=c("wide_ranging", "restricted"),
                         labels=c("wide ranging", "restricted")) +
@@ -1386,23 +1390,120 @@ ggplot(aes(x=species_range, y=indicator1_mean , fill=species_range)) +
       theme(panel.spacing = unit(1.5, "lines"))  
   
 ```
-Test the effect of range on indicator1 with country as a random effect.
+Test the effect of range type on Ne>500 indicator. Does the indicator vary between wide randing vs restricted distribution species? 
 
 ```{r stats indicator1 and range}
-library(lme4)
+
 ## Remove unknown
-data<-indicators_averaged_one %>%
-     filter(species_range!="unknown")
+data<- indicators_averaged_one  %>%
+                    filter(!is.na(indicator1_mean)) %>% 
+                    filter(species_range =="wide_ranging" | species_range =="restricted")
   
-## run model with glm
-m1 <- glm(data$indicator1_mean ~ data$species_range + data$country_assessment, family = "quasibinomial")
+## run model 
+m1 <- glm(data$indicator1_mean ~ data$species_range, family = "quasibinomial")
+
+# summary results
 summary(m1)
 
-# or with lme4?
-m2 <-lmer(indicator1_mean ~ species_range + (1|country_assessment), data = data)
-summary(m2)
+
+## + country
+m1.1 <- glm(data$indicator1_mean ~ data$species_range + data$country_assessment,  family = "quasibinomial")
+
+# summary results
+summary(m1.1)
+
 
 ```
+
+
+### Indicator 2 (mantained populations)
+
+Plot Indicator 2 by type of range in the entire dataset. Filtering "unknown" or NA in species range:
+
+```{r indicator2 by range}
+# get sample size by desired category
+sample_size <- indicators_averaged_one  %>%
+                    filter(!is.na(indicator2_mean)) %>% 
+                    filter(species_range =="wide_ranging" | species_range =="restricted") %>% 
+                    group_by(species_range) %>% summarize(num=n())
+
+# plot
+p2<-indicators_averaged_one %>% 
+    filter(!is.na(indicator2_mean)) %>% 
+    filter(species_range =="wide_ranging" | species_range =="restricted") %>% 
+  # add sampling size 
+  left_join(sample_size) %>% 
+  mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=myaxis, y=indicator2_mean , fill=species_range)) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") + ylab("Proportion of populations maintained") +
+      coord_flip() +
+      scale_fill_manual(breaks=c("wide_ranging", "restricted", "unknown"),
+                       labels=c("wide ranging", "restricted", "unknown"),
+                       values=c("#F8766D", "#00BFC4", "grey80")) +
+      theme_light() +
+      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20))
+p2
+```
+
+Plot Indicator 2 by country and type of range
+
+```{r indicator2 by country and range}
+### Duplicate dataframe to have a column with "all data" for faceting
+df<-CreateAllFacet(indicators_averaged_one, "country_assessment")
+
+# order with "all" as last
+df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US", "all"))
+
+## plot
+df  %>% 
+  # filter out "unknown" range
+  filter(species_range =="wide_ranging" | species_range =="restricted") %>% 
+  
+# plot
+ggplot(aes(x=species_range, y=indicator2_mean , fill=species_range)) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") + ylab("Proportion of populations maintained") +
+      coord_flip() +
+      scale_x_discrete(breaks=c("wide_ranging", "restricted"),
+                        labels=c("wide ranging", "restricted")) +
+      theme_light() +
+      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=15)) +
+      facet_wrap(~facet, ncol = 5) +
+      theme(panel.spacing = unit(1.5, "lines"))  
+  
+```
+
+Test the effect of range type on the proportion of maitained populations. Does the indicator vary between wide randing vs restricted distribution species? 
+
+```{r stats indicator2 and range}
+
+## Remove unknown
+data<- indicators_averaged_one  %>%
+                    filter(!is.na(indicator2_mean)) %>% 
+                    filter(species_range =="wide_ranging" | species_range =="restricted")
+  
+## run model 
+m2 <- glm(data$indicator2_mean ~ data$species_range, family = "quasibinomial")
+
+# summary results
+summary(m1)
+
+
+## + country
+m2.1 <- glm(data$indicator2_mean ~ data$species_range + data$country_assessment,  family = "quasibinomial")
+
+# summary results
+summary(m2.1)
+
+
+```
+
+
 
 
 ## Indicator 1 and Indicator 2 by IUCN status
@@ -1448,7 +1549,7 @@ p1<-df %>%
     ggplot(aes(x=myaxis, y=indicator1 , fill=global_IUCN)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of popuations with Ne>500") +
+      xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
       scale_fill_manual(values= IUCNcolors, # iucn color codes
                         breaks=c(levels(df$global_IUCN))) +
@@ -1498,7 +1599,7 @@ p2<-df %>%
     ggplot(aes(x=myaxis, y=indicator1_mean , fill=regional_redlist)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of popuations with Ne>500") +
+      xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
       scale_fill_manual(values= IUCNcolors_regional, # iucn color codes
                         breaks=c(levels(df$regional_redlist))) +
@@ -1528,7 +1629,7 @@ indicators_averaged_one %>%
   ggplot(aes(x=global_IUCN, y=indicator1_mean, fill=global_IUCN)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of popuations with Ne>500") +
+      xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
       scale_fill_manual(values= IUCNcolors, # iucn color codes
                     breaks=c(levels(indicator1$global_IUCN))) +
@@ -1554,7 +1655,7 @@ indicators_averaged_one %>%
   ggplot(aes(x=regional_redlist, y=indicator1_mean, fill=regional_redlist)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of popuations with Ne>500") +
+      xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
       scale_fill_manual(values= IUCNcolors_regional, # iucn color codes
                     breaks=c(levels(indicator1$regional_redlist))) +
@@ -1584,7 +1685,7 @@ p1<-only_multi %>%
   ggplot(aes(x=taxon, y=indicator1)) +
           geom_line(colour="darkgrey") + 
           geom_point(aes(color=country_assessment)) +
-  xlab("") + ylab("Proportion of popuations with Ne>500") +
+  xlab("") + ylab("Proportion of populations with Ne>500") +
   labs(color="country") +
   ylim(0, 1)+
   coord_flip() +
@@ -1606,7 +1707,7 @@ p2<-only_multi %>%
           geom_line(colour="darkgrey") + 
           geom_point(aes(color=country_assessment)) +
     scale_color_manual(values= scales::hue_pal()(4)[2:4]) + # last 3 colors to make them the same than the other plot
-  xlab("") + ylab("Proportion of populations maintained ") +
+  xlab("") + ylab("Proportion of populations maintained") +
   labs(color="country") +
   coord_flip() +
   theme_light() + 
