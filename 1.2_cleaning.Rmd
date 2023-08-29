@@ -432,10 +432,15 @@ happy_message<-"congratulations! there are no more taxa with issues to be correc
 
 ```
 
-## Change Managment Unitis for Dispersal-buffer in Method to define populations.
+## Change managment_unitis and other relevant methods to dispersal_buffer in Methods to define populations.
 
-The method "management units" to define populations was interpreted differently by countries. Namely, Belgium called "management units" a method in which they created a buffer polygons based on reported dispersal distances for each species around observation points, which are used as occurrence points. Polygons that overlap are fused together, and the resulting polygon, along with the points falling within its area, are considered a single population. However, for other countries "management units" refers to managed populations in the wild, sometimes enclosed, for instance as part of hunting schemes. Since we would be evaluating the effect of method on the indicators, we decided to separate management units into real management units and dispersal buffers, accordingly to which methods were used. This is also reflected in the versions of the Kobo form.
+The method "management units" to define populations was interpreted differently by countries. For example, Belgium called "management units" a method in which they created a buffer polygons based on reported dispersal distances for each species around observation points, which are used as occurrence points. Polygons that overlap are fused together, and the resulting polygon, along with the points falling within its area, are considered a single population. However, for other countries "management units" refers to managed populations in the wild, sometimes enclosed, for instance as part of hunting schemes. Similarly, Japan used occurrence data in about 10-km grids and known dispersal distances to define populations as one or more grids, but called this a combination of management_units and geographic_boundaries. 
 
+Since we would be evaluating the effect of method on the indicators, we decided to leave management units into real management units and to create a new category, called "dispersal buffers", which would better reflect what countries did.
+
+This is also reflected in the new versions of the Kobo form, where "dispersal buffer" has been added as an option.
+
+Re-label data for Belgium:
 ```{r}
 # select management_units that need to be changed to "dispersal_buffer" 
   # look for "managegment_units" in belgium and change that text to "dispersal_buffer" keeping any_text before or after
@@ -448,6 +453,28 @@ kobo_clean$defined_populations <- ifelse(kobo_clean$country_assessment == "belgi
 grep("dispersal_buffer", levels(as.factor(kobo_clean$defined_populations)), value=TRUE)
 
 ```
+
+Re-label data for Japan. After manually reviweing the data and discussing it with Fumiko, we believe that all taxa fit better in the new category "dispersal_buffer", except for the following taxa, which we thin would be better labeled as geographic_boundaries:
+```{r}
+
+# geographic_boundaries species:
+x<-c("Cryptocarya chinensis", "Polystichum piceopaleaceum", "Oxytropis campestris subsp. rishiriensi", "Sporobolus hancei")
+
+# change selected species to geographic_boundaries
+kobo_clean<-kobo_clean %>% mutate(defined_populations = ifelse(country_assessment == "japan" &
+                                                         kobo_clean$taxon %in% x, # in the list then change to geo
+                                    "geographic_boundaries", defined_populations)) %>%
+  
+# change the rest of japan species to "dispersal_buffer"
+mutate(defined_populations = ifelse(country_assessment == "japan" &
+                                    kobo_clean$taxon %!in% x, # if NOT in the list then change to dispersal_buff
+                                    "dispersal_buffer", defined_populations))
+
+# check data looks as expected
+unique(kobo_clean[kobo_clean$country_assessment == "japan", "defined_populations"])
+
+```
+
 
 
 ## Save the clean koboutput version:
