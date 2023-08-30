@@ -1340,19 +1340,19 @@ indicators_averaged_one$species_range<-gsub("wide_ranging", "wide ranging", indi
 
 ### Indicator 1 (Ne>5000)
 
-Plot Indicator 1 by type of range in the entire dataset. Filtering "unknown" or NA in species range:
+Plot Indicator 1 by type of range in the entire dataset. Filtering NA in species range:
 
 ```{r indicator1 by range}
 # get sample size by desired category
 sample_size <- indicators_averaged_one  %>%
                     filter(!is.na(indicator1_mean)) %>% 
-                    filter(species_range =="wide ranging" | species_range =="restricted") %>% 
+                    filter(!is.na(species_range)) %>% 
                     group_by(species_range) %>% summarize(num=n())
 
 # plot
 p1<-indicators_averaged_one %>% 
     filter(!is.na(indicator1_mean)) %>% 
-    filter(species_range =="wide ranging" | species_range =="restricted") %>% 
+    filter(!is.na(species_range)) %>% 
   # add sampling size 
   left_join(sample_size) %>% 
   mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
@@ -1363,14 +1363,14 @@ p1<-indicators_averaged_one %>%
       geom_jitter(size=.5, width = 0.1) +
       xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
-      scale_fill_manual(breaks=c("wide_ranging", "restricted", "unknown"),
+      scale_fill_manual(breaks=c("wide ranging", "restricted", "unknown"),
                        labels=c("wide ranging", "restricted", "unknown"),
-                       values=c("#F8766D", "#00BFC4", "grey80")) +
+                       values=c("#00BFC4", "#F8766D", "grey80")) +
       theme_light() +
       theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20))
 p1
 ```
-Plot Indicator 1 by country and type of range
+Plot Indicator 1 by country and type of range. Remove "unknown" and NA for better visualization.
 
 ```{r indicator1 by country and range}
 ### Duplicate dataframe to have a column with "all data" for faceting
@@ -1398,7 +1398,7 @@ ggplot(aes(x=species_range, y=indicator1_mean , fill=species_range)) +
       theme(panel.spacing = unit(1.5, "lines"))  
   
 ```
-Test the effect of range type on Ne>500 indicator. Does the indicator vary between wide randing vs restricted distribution species? 
+Test the effect of range type on Ne>500 indicator. Does the indicator vary between wide randing vs restricted distribution species? (keep only those categories and remove unknwon due to small sampling size)
 
 ```{r stats indicator1 and range}
 
@@ -1426,19 +1426,19 @@ summary(m1.1)
 
 ### Indicator 2 (mantained populations)
 
-Plot Indicator 2 by type of range in the entire dataset. Filtering "unknown" or NA in species range:
+Plot Indicator 2 by type of range in the entire dataset. Filtering NA in species range:
 
 ```{r indicator2 by range}
 # get sample size by desired category
 sample_size <- indicators_averaged_one  %>%
                     filter(!is.na(indicator2_mean)) %>% 
-                    filter(species_range =="wide ranging" | species_range =="restricted") %>% 
+                    filter(!is.na(species_range)) %>% 
                     group_by(species_range) %>% summarize(num=n())
 
 # plot
 p2<-indicators_averaged_one %>% 
     filter(!is.na(indicator2_mean)) %>% 
-    filter(species_range =="wide ranging" | species_range =="restricted") %>% 
+    filter(!is.na(species_range)) %>% 
   # add sampling size 
   left_join(sample_size) %>% 
   mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
@@ -1451,13 +1451,13 @@ p2<-indicators_averaged_one %>%
       coord_flip() +
       scale_fill_manual(breaks=c("wide ranging", "restricted", "unknown"),
                        labels=c("wide ranging", "restricted", "unknown"),
-                       values=c("#F8766D", "#00BFC4", "grey80")) +
+                       values=c("#00BFC4", "#F8766D", "grey80")) +
       theme_light() +
       theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20))
 p2
 ```
 
-Plot Indicator 2 by country and type of range
+Plot Indicator 2 by country and type of range. We remove NA and unknown for better visualization.
 
 ```{r indicator2 by country and range}
 ### Duplicate dataframe to have a column with "all data" for faceting
@@ -1477,8 +1477,6 @@ ggplot(aes(x=species_range, y=indicator2_mean , fill=species_range)) +
       geom_jitter(size=.5, width = 0.1) +
       xlab("") + ylab("Proportion of populations maintained") +
       coord_flip() +
-      scale_x_discrete(breaks=c("wide_ranging", "restricted"),
-                        labels=c("wide ranging", "restricted")) +
       theme_light() +
       theme(panel.border = element_blank(), legend.position="none", text= element_text(size=15)) +
       facet_wrap(~facet, ncol = 5) +
@@ -1486,7 +1484,7 @@ ggplot(aes(x=species_range, y=indicator2_mean , fill=species_range)) +
   
 ```
 
-Test the effect of range type on the proportion of maitained populations. Does the indicator vary between wide randing vs restricted distribution species? 
+Test the effect of range type on the proportion of maitained populations. Does the indicator vary between wide randing vs restricted distribution species? Consider only wide randing and restricted categores (ie remove unknown due to small sampling size)
 
 ```{r stats indicator2 and range}
 
@@ -1512,10 +1510,8 @@ summary(m2.1)
 ```
 
 ### Single plot PM and Ne indicators by range type
-```{r}
-plot_grid(p1,
-          p2, 
-          ncol=1, align = "v", labels=c("a)", "b)"))  
+```{r,  out.height="900px", out.width="800px"}
+plot_grid(p1, p2,  ncol=1, align = "v", labels=c("a)", "b)"))  
 ```
 
 
