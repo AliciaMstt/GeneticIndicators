@@ -1319,9 +1319,11 @@ plot_grid(p1, p2.1, p3.1, ncol=3, rel_widths = c(1.7,1,1), align = "h", labels=c
 
 ### Single figure 2 panels scatter plots number of populations vs indicators
 
-```{r}
+```{r, out.height= "800px", out.width="500px"}
 # plot
-plot_grid(p4, p5, ncol=2, align = "h", labels=c("a)", "b)"))  
+plot_grid(p4 + xlim(0,400) + xlab(""), # remove xlab from top plot and match x axis size
+          p5+ xlim(0,400), 
+          ncol=1, align = "v", labels=c("a)", "b)"))  
 
 ```
 
@@ -1503,7 +1505,10 @@ summary(m2.1)
 
 ```
 
+### Single plot PM and Ne indicators by range type
+```{r}
 
+```
 
 
 ## Indicator 1 and Indicator 2 by IUCN status
@@ -1665,6 +1670,8 @@ indicators_averaged_one %>%
       facet_wrap(~country_assessment, ncol = 4) +
       theme(panel.spacing = unit(1.5, "lines"))
 ```
+
+## Indicator values by taxonomic group
 
 ## Values of indicator 1 and indicator 2 for multiassessed species
 
