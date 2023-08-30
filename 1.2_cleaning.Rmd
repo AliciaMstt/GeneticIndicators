@@ -475,6 +475,21 @@ unique(kobo_clean[kobo_clean$country_assessment == "japan", "defined_populations
 
 ```
 
+After checking the data with Viktoria she found that "geographic_boundaries" should be changed to "dispersal_buffer" for the species listed below:
+
+```{r}
+# species to change geo boundaries  to dispersal
+x<-c("Bufotes viridis", "Pelophylax esculentus", "Pelobates fuscus", "Triturus cristatus", "Bombina bombina", "Bufo bufo", "Epidalea calamita", "Hyla arborea", "Lissotriton vulgaris", "Rana temporaria", "Rana arvalis", "Rana dalmatina", "Lepus timidus", "Erinaceus europaeus", "Muscardinus avellanarius", "Anguis fragilis", "Lacerta agilis", "Coronella austriaca", "Natrix natrix natrix", "Zootoca vivipara", "Anguis fragilis")
+
+# change selected species to dispersal_buffr
+kobo_clean$defined_populations <- ifelse(kobo_clean$country_assessment == "sweden" & kobo_clean$taxon %in% x,
+                                         gsub("geographic_boundaries", "dispersal_buffer", kobo_clean$defined_populations),
+                                         kobo_clean$defined_populations)
+
+# check data looks as expected
+filter(kobo_clean, country_assessment == "sweden" & taxon %in% x) %>% select(country_assessment, defined_populations, taxon)
+
+```
 
 
 ## Save the clean koboutput version:
@@ -661,7 +676,7 @@ Example:
 Example:
 NcPoint expects ONLY numbers, an no other character. Therefore 400-600 stored in NcPoint will be transformed to NA. And there would be a warning saying "NAs introduced by coercion". In this example, if you want to keep "400-600" then you should have filled the column NcRange with in this case less_5000_by_much.
 
-**4)NcType and NcRange should only have values from the specified categories, any other value will be changed to NA**
+**4) NcType and NcRange should only have values from the specified categories, any other value will be changed to NA**
 
 Example:
 * NcRange values could only be 'less_5000', 'less_5000_bymuch', 'more_5000', 'more_5000_bymuch', 'range_includes_5000'. If the assessor types "600-8000" this will be transformed to NA.

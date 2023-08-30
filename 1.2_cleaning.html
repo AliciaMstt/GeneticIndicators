@@ -2207,6 +2207,24 @@ mutate(defined_populations = ifelse(country_assessment == &quot;japan&quot; &amp
 # check data looks as expected
 unique(kobo_clean[kobo_clean$country_assessment == &quot;japan&quot;, &quot;defined_populations&quot;])</code></pre>
 <pre><code>## [1] &quot;dispersal_buffer&quot;      &quot;geographic_boundaries&quot;</code></pre>
+<p>After checking the data with Viktoria she found that
+“geographic_boundaries” should be changed to “dispersal_buffer” for the
+species listed below:</p>
+<pre class="r"><code># species to change geo boundaries  to dispersal
+x&lt;-c(&quot;Bufotes viridis&quot;, &quot;Pelophylax esculentus&quot;, &quot;Pelobates fuscus&quot;, &quot;Triturus cristatus&quot;, &quot;Bombina bombina&quot;, &quot;Bufo bufo&quot;, &quot;Epidalea calamita&quot;, &quot;Hyla arborea&quot;, &quot;Lissotriton vulgaris&quot;, &quot;Rana temporaria&quot;, &quot;Rana arvalis&quot;, &quot;Rana dalmatina&quot;, &quot;Lepus timidus&quot;, &quot;Erinaceus europaeus&quot;, &quot;Muscardinus avellanarius&quot;, &quot;Anguis fragilis&quot;, &quot;Lacerta agilis&quot;, &quot;Coronella austriaca&quot;, &quot;Natrix natrix natrix&quot;, &quot;Zootoca vivipara&quot;, &quot;Anguis fragilis&quot;)
+
+# change selected species to dispersal_buffr
+kobo_clean$defined_populations &lt;- ifelse(kobo_clean$country_assessment == &quot;sweden&quot; &amp; kobo_clean$taxon %in% x,
+                                         gsub(&quot;geographic_boundaries&quot;, &quot;dispersal_buffer&quot;, kobo_clean$defined_populations),
+                                         kobo_clean$defined_populations)
+
+# check data looks as expected
+filter(kobo_clean, country_assessment == &quot;sweden&quot; &amp; taxon %in% x) %&gt;% select(country_assessment, defined_populations, taxon)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["country_assessment"],"name":[1],"type":["chr"],"align":["left"]},{"label":["defined_populations"],"name":[2],"type":["chr"],"align":["left"]},{"label":["taxon"],"name":[3],"type":["chr"],"align":["left"]}],"data":[{"1":"sweden","2":"dispersal_buffer","3":"Rana dalmatina"},{"1":"sweden","2":"genetic_clusters dispersal_buffer","3":"Bufotes viridis"},{"1":"sweden","2":"other","3":"Anguis fragilis"},{"1":"sweden","2":"dispersal_buffer","3":"Pelophylax esculentus"},{"1":"sweden","2":"dispersal_buffer","3":"Pelobates fuscus"},{"1":"sweden","2":"dispersal_buffer adaptive_traits","3":"Triturus cristatus"},{"1":"sweden","2":"genetic_clusters dispersal_buffer","3":"Bombina bombina"},{"1":"sweden","2":"genetic_clusters dispersal_buffer","3":"Bufo bufo"},{"1":"sweden","2":"dispersal_buffer adaptive_traits","3":"Lacerta agilis"},{"1":"sweden","2":"genetic_clusters dispersal_buffer","3":"Epidalea calamita"},{"1":"sweden","2":"dispersal_buffer","3":"Hyla arborea"},{"1":"sweden","2":"eco_biogeo_proxies adaptive_traits","3":"Lissotriton vulgaris"},{"1":"sweden","2":"genetic_clusters eco_biogeo_proxies","3":"Rana temporaria"},{"1":"sweden","2":"genetic_clusters dispersal_buffer","3":"Rana arvalis"},{"1":"sweden","2":"dispersal_buffer","3":"Coronella austriaca"},{"1":"sweden","2":"dispersal_buffer","3":"Natrix natrix natrix"},{"1":"sweden","2":"dispersal_buffer","3":"Zootoca vivipara"},{"1":"sweden","2":"dispersal_buffer eco_biogeo_proxies","3":"Lepus timidus"},{"1":"sweden","2":"dispersal_buffer","3":"Erinaceus europaeus"},{"1":"sweden","2":"dispersal_buffer","3":"Muscardinus avellanarius"},{"1":"sweden","2":"dispersal_buffer","3":"Rana dalmatina"},{"1":"sweden","2":"other","3":"Anguis fragilis"},{"1":"sweden","2":"dispersal_buffer","3":"Coronella austriaca"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
 </div>
 <div id="save-the-clean-koboutput-version" class="section level2">
 <h2>Save the clean koboutput version:</h2>
@@ -2462,7 +2480,7 @@ Therefore 400-600 stored in NcPoint will be transformed to NA. And there
 would be a warning saying “NAs introduced by coercion”. In this example,
 if you want to keep “400-600” then you should have filled the column
 NcRange with in this case less_5000_by_much.</p>
-<p><strong>4)NcType and NcRange should only have values from the
+<p><strong>4) NcType and NcRange should only have values from the
 specified categories, any other value will be changed to NA</strong></p>
 <p>Example: * NcRange values could only be ‘less_5000’,
 ‘less_5000_bymuch’, ‘more_5000’, ‘more_5000_bymuch’,
