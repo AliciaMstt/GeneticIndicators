@@ -76,19 +76,17 @@ taxoncolors<-cividis(12) # same than using cividis(length(levels(as.factor(metad
 
 # get a set of colors to highlight genetic and geographic with similar colors
 
-simplifiedmethods_colors<-c("#b34656", #"adaptive_traits management_units"
-                            "#b34656", # "management_units" 
-                            "#FFA07A", #"dispersal_buffer"
+simplifiedmethods_colors<-c("#FFA07A", #"dispersal_buffer"
                             "#7f611b", # "eco_biogeo_proxies"
                             "#668cd1", # "genetic_clusters"     
                             "#668cd1", # "genetic_clusters eco_biogeo_proxies"     
                             "#45c097", # "genetic_clusters geographic_boundaries"  
-                            "#d4b43e", # "geographic_boundaries"                   
-                            "#d4b43e", # "geographic_boundaries adaptive_traits"
+                            "#d4b43e", # "geographic_boundaries"
                             "#d4b43e", # "geographic_boundaries eco_biogeo_proxies"
-                            "#d4b43e", # "geographic_boundaries management_units"  
-                            "#be72c9", # "low_freq_combinations" 
-                            "#be72c9")# "other" 
+                            "#d4b43e", # "geographic_boundaries management_units" 
+                            "#b34656", # "management_units" 
+                            "#be72c9", # "other" 
+                            "#be72c9")# "other_combinations" 
   
 ```
 
@@ -244,7 +242,7 @@ The methods used to define populations come from a check box question were one o
 table(indicators_full$defined_populations)
 ```
 
-It is hard to group the above methods, so we will keep the original groups with n >=19 in the above list, and tag the combinations that appear few times as as "low_freq_combinations".
+It is hard to group the above methods, so we will keep the original groups with n >=19 in the above list, and tag the combinations that appear few times as as "other_combinations".
 
 Which groups have n>=19?
 ```{r}
@@ -262,7 +260,7 @@ indicators_full<- indicators_full %>%
   mutate(defined_populations_simplified = case_when(
          # if the method is in the list of methods n>=19 then keep it
          defined_populations %in% x$method ~ defined_populations,
-         TRUE ~ "low_freq_combinations"))
+         TRUE ~ "other_combinations"))
 
 
 ### for meta
@@ -270,7 +268,7 @@ metadata<- metadata %>%
   mutate(defined_populations_simplified = case_when(
          # if the method is in the list of methods n>=19 then keep it
          defined_populations %in% x$method ~ defined_populations,
-         TRUE ~ "low_freq_combinations"))
+         TRUE ~ "other_combinations"))
          
 ```
 
@@ -294,51 +292,32 @@ Create nicer names for ploting
 # original method names
 levels(as.factor(indicators_full$defined_populations_simplified))
 
-# nice methods names in original order
-nice_names_or <- c("adaptive traits & management units",
-                   "dispersal buffer",
-                    "eco- biogeographic proxies",
-                   "genetic clusters",
-                   "genetic clusters & eco- biogeographic proxies",
-                   "genetic clusters & geographic boundaries",
-                   "geographic boundaries",
-                   "geographic boundaries & adaptive traits",
-                   "geographic boundaries & eco- biogeographic proxies",
-                   "geographic boundaries & management units",
-                   "low frequency combinations",
-                   "management units",
-                   "others")
 
-# nice names in better order for plotting
-nice_names <- c("adaptive traits & management units",
+# nicer names
+nice_names <- c("dispersal buffer",
+                "eco- biogeographic proxies",
+                 "genetic clusters",
+                 "genetic clusters & eco- biogeographic proxies",
+                 "genetic clusters & geographic boundaries",
+                 "geographic boundaries",
+                 "geographic boundaries & eco- biogeographic proxies",
+                 "geographic boundaries & management units",
                  "management units",
-                 "dispersal buffer",
-                  "eco- biogeographic proxies",
-                   "genetic clusters",
-                   "genetic clusters & eco- biogeographic proxies",
-                   "genetic clusters & geographic boundaries",
-                   "geographic boundaries",
-                   "geographic boundaries & adaptive traits",
-                   "geographic boundaries & eco- biogeographic proxies",
-                   "geographic boundaries & management units",
-                   "low frequency combinations",
-                   "others")
+                 "other", 
+                 "other combinations")
 
 
 ### add them
-## indicators
-indicators_full$defined_populations_nicenames<-as.factor(indicators_full$defined_populations_simplified)
-# add new nice names
-levels(indicators_full$defined_populations_nicenames)<-nice_names_or
-# change to desired order
-indicators_full$defined_populations_nicenames<-factor(indicators_full$defined_populations_nicenames, 
-                                                levels=nice_names)
+indicators_full$defined_populations_nicenames <- factor(
+    indicators_full$defined_populations_simplified,
+    levels = levels(as.factor(indicators_full$defined_populations_simplified)),
+    labels = nice_names)
 
 # metadata
-metadata$defined_populations_nicenames<-as.factor(metadata$defined_populations_simplified)
-levels(metadata$defined_populations_nicenames)<-nice_names_or
-metadata$defined_populations_nicenames<-factor(metadata$defined_populations_nicenames, 
-                                                levels=nice_names)
+metadata$defined_populations_nicenames <- factor(
+    metadata$defined_populations_simplified,
+    levels = levels(as.factor(metadata$defined_populations_simplified)),
+    labels = nice_names)
 
 #check names match
 select(metadata, defined_populations_nicenames, defined_populations_simplified)
@@ -1241,29 +1220,26 @@ df<-indicators_full %>%
   filter(!is.na(indicator2)) %>% 
     # add sampling size 
   left_join(sample_size) %>%
-  mutate(myaxis = paste0(defined_populations_nicenames, " (n= ", num, ")")) %>%
-#myaxis needs levels in the same order than defined_populations_nicenames
-  mutate(myaxis = factor(myaxis, 
-                  levels=levels(as.factor(myaxis))[c(1,12,2:11,13)])) # reorders levels
-## Change levels of myaxis to keep only the n
-levels(df$myaxis)<-sub(".*(\\(n= \\d+\\))", "\\1", levels(df$myaxis)) # extract "(n = number)"
+  mutate(myaxis = as.factor(paste0(defined_populations_nicenames, " (n= ", num, ")")))
 
 
 p2.1<- df %>%
   filter(n_extant_populations<500) %>%
   ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_nicenames,    
                                      fill=defined_populations_nicenames)) +
-          geom_boxplot() + xlab("") + ylab("Proportion of maintained populations (indicator)") +
+          geom_boxplot() + xlab("") + ylab("Proportion of maintained populations") +
           geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
   theme_light() +
   theme(panel.border = element_blank(), legend.position="none",
-        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) 
+        plot.margin = unit(c(0.2, 0.2, 0.2, 0.2), "cm")) + # this is used to decrease the space between plots) 
   scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
                     breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
   scale_color_manual(values=simplifiedmethods_colors,
                     breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_x_discrete(limits=rev) +
+  
+  scale_x_discrete(limits=rev, 
+                   labels= rev(sub(".*(\\(n= \\d+\\))", "\\1", levels(df$myaxis)))) + # extract "(n = number)") and show them in reverse order
   theme(text = element_text(size = 13))
 
 
@@ -1282,14 +1258,7 @@ df<-indicators_full %>%
   filter(!is.na(indicator1)) %>% 
   # add sampling size 
   left_join(sample_size) %>%
-  mutate(myaxis = paste0(defined_populations_nicenames, " (n= ", num, ")")) %>%
-  #myaxis needs levels in the same order than defined_populations_nicenames
-  mutate(myaxis = factor(myaxis, 
-                         levels=levels(as.factor(myaxis))[c(1,12,2:11,13)])) # reorders levels
-
-## Change levels of myaxis to keep only the n
-levels(df$myaxis)<-sub(".*(\\(n= \\d+\\))", "\\1", levels(df$myaxis)) # extract "(n = number)"
-
+  mutate(myaxis = as.factor(paste0(defined_populations_nicenames, " (n= ", num, ")")))
 
 
 ## plot 
@@ -1301,17 +1270,18 @@ p3.1<- df %>%
   coord_flip() +
   theme_light() +
   theme(panel.border = element_blank(), legend.position="none",
-        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) 
+        plot.margin = unit(c(0.2, 0.2, 0.2, 0.2), "cm")) + # this is used to decrease the space between plots) 
   scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
                     breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
   scale_color_manual(values=simplifiedmethods_colors,
                      breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_x_discrete(limits=rev) +
+  scale_x_discrete(limits=rev, 
+                   labels= rev(sub(".*(\\(n= \\d+\\))", "\\1", levels(df$myaxis)))) + # extract "(n = number)") and show them in reverse order
   theme(text = element_text(size = 13))
 
 
 ## Plot 3 panels
-plot_grid(p1, p2.1, p3.1, ncol=3, rel_widths = c(1.7,1,1), align = "h", labels=c("a)", "b)", "c)"))  
+plot_grid(p1, p2.1, p3.1, ncol=3, rel_widths = c(1.9,1,1), align = "h", labels=c("a)", "b)", "c)"))  
 
 
 
