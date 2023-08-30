@@ -1332,6 +1332,12 @@ plot_grid(p4 + xlim(0,400) + xlab(""), # remove xlab from top plot and match x a
 
 All the following plots and analyses consider the average of multiassessed species, so that they are shown only once.
 
+To have nicer looking plots, change "wide_ranging" for "wide ranging":
+```{r}
+indicators_averaged_one$species_range<-gsub("wide_ranging", "wide ranging", indicators_averaged_one$species_range)
+```
+
+
 ### Indicator 1 (Ne>5000)
 
 Plot Indicator 1 by type of range in the entire dataset. Filtering "unknown" or NA in species range:
@@ -1340,13 +1346,13 @@ Plot Indicator 1 by type of range in the entire dataset. Filtering "unknown" or 
 # get sample size by desired category
 sample_size <- indicators_averaged_one  %>%
                     filter(!is.na(indicator1_mean)) %>% 
-                    filter(species_range =="wide_ranging" | species_range =="restricted") %>% 
+                    filter(species_range =="wide ranging" | species_range =="restricted") %>% 
                     group_by(species_range) %>% summarize(num=n())
 
 # plot
 p1<-indicators_averaged_one %>% 
     filter(!is.na(indicator1_mean)) %>% 
-    filter(species_range =="wide_ranging" | species_range =="restricted") %>% 
+    filter(species_range =="wide ranging" | species_range =="restricted") %>% 
   # add sampling size 
   left_join(sample_size) %>% 
   mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
@@ -1376,7 +1382,7 @@ df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "Franc
 ## plot
 df  %>% 
   # filter out "unknown" range
-  filter(species_range =="wide_ranging" | species_range =="restricted") %>% 
+  filter(species_range =="wide ranging" | species_range =="restricted") %>% 
   
 # plot
 ggplot(aes(x=species_range, y=indicator1_mean , fill=species_range)) +
@@ -1399,7 +1405,7 @@ Test the effect of range type on Ne>500 indicator. Does the indicator vary betwe
 ## Remove unknown
 data<- indicators_averaged_one  %>%
                     filter(!is.na(indicator1_mean)) %>% 
-                    filter(species_range =="wide_ranging" | species_range =="restricted")
+                    filter(species_range =="wide ranging" | species_range =="restricted")
   
 ## run model 
 m1 <- glm(data$indicator1_mean ~ data$species_range, family = "quasibinomial")
@@ -1426,13 +1432,13 @@ Plot Indicator 2 by type of range in the entire dataset. Filtering "unknown" or 
 # get sample size by desired category
 sample_size <- indicators_averaged_one  %>%
                     filter(!is.na(indicator2_mean)) %>% 
-                    filter(species_range =="wide_ranging" | species_range =="restricted") %>% 
+                    filter(species_range =="wide ranging" | species_range =="restricted") %>% 
                     group_by(species_range) %>% summarize(num=n())
 
 # plot
 p2<-indicators_averaged_one %>% 
     filter(!is.na(indicator2_mean)) %>% 
-    filter(species_range =="wide_ranging" | species_range =="restricted") %>% 
+    filter(species_range =="wide ranging" | species_range =="restricted") %>% 
   # add sampling size 
   left_join(sample_size) %>% 
   mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
@@ -1443,7 +1449,7 @@ p2<-indicators_averaged_one %>%
       geom_jitter(size=.5, width = 0.1) +
       xlab("") + ylab("Proportion of populations maintained") +
       coord_flip() +
-      scale_fill_manual(breaks=c("wide_ranging", "restricted", "unknown"),
+      scale_fill_manual(breaks=c("wide ranging", "restricted", "unknown"),
                        labels=c("wide ranging", "restricted", "unknown"),
                        values=c("#F8766D", "#00BFC4", "grey80")) +
       theme_light() +
@@ -1463,7 +1469,7 @@ df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "Franc
 ## plot
 df  %>% 
   # filter out "unknown" range
-  filter(species_range =="wide_ranging" | species_range =="restricted") %>% 
+  filter(species_range =="wide ranging" | species_range =="restricted") %>% 
   
 # plot
 ggplot(aes(x=species_range, y=indicator2_mean , fill=species_range)) +
@@ -1487,7 +1493,7 @@ Test the effect of range type on the proportion of maitained populations. Does t
 ## Remove unknown
 data<- indicators_averaged_one  %>%
                     filter(!is.na(indicator2_mean)) %>% 
-                    filter(species_range =="wide_ranging" | species_range =="restricted")
+                    filter(species_range =="wide ranging" | species_range =="restricted")
   
 ## run model 
 m2 <- glm(data$indicator2_mean ~ data$species_range, family = "quasibinomial")
@@ -1507,7 +1513,9 @@ summary(m2.1)
 
 ### Single plot PM and Ne indicators by range type
 ```{r}
-
+plot_grid(p1,
+          p2, 
+          ncol=1, align = "v", labels=c("a)", "b)"))  
 ```
 
 
