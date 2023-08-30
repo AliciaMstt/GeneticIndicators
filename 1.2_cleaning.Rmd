@@ -479,7 +479,7 @@ After checking the data with Viktoria she found that "geographic_boundaries" sho
 
 ```{r}
 # species to change geo boundaries  to dispersal
-x<-c("Bufotes viridis", "Pelophylax esculentus", "Pelobates fuscus", "Triturus cristatus", "Bombina bombina", "Bufo bufo", "Epidalea calamita", "Hyla arborea", "Lissotriton vulgaris", "Rana temporaria", "Rana arvalis", "Rana dalmatina", "Lepus timidus", "Erinaceus europaeus", "Muscardinus avellanarius", "Anguis fragilis", "Lacerta agilis", "Coronella austriaca", "Natrix natrix natrix", "Zootoca vivipara", "Anguis fragilis")
+x<-c("Bufotes viridis", "Pelophylax esculentus", "Pelobates fuscus", "Triturus cristatus", "Bombina bombina", "Bufo bufo", "Epidalea calamita", "Hyla arborea", "Lissotriton vulgaris", "Rana temporaria", "Rana arvalis", "Rana dalmatina", "Lepus timidus", "Erinaceus europaeus", "Muscardinus avellanarius", "Lacerta agilis", "Coronella austriaca", "Natrix natrix natrix", "Zootoca vivipara")
 
 # change selected species to dispersal_buffr
 kobo_clean$defined_populations <- ifelse(kobo_clean$country_assessment == "sweden" & kobo_clean$taxon %in% x,
