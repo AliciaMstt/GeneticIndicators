@@ -1688,7 +1688,6 @@ indicators_averaged_one %>%
       theme(panel.spacing = unit(1.5, "lines"))
 ```
 
-Data table
 
 ### (c-d) Does Proportion of Maintained Populations indicator varies with red list status?
 
@@ -1872,6 +1871,39 @@ plot_grid(p1 + ylab(""),
           p2,
           p4,
           ncol=2, align = "v", labels=c("a)", "c)", "b)", "d)"))  
+```
+### How many taxa are below 0.75, 0.50 or 0.25 in indicators?
+
+Table for the Ne > 500 indicator:
+
+```{r}
+x  <- indicators_averaged_one %>%
+               filter(!is.na(indicator1_mean)) %>% 
+               filter(!is.na(global_IUCN)) %>% 
+               group_by(global_IUCN) %>% 
+               summarize(n.Ne_ind=n(),
+                         n.below.75=sum(indicator1_mean<0.75),
+                         n.below.50=sum(indicator1_mean<0.50),
+                         n.below.25=sum(indicator1_mean<0.25),
+                         per.below.25=n.below.25/n.Ne_ind*100,
+                         per.below.50=n.below.50/n.Ne_ind*100)
+kable(x, digits=1)
+```
+
+Table for the PM indicator:
+
+```{r}
+x  <- indicators_averaged_one %>%
+               filter(!is.na(indicator2_mean)) %>% 
+               filter(!is.na(global_IUCN)) %>% 
+               group_by(global_IUCN) %>% 
+               summarize(n.PM_ind=n(),
+                         n.below.75=sum(indicator2_mean<0.75),
+                         n.below.50=sum(indicator2_mean<0.50),
+                         n.below.25=sum(indicator2_mean<0.25),
+                         per.below.25=n.below.25/n.PM_ind*100,
+                         per.below.50=n.below.50/n.PM_ind*100)
+kable(x, digits=1)
 ```
 
 
