@@ -566,6 +566,83 @@ p3
  
 ```
 
+## Range of values for Ne and Nc data
+
+Range of Ne values by taxonomic group, without possible outliers (Ne > 100000)
+
+```{r}
+ind1_data %>%
+  filter(Ne < 100000) %>%
+  filter(!is.na(Ne))  %>%
+  
+  ggplot(aes(x=taxonomic_group, y=Ne)) +
+  geom_boxplot(color="grey50") +
+  geom_jitter(size=.5, width = 0.1, color="darkred") +
+  xlab("") +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+Check outliers
+```{r}
+ind1_data %>% 
+  filter(Ne > 100000) %>%
+  select(country_assessment, name_assessor, taxon, taxonomic_group, Ne, NeLower, NeUpper, multiassessment, population)
+```
+
+
+Range of Nc values (actual data point provided) by taxonomic group. Without possible outliers.
+
+```{r}
+ind1_data %>%
+  filter(!is.na(NcPoint))  %>%
+  filter(NcPoint < 10000000) %>%
+ 
+  ggplot(aes(x=taxonomic_group, y=NcPoint)) +
+  geom_boxplot(color="grey50") +
+  geom_jitter(size=.5, width = 0.1, color="darkred") +
+  xlab("") +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+Check outliers
+```{r}
+ind1_data %>% 
+  filter(NcPoint > 10000000) %>% 
+  select(country_assessment, name_assessor, taxon, taxonomic_group, population, NcPoint, NcLower, NcUpper, multiassessment, population)
+```
+
+Range of Ne values by taxonomic group from different sources. Without possible outliers.
+
+```{r}
+ind1_data %>%
+  filter(!is.na(Ne_combined))  %>%
+  filter(Ne < 100000) %>%
+ 
+  ggplot(aes(x=taxonomic_group, y=Ne_combined)) +
+  geom_boxplot(color="grey50") +
+  geom_jitter(size=.5, width = 0.1, color="darkred") +
+  xlab("") +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+Range of Ne values by taxonomic group from different sources. Zoom to Ne < 10,000
+
+```{r}
+ind1_data %>%
+  filter(!is.na(Ne_combined))  %>%
+  filter(Ne < 10000) %>%
+ 
+  ggplot(aes(x=taxonomic_group, y=Ne_combined)) +
+  geom_boxplot(color="grey50") +
+  geom_jitter(size=.5, width = 0.1, color="darkred") +
+  xlab("") +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 45))
+```
+
 ## Missing data on extant and extinct populations
 
 We have NA in Proportion of maintained populations (indicator) because in some cases the number of extinct populations is unknown, therefore the operation cannot be computed. 
