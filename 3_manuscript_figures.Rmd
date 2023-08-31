@@ -338,7 +338,7 @@ filter(multiassessment=="multiassessment")  %>%
   
 ```
 
-Multiassessments allow to account for uncertainty in the number of populations or the size of them. We can examine how the indicators value species by species as done elsewhere in these analyses (see below "Values for indicator 1 and 2 for multiassessed species), but to examine global trends, some of the figures below use the average.
+Multiassessments allow to account for uncertainty in the number of populations or the size of them. We can examine how the indicators value species by species as done elsewhere in these analyses (see below "Values for indicator 1 and 2 for multiassessed species), but to examine global trends, some of the figures below use the average. **The averages are stored in a different column, labeled `indicator[1 or 2]_mean`.**
 
 ```{r}
 indicators_averaged<-indicators_full %>%
@@ -1204,7 +1204,7 @@ summary(m5.2)
 ### Single plot 3 panels box plots for the effect of method on: number of populations, proportion of maintained populations (indicator 2) and Proportion of populations with Ne>500 (indicator 1).
 
 Plot in three panels. 
-```{r, out.height="380px", out.width="1130px"}
+```{r, out.height="400px", out.width="1600px"}
 ##### plot for Proportion of maintained populations (indicator 2) only with n in axis labels
 
 # sample size 
@@ -1300,7 +1300,7 @@ plot_grid(p4 + xlim(0,400) + xlab(""), # remove xlab from top plot and match x a
 
 ## Indicator 1 and indicator 2 by type of range
 
-All the following plots and analyses consider the average of multiassessed species, so that they are shown only once.
+All the following plots and analyses consider the average of multiassessed species (variable `_mean`), so that they are shown only once.
 
 To have nicer looking plots, change "wide_ranging" for "wide ranging":
 ```{r}
@@ -1376,6 +1376,9 @@ Test the effect of range type on Ne>500 indicator. Does the indicator vary betwe
 data<- indicators_averaged_one  %>%
                     filter(!is.na(indicator1_mean)) %>% 
                     filter(species_range =="wide ranging" | species_range =="restricted")
+
+# summary of indicator
+summary(data$indicator1_mean)
   
 ## run model 
 m1 <- glm(data$indicator1_mean ~ data$species_range, family = "quasibinomial")
@@ -1391,6 +1394,14 @@ m1.1 <- glm(data$indicator1_mean ~ data$species_range + data$country_assessment,
 summary(m1.1)
 
 
+```
+
+Test with glmmTMB
+
+```{r, eval=FALSE}
+library(glmmTMB)
+
+glmmTMB(indicator1_mean ~ species_range + (1|country_assessment), family = "betabinomial", data = data)
 ```
 
 
@@ -1462,6 +1473,9 @@ Test the effect of range type on the proportion of maitained populations. Does t
 data<- indicators_averaged_one  %>%
                     filter(!is.na(indicator2_mean)) %>% 
                     filter(species_range =="wide ranging" | species_range =="restricted")
+
+# summary of indicator
+summary(data$indicator2_mean)
   
 ## run model 
 m2 <- glm(data$indicator2_mean ~ data$species_range, family = "quasibinomial")
@@ -1479,10 +1493,21 @@ summary(m2.1)
 
 ```
 
+
+Test with glmmTMB
+
+```{r, eval=FALSE}
+library(glmmTMB)
+
+glmmTMB(indicator2_mean ~ species_range + (1|country_assessment), family = "betabinomial", data = data)
+
+```
+
 ### Single plot PM and Ne indicators by range type
 ```{r,  out.height="900px", out.width="800px"}
 plot_grid(p1, p2,  ncol=1, align = "v", labels=c("a)", "b)"))  
 ```
+
 
 
 ## Indicator 1 and Indicator 2 by IUCN status
