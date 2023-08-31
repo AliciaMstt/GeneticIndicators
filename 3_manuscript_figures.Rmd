@@ -1375,7 +1375,7 @@ plot_grid(p4 + xlim(0,400) + xlab(""), # remove xlab from top plot and match x a
 ```
 
 
-## Indicator 1 and indicator 2 by type of range
+## Effect of distribution range (restricted vs wide) on the indicators
 
 All the following plots and analyses consider the average of multiassessed species (variable `_mean`), so that they are shown only once.
 
@@ -1587,7 +1587,7 @@ plot_grid(p1, p2,  ncol=1, align = "v", labels=c("a)", "b)"))
 
 
 
-## Indicator 1 and Indicator 2 by IUCN status
+## Indicatros by threat status (IUCN Red List)
 
 All the following plots and analyses consider the average of multiassessed species (variable `_mean`), so that they are shown only once.
 
@@ -1632,7 +1632,7 @@ df$global_IUCN<-factor(df$global_IUCN, levels=c("cr", "en", "vu", "nt", "lc", "d
       
 # plot
 p1<-df %>%
-    ggplot(aes(x=myaxis, y=indicator1 , fill=global_IUCN)) +
+    ggplot(aes(x=myaxis, y=indicator1_mean , fill=global_IUCN)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
       xlab("") + ylab("Proportion of populations with Ne>500") +
@@ -1984,7 +1984,167 @@ kable(x, digits=1)
 ```
 
 
+
 ## Indicator values by taxonomic group
+
+All the following plots and analyses consider the average of multiassessed species (variable _mean), so that they are shown only once.
+
+Indicator Ne > 500
+```{r}
+## prepare data
+# add sampling size
+sample_size <- indicators_averaged_one %>%
+               filter(!is.na(indicator1_mean)) %>% 
+               group_by(taxonomic_group) %>% summarize(num=n())
+
+# new df 
+df<- indicators_averaged_one %>% 
+     filter(!is.na(indicator1_mean)) %>% 
+        # add sampling size 
+        left_join(sample_size) %>%
+        mutate(myaxis = paste0(taxonomic_group, " (n= ", num, ")"))
+
+# change order of levels so that they are in the desired order
+df$myaxis<-factor(df$myaxis, 
+                  #grep is used below to get the sample size, which may change depending on the data
+                    levels=c(grep("amphibian", unique(df$myaxis), value = TRUE), 
+                             grep("bird" , unique(df$myaxis), value = TRUE),
+                             grep("fish" , unique(df$myaxis), value = TRUE),
+                             grep("invertebrate", unique(df$myaxis), value = TRUE),
+                             grep("mammal", unique(df$myaxis), value = TRUE),
+                             grep("angiosperm", unique(df$myaxis), value = TRUE),
+                             grep("bryophyte", unique(df$myaxis), value = TRUE),
+                             grep("gymnosperm", unique(df$myaxis), value = TRUE),
+                             grep("reptile", unique(df$myaxis), value = TRUE),
+                             grep("pteridophytes", unique(df$myaxis), value = TRUE),
+                             grep("fungus", unique(df$myaxis), value = TRUE),
+                             grep("other" , unique(df$myaxis), value = TRUE)))
+
+df$taxonomic_group<-factor(df$taxonomic_group, 
+                           levels=c("amphibian", "bird" , "fish" , "invertebrate", "mammal",
+                                     "angiosperm",  "bryophyte",  "gymnosperm",  "reptile", "pteridophytes",
+                                     "fungus", "other"))
+
+        
+# plot
+p1<-df %>%
+    ggplot(aes(x=myaxis, y=indicator1_mean, fill=taxonomic_group, color=taxonomic_group)) +
+      geom_violin(width=1.5, linewidth = 0.2)  +
+      geom_jitter(size=.7, width = 0.1, color="darkred") +
+      xlab("") + ylab("Proportion of populations with Ne>500") +
+      coord_flip() +
+      scale_x_discrete(limits=rev) +
+      scale_fill_manual(values= c(rep("#9d9bb8", 5), # for animals
+                                  rep("#7fb4a6", 5), # for platns
+                                  rep("#b6a080", 2)), # for fungi and others
+                       breaks=c(levels(df$taxonomic_group))) +
+      scale_color_manual(values= c(rep("#9d9bb8", 5), # for animals
+                                  rep("#7fb4a6", 5), # for platns
+                                  rep("#b6a080", 2)), # for fungi and others
+                       breaks=c(levels(df$taxonomic_group))) +
+      theme_light() +
+      theme(panel.border = element_blank(), legend.position="none",
+            text= element_text(size=15))
+p1
+```
+
+Table of number or percentage of taxa below 0.25, 0.50 and 0.75:
+
+```{r}
+x  <- indicators_averaged_one %>%
+               filter(!is.na(indicator1_mean)) %>% 
+               filter(!is.na(taxonomic_group)) %>% 
+               group_by(taxonomic_group) %>% 
+               summarize(n.Ne_ind=n(),
+                         n.below.75=sum(indicator1_mean<0.75),
+                         n.below.50=sum(indicator1_mean<0.50),
+                         n.below.25=sum(indicator1_mean<0.25),
+                         per.below.25=n.below.25/n.Ne_ind*100,
+                         per.below.50=n.below.50/n.Ne_ind*100)
+kable(x, digits=0)
+```
+
+
+
+Indicator Proportion of mantained populations:
+```{r}
+## prepare data
+# add sampling size
+sample_size <- indicators_averaged_one %>%
+               filter(!is.na(indicator2_mean)) %>% 
+               group_by(taxonomic_group) %>% summarize(num=n())
+
+# new df 
+df<- indicators_averaged_one %>% 
+     filter(!is.na(indicator2_mean)) %>% 
+        # add sampling size 
+        left_join(sample_size) %>%
+        mutate(myaxis = paste0(taxonomic_group, " (n= ", num, ")"))
+
+# change order of levels so that they are in the desired order
+df$myaxis<-factor(df$myaxis, 
+                  #grep is used below to get the sample size, which may change depending on the data
+                    levels=c(grep("amphibian", unique(df$myaxis), value = TRUE), 
+                             grep("bird" , unique(df$myaxis), value = TRUE),
+                             grep("fish" , unique(df$myaxis), value = TRUE),
+                             grep("invertebrate", unique(df$myaxis), value = TRUE),
+                             grep("mammal", unique(df$myaxis), value = TRUE),
+                             grep("angiosperm", unique(df$myaxis), value = TRUE),
+                             grep("bryophyte", unique(df$myaxis), value = TRUE),
+                             grep("gymnosperm", unique(df$myaxis), value = TRUE),
+                             grep("reptile", unique(df$myaxis), value = TRUE),
+                             grep("pteridophytes", unique(df$myaxis), value = TRUE),
+                             grep("fungus", unique(df$myaxis), value = TRUE),
+                             grep("other" , unique(df$myaxis), value = TRUE)))
+
+df$taxonomic_group<-factor(df$taxonomic_group, 
+                           levels=c("amphibian", "bird" , "fish" , "invertebrate", "mammal",
+                                     "angiosperm",  "bryophyte",  "gymnosperm",  "reptile", "pteridophytes",
+                                     "fungus", "other"))
+
+        
+# plot
+p2<-df %>%
+    ggplot(aes(x=myaxis, y=indicator2_mean, fill=taxonomic_group, color=taxonomic_group)) +
+      geom_violin(width=1, linewidth = 0.2)  +
+      geom_jitter(size=.7, width = 0.1, color="darkred") +
+      xlab("") + ylab("Proportion of maintained populations") +
+      coord_flip() +
+      scale_x_discrete(limits=rev) +
+      scale_fill_manual(values= c(rep("#9d9bb8", 5), # for animals
+                                  rep("#7fb4a6", 5), # for platns
+                                  rep("#b6a080", 2)), # for fungi and others
+                       breaks=c(levels(df$taxonomic_group))) +
+      scale_color_manual(values= c(rep("#9d9bb8", 5), # for animals
+                                  rep("#7fb4a6", 5), # for platns
+                                  rep("#b6a080", 2)), # for fungi and others
+                       breaks=c(levels(df$taxonomic_group))) +
+      theme_light() +
+      theme(panel.border = element_blank(), legend.position="none",
+            text= element_text(size=15))
+p2
+```
+Table of number or percentage of taxa below 0.25, 0.50 and 0.75:
+
+```{r}
+x  <- indicators_averaged_one %>%
+               filter(!is.na(indicator2_mean)) %>% 
+               filter(!is.na(taxonomic_group)) %>% 
+               group_by(taxonomic_group) %>% 
+               summarize(n.PM_ind=n(),
+                         n.below.75=sum(indicator2_mean<0.75),
+                         n.below.50=sum(indicator2_mean<0.50),
+                         n.below.25=sum(indicator2_mean<0.25),
+                         per.below.25=n.below.25/n.PM_ind*100,
+                         per.below.50=n.below.50/n.PM_ind*100)
+kable(x, digits=1)
+```
+
+### Single figure 2 panels for both indicators by taxonomic group
+```{r}
+plot_grid(p1, p2, ncol=1, align = "v", labels=c("a)", "b)"))
+```
+
 
 ## Values of indicator 1 and indicator 2 for multiassessed species
 
