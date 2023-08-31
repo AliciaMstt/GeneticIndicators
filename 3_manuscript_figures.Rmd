@@ -1512,8 +1512,11 @@ plot_grid(p1, p2,  ncol=1, align = "v", labels=c("a)", "b)"))
 
 ## Indicator 1 and Indicator 2 by IUCN status
 
-### Indicator 1
-Indicator 1 by global IUCN in the entire dataset:
+All the following plots and analyses consider the average of multiassessed species (variable `_mean`), so that they are shown only once.
+
+### (a-b) Ne > 500 indicator and red list status
+
+Plot indicator 1 by global IUCN in the entire dataset:
 
 ```{r indicator1 gobalIUCN}
 
@@ -1522,11 +1525,13 @@ Indicator 1 by global IUCN in the entire dataset:
 # add sampling size
 sample_size <- indicators_averaged_one %>%
                filter(!is.na(indicator1_mean)) %>% 
+               filter(!is.na(global_IUCN)) %>% 
                group_by(global_IUCN) %>% summarize(num=n())
 
 # new df 
 df<- indicators_averaged_one %>% 
      filter(!is.na(indicator1_mean)) %>% 
+     filter(!is.na(global_IUCN)) %>% 
         # add sampling size 
         left_join(sample_size) %>%
         mutate(myaxis = paste0(global_IUCN, " (n= ", num, ")"))
@@ -1557,15 +1562,18 @@ p1<-df %>%
       coord_flip() +
       scale_fill_manual(values= IUCNcolors, # iucn color codes
                         breaks=c(levels(df$global_IUCN))) +
+      scale_x_discrete(limits=rev) +
       theme_light() +
-      ggtitle("a) global Red List") +
-      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=15))
+      ggtitle("global Red List") +
+      theme(panel.border = element_blank(), legend.position="none", 
+            plot.title = element_text(hjust = 0.5), # center title
+            text= element_text(size=15))
 p1
 
 ```
 
 
-Indicator 1 by regional IUCN in the entire dataset:
+Indicator 1 by regional IUCN. This EXCLUDES Mexico, USA and Australia because they don't use the Red List approach at the national or regional level.
 
 ```{r indicator1 regionalIUCN}
 ## Regional IUCN
@@ -1574,11 +1582,15 @@ Indicator 1 by regional IUCN in the entire dataset:
 # add sampling size
 sample_size <- indicators_averaged_one %>%
                filter(!is.na(indicator1_mean)) %>% 
+               filter(!is.na(regional_redlist)) %>% 
+               filter(country_assessment %!in% c("Mexico", "US", "Australia")) %>% 
                group_by(regional_redlist) %>% summarize(num=n())
 
 # new df 
 df<- indicators_averaged_one %>% 
      filter(!is.na(indicator1_mean)) %>% 
+     filter(!is.na(regional_redlist)) %>% 
+     filter(country_assessment %!in% c("Mexico", "US", "Australia")) %>% 
         # add sampling size 
         left_join(sample_size) %>%
         mutate(myaxis = paste0(regional_redlist, " (n= ", num, ")"))
@@ -1601,24 +1613,21 @@ df$regional_redlist<-factor(df$regional_redlist, levels=c("re","cr", "en", "vu",
 # plot
 p2<-df %>%
     ggplot(aes(x=myaxis, y=indicator1_mean , fill=regional_redlist)) +
-      geom_violin(width=1, linewidth = 0)  +
+      geom_violin(width=1.5, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
       xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
       scale_fill_manual(values= IUCNcolors_regional, # iucn color codes
                         breaks=c(levels(df$regional_redlist))) +
+      scale_x_discrete(limits=rev) +
       theme_light() +
-      ggtitle("b) regional Red List") +
-      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=15))
+      ggtitle("regional Red List") +
+      theme(panel.border = element_blank(), legend.position="none", 
+            plot.title = element_text(hjust = 0.5), # center title
+            text= element_text(size=15))
 p2
 
 
-```
-
-Both together
-
-```{r indicator1 IUCN global regional}
-plot_grid(p1, p2, ncol=2)
 ```
 
 Indicator 1 by country and global IUCN
@@ -1627,8 +1636,10 @@ Indicator 1 by country and global IUCN
 ## change order of levels so that categories match with the order of colors
 indicators_averaged_one$global_IUCN<-factor(indicators_averaged_one$global_IUCN, levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
 
+
 # plot
 indicators_averaged_one %>% 
+  filter(!is.na(regional_redlist)) %>%
   # plot
   ggplot(aes(x=global_IUCN, y=indicator1_mean, fill=global_IUCN)) +
       geom_violin(width=1, linewidth = 0)  +
@@ -1636,15 +1647,18 @@ indicators_averaged_one %>%
       xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
       scale_fill_manual(values= IUCNcolors, # iucn color codes
-                    breaks=c(levels(indicator1$global_IUCN))) +
+                    breaks=c(levels(indicators_averaged_one$global_IUCN))) +
+      scale_x_discrete(limits=rev) +
       theme_light() +
       ggtitle("global IUCN Redlist") +
-      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=13)) +
+      theme(panel.border = element_blank(), legend.position="none", 
+            plot.title = element_text(hjust = 0.5), # center title
+            text= element_text(size=13)) +
       facet_wrap(~country_assessment, ncol = 3) +
       theme(panel.spacing = unit(1.5, "lines"))
 ```
 
-Indicator1 by regional IUCN Redlist, excluding US and Mexico becasue they don't have a regional IUCN redlist.
+Indicator1 by regional IUCN Redlist, excluding US, Australia and Mexico becasue they don't have a regional IUCN redlist.
 
 ```{r indicator1 country regionalIUCN}
 ## change order of levels so that categories match with the order of colors
@@ -1653,7 +1667,8 @@ indicators_averaged_one$regional_redlist<-factor(indicators_averaged_one$regiona
 # plot
 indicators_averaged_one %>% 
   # filter US and Mx
-  filter(country_assessment!="Mexico", country_assessment!="US") %>%
+  filter(country_assessment %!in% c("Mexico", "US", "Australia")) %>%
+  filter(!is.na(regional_redlist)) %>%
   
   # plot
   ggplot(aes(x=regional_redlist, y=indicator1_mean, fill=regional_redlist)) +
@@ -1662,13 +1677,203 @@ indicators_averaged_one %>%
       xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
       scale_fill_manual(values= IUCNcolors_regional, # iucn color codes
-                    breaks=c(levels(indicator1$regional_redlist))) +
+                    breaks=c(levels(indicators_averaged_one$regional_redlist))) +
+      scale_x_discrete(limits=rev) +
       theme_light() +
       ggtitle("regional IUCN Redlist") +
-      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=15)) +
-      facet_wrap(~country_assessment, ncol = 4) +
+      theme(panel.border = element_blank(), legend.position="none", 
+            plot.title = element_text(hjust = 0.5), # center title
+            text= element_text(size=15)) +
+      facet_wrap(~country_assessment, ncol = 3) +
       theme(panel.spacing = unit(1.5, "lines"))
 ```
+
+Data table
+
+### (c-d) Does Proportion of Maintained Populations indicator varies with red list status?
+
+Plot indicator 2 by global IUCN in the entire dataset:
+
+```{r indicator2 gobalIUCN}
+
+## Global IUCN
+## prepare data
+# add sampling size
+sample_size <- indicators_averaged_one %>%
+               filter(!is.na(indicator2_mean)) %>% 
+               filter(!is.na(global_IUCN)) %>% 
+               group_by(global_IUCN) %>% summarize(num=n())
+
+# new df 
+df<- indicators_averaged_one %>% 
+     filter(!is.na(indicator2_mean)) %>% 
+     filter(!is.na(global_IUCN)) %>% 
+        # add sampling size 
+        left_join(sample_size) %>%
+        mutate(myaxis = paste0(global_IUCN, " (n= ", num, ")"))
+
+
+# change order of levels so that they are in the desired order
+df$myaxis<-factor(df$myaxis, 
+                  #grep is used below to get the sample size, which may change depending on the data
+                  levels=c(grep("cr", unique(df$myaxis), value = TRUE),
+                          grep("en", unique(df$myaxis), value = TRUE),
+                          grep("vu", unique(df$myaxis), value = TRUE),
+                          grep("nt", unique(df$myaxis), value = TRUE),
+                          grep("lc", unique(df$myaxis), value = TRUE),
+                          grep("dd", unique(df$myaxis), value = TRUE),
+                          grep("not_assessed", unique(df$myaxis), value = TRUE),
+                          grep("unknown", unique(df$myaxis), value = TRUE)))
+
+df$global_IUCN<-factor(df$global_IUCN, levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
+
+
+      
+# plot
+p3<-df %>%
+    ggplot(aes(x=myaxis, y=indicator2 , fill=global_IUCN)) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") + ylab("Proportion of maintained populations") +
+      coord_flip() +
+      scale_fill_manual(values= IUCNcolors, # iucn color codes
+                        breaks=c(levels(df$global_IUCN))) +
+      scale_x_discrete(limits=rev) +
+      theme_light() +
+      ggtitle("global Red List") +
+      theme(panel.border = element_blank(), legend.position="none", 
+            plot.title = element_text(hjust = 0.5), # center title
+            text= element_text(size=15))
+p3
+
+```
+
+
+indicator 2 by regional IUCN. This EXCLUDES Mexico, USA and Australia because they don't use the Red List approach at the national or regional level.
+
+```{r indicator2 regionalIUCN}
+## Regional IUCN
+
+## prepare data
+# add sampling size
+sample_size <- indicators_averaged_one %>%
+               filter(!is.na(indicator2_mean)) %>% 
+               filter(!is.na(regional_redlist)) %>% 
+               filter(country_assessment %!in% c("Mexico", "US", "Australia")) %>% 
+               group_by(regional_redlist) %>% summarize(num=n())
+
+# new df 
+df<- indicators_averaged_one %>% 
+     filter(!is.na(indicator2_mean)) %>% 
+     filter(!is.na(regional_redlist)) %>% 
+     filter(country_assessment %!in% c("Mexico", "US", "Australia")) %>% 
+        # add sampling size 
+        left_join(sample_size) %>%
+        mutate(myaxis = paste0(regional_redlist, " (n= ", num, ")"))
+
+# change order of levels so that they are in the desired order
+df$myaxis<-factor(df$myaxis, 
+                  #grep is used below to get the sample size, which may change depending on the data
+                  levels=c(grep("re", unique(df$myaxis), value = TRUE),
+                          grep("cr", unique(df$myaxis), value = TRUE),
+                          grep("en", unique(df$myaxis), value = TRUE),
+                          grep("vu", unique(df$myaxis), value = TRUE),
+                          grep("nt", unique(df$myaxis), value = TRUE),
+                          grep("lc", unique(df$myaxis), value = TRUE),
+                          grep("dd", unique(df$myaxis), value = TRUE),
+                          grep("not_assessed", unique(df$myaxis), value = TRUE),
+                          grep("unknown", unique(df$myaxis), value = TRUE)))
+
+df$regional_redlist<-factor(df$regional_redlist, levels=c("re","cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
+      
+# plot
+p4<-df %>%
+    ggplot(aes(x=myaxis, y=indicator2_mean , fill=regional_redlist)) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") + ylab("Proportion of maintained populations") +
+      coord_flip() +
+      scale_fill_manual(values= IUCNcolors_regional, # iucn color codes
+                        breaks=c(levels(df$regional_redlist))) +
+      scale_x_discrete(limits=rev) +
+      theme_light() +
+      ggtitle("regional Red List") +
+      theme(panel.border = element_blank(), legend.position="none", 
+            plot.title = element_text(hjust = 0.5), # center title
+            text= element_text(size=15))
+p4
+
+
+```
+
+indicator 2 by country and global IUCN
+
+```{r indicator2 country globalIUCN}
+## change order of levels so that categories match with the order of colors
+indicators_averaged_one$global_IUCN<-factor(indicators_averaged_one$global_IUCN, levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
+
+
+# plot
+indicators_averaged_one %>% 
+  filter(!is.na(regional_redlist)) %>%
+  # plot
+  ggplot(aes(x=global_IUCN, y=indicator2_mean, fill=global_IUCN)) +
+      geom_violin(width=1, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") + ylab("Proportion of maintained populations") +
+      coord_flip() +
+      scale_fill_manual(values= IUCNcolors, # iucn color codes
+                    breaks=c(levels(indicators_averaged_one$global_IUCN))) +
+      scale_x_discrete(limits=rev) +
+      theme_light() +
+      ggtitle("global IUCN Redlist") +
+      theme(panel.border = element_blank(), legend.position="none", 
+            plot.title = element_text(hjust = 0.5), # center title
+            text= element_text(size=13)) +
+      facet_wrap(~country_assessment, ncol = 3) +
+      theme(panel.spacing = unit(1.5, "lines"))
+```
+
+indicator2 by regional IUCN Redlist, excluding US, Australia and Mexico becasue they don't have a regional IUCN redlist.
+
+```{r indicator2 country regionalIUCN}
+## change order of levels so that categories match with the order of colors
+indicators_averaged_one$regional_redlist<-factor(indicators_averaged_one$regional_redlist, levels=c("re","cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
+
+# plot
+indicators_averaged_one %>% 
+  # filter US and Mx
+  filter(country_assessment %!in% c("Mexico", "US", "Australia")) %>%
+  filter(!is.na(regional_redlist)) %>%
+  
+  # plot
+  ggplot(aes(x=regional_redlist, y=indicator2_mean, fill=regional_redlist)) +
+      geom_violin(width=1.5, linewidth = 0)  +
+      geom_jitter(size=.5, width = 0.1) +
+      xlab("") + ylab("Proportion of maintained populations") +
+      coord_flip() +
+      scale_fill_manual(values= IUCNcolors_regional, # iucn color codes
+                    breaks=c(levels(indicators_averaged_one$regional_redlist))) +
+      scale_x_discrete(limits=rev) +
+      theme_light() +
+      ggtitle("regional IUCN Redlist") +
+      theme(panel.border = element_blank(), legend.position="none", 
+            plot.title = element_text(hjust = 0.5), # center title
+            text= element_text(size=15)) +
+      facet_wrap(~country_assessment, ncol = 3) +
+      theme(panel.spacing = unit(1.5, "lines"))
+```
+
+### Single plot 4 pannels IUCN redlist and indicator range values
+
+```{r}
+plot_grid(p1 + ylab(""),
+          p3 + ylab(""),
+          p2,
+          p4,
+          ncol=2, align = "v", labels=c("a)", "c)", "b)", "d)"))  
+```
+
 
 ## Indicator values by taxonomic group
 
