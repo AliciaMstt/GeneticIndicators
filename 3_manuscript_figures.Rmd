@@ -25,6 +25,7 @@ library(viridis)
 library(cowplot)
 library(lme4)
 library(knitr)
+library(glmmTMB)
 ```
 
 Load required functions. These custom fuctions are available at: https://github.com/AliciaMstt/GeneticIndicators
@@ -944,7 +945,7 @@ Run model asking: Does indicator 2 vary with method used? Controlling for variat
 
 
 ```{r}
-m2<-glm(data_for_model$indicator2 ~ data_for_model$defined_populations_simplified, family ="quasibinomial")
+m2<-glmmTMB(indicator2 ~ defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = data_for_model)
 ```
 
 See results:
@@ -1021,7 +1022,7 @@ Run model asking: Does indicator 1 vary with method used? Controlling for variat
 
 
 ```{r}
-m3<-glm(data_for_model$indicator1 ~ data_for_model$defined_populations_simplified, family ="quasibinomial")
+m3<-glmmTMB(indicator1 ~ defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = data_for_model)
 ```
 
 See results:
@@ -1078,14 +1079,12 @@ data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$
 
 ```
 
-Run GLM  model including method. Note: the number of mantained populations varies a lot among countries, but it’s in the predictor here, not response, so don’t really need country as random factor.
+Run model:
 
-This model will be unbalanced and it is more parametarized, but it would be the ideal if our dataset were larger:
 ```{r}
 # run model
-m4 <- glm(data_for_model$indicator2 ~ data_for_model$n_extant_populations + 
-            data_for_model$defined_populations_simplified + 
-            data_for_model$n_extant_populations*data_for_model$defined_populations_simplified, family = "quasibinomial")
+m4 <- glmmTMB(indicator2 ~ defined_populations_simplified + n_extant_populations + defined_populations_simplified*n_extant_populations + (1|country_assessment), family = "ordbeta", data = data_for_model)
+
 ```
 
 Summary:
@@ -1096,12 +1095,10 @@ summary(m4)
 
 
 We run a similar model than above, but limited to relationship of interest:
-glm(indicator2 ~ N_maintained_pops, family = “quasibinomial”). 
-
 
 ```{r}
-m4.1 <- glm(data_for_model$indicator2 ~ data_for_model$n_extant_populations, family = "quasibinomial")
-m4.1
+m4.1 <- glmmTMB(indicator2 ~ n_extant_populations + (1|country_assessment), family = "ordbeta", data= data_for_model)
+
 ```
 
 Summary:
@@ -1201,14 +1198,11 @@ data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$
 
 ```
 
-Run GLM  model including method. Note: the number of mantained populations varies a lot among countries, but it’s in the predictor here, not response, so don’t really need country as random factor.
+Run model:
 
-This model will be unbalanced and it is more parametarized, but it would be the ideal if our dataset were larger:
 ```{r}
 # run model
-m5 <- glm(data_for_model$indicator1 ~ data_for_model$n_extant_populations + 
-            data_for_model$defined_populations_simplified + 
-            data_for_model$n_extant_populations*data_for_model$defined_populations_simplified, family = "quasibinomial")
+m5 <- glmmTMB(indicator1 ~ defined_populations_simplified + n_extant_populations + defined_populations_simplified*n_extant_populations + (1|country_assessment), family = "ordbeta", data = data_for_model)
 ```
 
 Summary:
@@ -1219,17 +1213,16 @@ summary(m5)
 
 
 We run a similar model than above, but limited to relationship of interest:
-glm(indicator1 ~ N_maintained_pops, family = “quasibinomial”). 
+
 
 
 ```{r}
-m5.1 <- glm(data_for_model$indicator1 ~ data_for_model$n_extant_populations, family = "quasibinomial")
-m5.1
+# m5.1 pending to update when 4.1 is checked ok
 ```
 
 Summary:
 ```{r}
-summary(m5.1)
+# summary(m5.1)
 ```
 
 Because “what’s a population and how do you define them?” is such an important question, we can also test the effect of methods alone. First, subset the data to only those taxa where a single method was used: 
@@ -1263,17 +1256,15 @@ ind1_single_methods$defined_populations_simplified<-relevel(as.factor(ind1_singl
 
 Run model:
 
-```{r}
+```{r, }
 # run model
-m5.2 <- glm(ind1_single_methods$indicator1 ~ ind1_single_methods$n_extant_populations + 
-            ind1_single_methods$defined_populations_simplified + 
-            ind1_single_methods$n_extant_populations*ind1_single_methods$defined_populations_simplified, family = "quasibinomial")
+# m5.2 pending
 ```
 
 Summary:
 
 ```{r}
-summary(m5.2)
+# summary(m5.2) pending
 ```
 
 
