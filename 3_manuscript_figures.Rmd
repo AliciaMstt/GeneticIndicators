@@ -1940,6 +1940,7 @@ plot_grid(p1 + ylab(""),
           p4,
           ncol=2, align = "v", labels=c("a)", "c)", "b)", "d)"))  
 ```
+
 ### How many taxa are below 0.75, 0.50 or 0.25 in indicators?
 
 Table for the Ne > 500 indicator:
@@ -1978,22 +1979,44 @@ kable(x, digits=1)
 
 ## Indicator values by taxonomic group
 
-All the following plots and analyses consider the average of multiassessed species (variable _mean), so that they are shown only once.
+All the following plots and analyses consider the average of multiassessed species (variable _mean), so that they are shown only once. 
 
-Indicator Ne > 500
+We also grouped taxa with small n (<5) into "others", according to the following table:
+
+```{r}
+table(indicators_averaged_one$taxonomic_group)
+```
+
+They are grouped along with "other" in a new category "others" in the new variable `taxonomic_group_simplified`:
+
+```{r}
+indicators_averaged_one <- indicators_averaged_one %>% 
+                                mutate(taxonomic_group_simplified = case_when(
+                                       # if the taxon group is in the list of groups with small n change to "others"
+                                       taxonomic_group %!in% c("bryophyte", "fungus", "other") ~ taxonomic_group,
+                                       TRUE ~ "others"))
+
+# check:
+table(indicators_averaged_one$taxonomic_group_simplified)
+```
+
+### Violin plots and summary tables for each indicator by taxonomic group
+
+**Indicator Ne > 500**
+
 ```{r}
 ## prepare data
 # add sampling size
 sample_size <- indicators_averaged_one %>%
                filter(!is.na(indicator1_mean)) %>% 
-               group_by(taxonomic_group) %>% summarize(num=n())
+               group_by(taxonomic_group_simplified) %>% summarize(num=n())
 
 # new df 
 df<- indicators_averaged_one %>% 
      filter(!is.na(indicator1_mean)) %>% 
         # add sampling size 
         left_join(sample_size) %>%
-        mutate(myaxis = paste0(taxonomic_group, " (n= ", num, ")"))
+        mutate(myaxis = paste0(taxonomic_group_simplified, " (n= ", num, ")"))
 
 # change order of levels so that they are in the desired order
 df$myaxis<-factor(df$myaxis, 
@@ -2004,73 +2027,98 @@ df$myaxis<-factor(df$myaxis,
                              grep("invertebrate", unique(df$myaxis), value = TRUE),
                              grep("mammal", unique(df$myaxis), value = TRUE),
                              grep("angiosperm", unique(df$myaxis), value = TRUE),
-                             grep("bryophyte", unique(df$myaxis), value = TRUE),
                              grep("gymnosperm", unique(df$myaxis), value = TRUE),
                              grep("reptile", unique(df$myaxis), value = TRUE),
                              grep("pteridophytes", unique(df$myaxis), value = TRUE),
-                             grep("fungus", unique(df$myaxis), value = TRUE),
-                             grep("other" , unique(df$myaxis), value = TRUE)))
+                             grep("others" , unique(df$myaxis), value = TRUE)))
 
-df$taxonomic_group<-factor(df$taxonomic_group, 
-                           levels=c("amphibian", "bird" , "fish" , "invertebrate", "mammal",
-                                     "angiosperm",  "bryophyte",  "gymnosperm",  "reptile", "pteridophytes",
-                                     "fungus", "other"))
+df$taxonomic_group_simplified<-factor(df$taxonomic_group_simplified, 
+                                       levels=c("amphibian", "bird" , "fish" , "invertebrate", "mammal",
+                                                 "angiosperm",  "gymnosperm",  "reptile", "pteridophytes",
+                                                "others"))
 
         
 # plot
 p1<-df %>%
-    ggplot(aes(x=myaxis, y=indicator1_mean, fill=taxonomic_group, color=taxonomic_group)) +
+    ggplot(aes(x=myaxis, y=indicator1_mean, fill=taxonomic_group_simplified, color=taxonomic_group_simplified)) +
       geom_violin(width=1.5, linewidth = 0.2)  +
       geom_jitter(size=.7, width = 0.1, color="darkred") +
       xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
       scale_x_discrete(limits=rev) +
       scale_fill_manual(values= c(rep("#9d9bb8", 5), # for animals
-                                  rep("#7fb4a6", 5), # for platns
-                                  rep("#b6a080", 2)), # for fungi and others
-                       breaks=c(levels(df$taxonomic_group))) +
+                                  rep("#7fb4a6", 4), # for platns
+                                  rep("#b6a080", 1)), # for fungi and others
+                       breaks=c(levels(df$taxonomic_group_simplified))) +
       scale_color_manual(values= c(rep("#9d9bb8", 5), # for animals
-                                  rep("#7fb4a6", 5), # for platns
-                                  rep("#b6a080", 2)), # for fungi and others
-                       breaks=c(levels(df$taxonomic_group))) +
+                                  rep("#7fb4a6", 4), # for platns
+                                  rep("#b6a080", 1)), # for fungi and others
+                       breaks=c(levels(df$taxonomic_group_simplified))) +
       theme_light() +
       theme(panel.border = element_blank(), legend.position="none",
             text= element_text(size=15))
 p1
 ```
 
-Table of number or percentage of taxa below 0.25, 0.50 and 0.75:
+
+Table with sampling size, mean indicator value and proporiton of taxa where the value is below 0.25, 0.50 and 0.75:
 
 ```{r}
+#summary table by taxonomic group
 x  <- indicators_averaged_one %>%
                filter(!is.na(indicator1_mean)) %>% 
-               filter(!is.na(taxonomic_group)) %>% 
-               group_by(taxonomic_group) %>% 
+               filter(!is.na(taxonomic_group_simplified)) %>% 
+               group_by(taxonomic_group_simplified) %>% 
                summarize(n.Ne_ind=n(),
+                         mean.Ne_ind=mean(indicator1_mean),
                          n.below.75=sum(indicator1_mean<0.75),
                          n.below.50=sum(indicator1_mean<0.50),
                          n.below.25=sum(indicator1_mean<0.25),
                          per.below.25=n.below.25/n.Ne_ind*100,
                          per.below.50=n.below.50/n.Ne_ind*100)
-kable(x, digits=0)
+
+# Calculate total counts and means
+total_counts <- summarise(x,
+                          taxonomic_group_simplified = "ALL",
+                          n.Ne_ind = sum(n.Ne_ind),
+                          mean.Ne_ind = mean(mean.Ne_ind),
+                          n.below.75 = sum(n.below.75),
+                          n.below.50 = sum(n.below.50),
+                          n.below.25 = sum(n.below.25),
+                          per.below.25 = n.below.25 / n.Ne_ind * 100,
+                          per.below.50 = n.below.50 / n.Ne_ind * 100)
+
+# Bind the total row to the summary_table
+summary_table <- bind_rows(x, total_counts)
+
+# keep taxonomic groups as level in desired order:
+summary_table$taxonomic_group_simplified<-factor(summary_table$taxonomic_group_simplified,
+                                                 levels = c("amphibian", "bird" , "fish" , "invertebrate", "mammal",
+                                                 "angiosperm", "gymnosperm",  "reptile", "pteridophytes",
+                                                "others", "ALL"))
+summary_table<- summary_table %>% arrange(taxonomic_group_simplified)
+
+# show nice table
+kable(summary_table, digits=2)
 ```
 
 
 
-Indicator Proportion of mantained populations:
+**Indicator Proportion of mantained populations:**
+
 ```{r}
 ## prepare data
 # add sampling size
 sample_size <- indicators_averaged_one %>%
                filter(!is.na(indicator2_mean)) %>% 
-               group_by(taxonomic_group) %>% summarize(num=n())
+               group_by(taxonomic_group_simplified) %>% summarize(num=n())
 
 # new df 
 df<- indicators_averaged_one %>% 
      filter(!is.na(indicator2_mean)) %>% 
         # add sampling size 
         left_join(sample_size) %>%
-        mutate(myaxis = paste0(taxonomic_group, " (n= ", num, ")"))
+        mutate(myaxis = paste0(taxonomic_group_simplified, " (n= ", num, ")"))
 
 # change order of levels so that they are in the desired order
 df$myaxis<-factor(df$myaxis, 
@@ -2081,60 +2129,334 @@ df$myaxis<-factor(df$myaxis,
                              grep("invertebrate", unique(df$myaxis), value = TRUE),
                              grep("mammal", unique(df$myaxis), value = TRUE),
                              grep("angiosperm", unique(df$myaxis), value = TRUE),
-                             grep("bryophyte", unique(df$myaxis), value = TRUE),
                              grep("gymnosperm", unique(df$myaxis), value = TRUE),
                              grep("reptile", unique(df$myaxis), value = TRUE),
                              grep("pteridophytes", unique(df$myaxis), value = TRUE),
-                             grep("fungus", unique(df$myaxis), value = TRUE),
-                             grep("other" , unique(df$myaxis), value = TRUE)))
+                             grep("others" , unique(df$myaxis), value = TRUE)))
 
-df$taxonomic_group<-factor(df$taxonomic_group, 
+df$taxonomic_group_simplified<-factor(df$taxonomic_group_simplified, 
                            levels=c("amphibian", "bird" , "fish" , "invertebrate", "mammal",
-                                     "angiosperm",  "bryophyte",  "gymnosperm",  "reptile", "pteridophytes",
-                                     "fungus", "other"))
+                                     "angiosperm",  "gymnosperm",  "reptile", "pteridophytes",
+                                     "others"))
 
         
 # plot
 p2<-df %>%
-    ggplot(aes(x=myaxis, y=indicator2_mean, fill=taxonomic_group, color=taxonomic_group)) +
+    ggplot(aes(x=myaxis, y=indicator2_mean, fill=taxonomic_group_simplified, color=taxonomic_group_simplified)) +
       geom_violin(width=1, linewidth = 0.2)  +
       geom_jitter(size=.7, width = 0.1, color="darkred") +
       xlab("") + ylab("Proportion of maintained populations") +
       coord_flip() +
       scale_x_discrete(limits=rev) +
       scale_fill_manual(values= c(rep("#9d9bb8", 5), # for animals
-                                  rep("#7fb4a6", 5), # for platns
-                                  rep("#b6a080", 2)), # for fungi and others
-                       breaks=c(levels(df$taxonomic_group))) +
+                                  rep("#7fb4a6", 4), # for platns
+                                  rep("#b6a080", 1)), # for fungi and others
+                       breaks=c(levels(df$taxonomic_group_simplified))) +
       scale_color_manual(values= c(rep("#9d9bb8", 5), # for animals
-                                  rep("#7fb4a6", 5), # for platns
-                                  rep("#b6a080", 2)), # for fungi and others
-                       breaks=c(levels(df$taxonomic_group))) +
+                                  rep("#7fb4a6", 4), # for platns
+                                  rep("#b6a080", 1)), # for fungi and others
+                       breaks=c(levels(df$taxonomic_group_simplified))) +
       theme_light() +
       theme(panel.border = element_blank(), legend.position="none",
             text= element_text(size=15))
 p2
 ```
-Table of number or percentage of taxa below 0.25, 0.50 and 0.75:
+
+Table with sampling size, mean indicator value and proporiton of taxa where the value is below 0.25, 0.50 and 0.75:
+
 
 ```{r}
+# summary table for taxonomic group:
 x  <- indicators_averaged_one %>%
                filter(!is.na(indicator2_mean)) %>% 
-               filter(!is.na(taxonomic_group)) %>% 
-               group_by(taxonomic_group) %>% 
+               filter(!is.na(taxonomic_group_simplified)) %>% 
+               group_by(taxonomic_group_simplified) %>% 
                summarize(n.PM_ind=n(),
+                         mean.PM_ind=mean(indicator2_mean),
                          n.below.75=sum(indicator2_mean<0.75),
                          n.below.50=sum(indicator2_mean<0.50),
                          n.below.25=sum(indicator2_mean<0.25),
                          per.below.25=n.below.25/n.PM_ind*100,
                          per.below.50=n.below.50/n.PM_ind*100)
-kable(x, digits=1)
+
+
+# Calculate total counts and means
+total_counts <- summarise(x,
+                          taxonomic_group_simplified = "ALL",
+                          n.PM_ind = sum(n.PM_ind),
+                          mean.PM_ind = mean(mean.PM_ind),
+                          n.below.75 = sum(n.below.75),
+                          n.below.50 = sum(n.below.50),
+                          n.below.25 = sum(n.below.25),
+                          per.below.25 = n.below.25 / n.PM_ind * 100,
+                          per.below.50 = n.below.50 / n.PM_ind * 100)
+
+# Bind the total row to the summary_table
+summary_table <- bind_rows(x, total_counts)
+
+# keep taxonomic groups as level in desired order:
+summary_table$taxonomic_group_simplified<-factor(summary_table$taxonomic_group_simplified,
+                                                 levels = c("amphibian", "bird" , "fish" , "invertebrate", "mammal",
+                                                 "angiosperm", "gymnosperm",  "reptile", "pteridophytes",
+                                                "others", "ALL"))
+summary_table<- summary_table %>% arrange(taxonomic_group_simplified)
+
+# show nice table
+kable(summary_table, digits=2)
+
 ```
 
-### Single figure 2 panels for both indicators by taxonomic group
+
+### Single figure 2 panels violin plots for both indicators by taxonomic group
 ```{r}
 plot_grid(p1, p2, ncol=1, align = "v", labels=c("a)", "b)"))
 ```
+
+### Violin plots but grouping animals, plants, others
+
+Create new category
+```{r}
+
+# Define the grouping map
+grouping_map <- c(
+  "amphibian", "bird", "fish", "invertebrate", "mammal",
+  "angiosperm", "gymnosperm", "reptile", "pteridophytes", "others"
+)
+
+# Create a new variable taxonomic_group_3
+df <- indicators_averaged_one %>%
+  mutate(
+    taxonomic_group_3 = case_when(
+      taxonomic_group_simplified %in% grouping_map[1:5] ~ "animals",
+      taxonomic_group_simplified %in% grouping_map[6:9] ~ "plants",
+      taxonomic_group_simplified %in% grouping_map[10] ~ "others",
+      TRUE ~ NA_character_
+    )
+  )
+
+```
+
+Plot for Ne > 500 indicator:
+```{r}
+p3<-df %>%
+  ggplot(aes(x=taxonomic_group_3, y=indicator1_mean, fill=taxonomic_group_3, color=taxonomic_group_3)) +
+  geom_violin(width=1, linewidth = 0.2)  +
+  geom_jitter(size=.7, width = 0.1, color="darkred") +
+  xlab("") + ylab("Proportion of populations with Ne>500") +
+  coord_flip() +
+  scale_x_discrete(limits=rev) +
+  scale_fill_manual(values= c("#9d9bb8", "#7fb4a6", "#b6a080"),
+                    breaks = c("animals", "plants", "others")) +
+  scale_color_manual(values= c("#9d9bb8", "#7fb4a6", "#b6a080"),
+                     breaks = c("animals", "plants", "others")) +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none",
+        text= element_text(size=15))
+p3
+```
+
+Summary table:
+
+```{r}
+x  <- df %>%
+               filter(!is.na(indicator1_mean)) %>% 
+               filter(!is.na(taxonomic_group_3)) %>% 
+               group_by(taxonomic_group_3) %>% 
+               summarize(n.ind=n(),
+                         mean.ind=mean(indicator1_mean),
+                         n.below.75=sum(indicator1_mean<0.75),
+                         n.below.50=sum(indicator1_mean<0.50),
+                         n.below.25=sum(indicator1_mean<0.25),
+                         per.below.25=n.below.25/n.ind*100,
+                         per.below.50=n.below.50/n.ind*100)
+
+kable(x, digits=2)
+```
+
+
+
+Plot Proportion of mantained indicator:
+
+```{r}
+p4<-df %>%
+  ggplot(aes(x=taxonomic_group_3, y=indicator2_mean, fill=taxonomic_group_3, color=taxonomic_group_3)) +
+  geom_violin(width=1, linewidth = 0.2)  +
+  geom_jitter(size=.7, width = 0.1, color="darkred") +
+  xlab("") + ylab("Proportion of maintained populations") +
+  coord_flip() +
+  scale_x_discrete(limits=rev) +
+  scale_fill_manual(values= c("#9d9bb8", "#7fb4a6", "#b6a080"),
+                    breaks = c("animals", "plants", "others")) +
+  scale_color_manual(values= c("#9d9bb8", "#7fb4a6", "#b6a080"),
+                     breaks = c("animals", "plants", "others")) +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none",
+        text= element_text(size=15))
+p4
+```
+
+
+Summary table:
+
+```{r}
+x  <- df %>%
+               filter(!is.na(indicator2_mean)) %>% 
+               filter(!is.na(taxonomic_group_3)) %>% 
+               group_by(taxonomic_group_3) %>% 
+               summarize(n.ind=n(),
+                         mean.ind=mean(indicator2_mean),
+                         n.below.75=sum(indicator2_mean<0.75),
+                         n.below.50=sum(indicator2_mean<0.50),
+                         n.below.25=sum(indicator2_mean<0.25),
+                         per.below.25=n.below.25/n.ind*100,
+                         per.below.50=n.below.50/n.ind*100,
+                         per.below.50=n.below.75/n.ind*100)
+
+kable(x, digits=2)
+```
+
+
+### Density plots faceted by taxonomic group:
+
+Ne > 500 indicator:
+
+```{r}
+density_plot <- df %>%
+  ggplot(aes(x = indicator1_mean, fill = taxonomic_group_simplified, color = taxonomic_group_simplified)) +
+  geom_density(alpha = 0.7) +
+  facet_wrap(~ taxonomic_group_simplified, scales = "free_x", ncol=5) +
+  labs(x = "Proportion of populations with Ne>500", y = "Density") +
+  scale_fill_manual(
+    values = c(rep("#9d9bb8", 5), # for animals
+               rep("#7fb4a6", 4), # for plants
+               rep("#b6a080", 1)), # for fungi and others
+    breaks = levels(df$taxonomic_group_simplified)
+  ) +
+  scale_color_manual(
+    values = c(rep("#9d9bb8", 5), # for animals
+               rep("#7fb4a6", 4), # for plants
+               rep("#b6a080", 1)), # for fungi and others
+    breaks = levels(df$taxonomic_group_simplified)
+  ) +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position = "none", text = element_text(size = 15))
+
+density_plot
+```
+
+
+Proportion of maintained populations indicator:
+
+```{r}
+# Create density plots for indicator2_mean
+density_plot <- df %>%
+  ggplot(aes(x = indicator2_mean, fill = taxonomic_group_simplified, color = taxonomic_group_simplified)) +
+  geom_density(alpha = 0.7) +
+  facet_wrap(~ taxonomic_group_simplified, scales = "free_x", ncol=5) +
+  labs(x = "Proportion of maintained populations", y = "Density") +
+  scale_fill_manual(
+    values = c(rep("#9d9bb8", 5), # for animals
+               rep("#7fb4a6", 4), # for plants
+               rep("#b6a080", 1)), # for fungi and others
+    breaks = levels(df$taxonomic_group_simplified)
+  ) +
+  scale_color_manual(
+    values = c(rep("#9d9bb8", 5), # for animals
+               rep("#7fb4a6", 4), # for plants
+               rep("#b6a080", 1)), # for fungi and others
+    breaks = levels(df$taxonomic_group_simplified)
+  ) +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position = "none", text = element_text(size = 15))
+
+density_plot
+```
+
+### Density plots in a single plot with alpha:
+
+Ne > 500 indicator:
+
+```{r}
+# Create a density plot for indicator1_mean without facets
+density_plot <- df %>%
+  ggplot(aes(x = indicator1_mean, fill = taxonomic_group_simplified, color = taxonomic_group_simplified)) +
+  geom_density(alpha = 0.3, size = 1) + # Increase transparency and line size
+  labs(x = "Proportion of populations with Ne>500", y = "Density") +
+  scale_fill_viridis_d(option = "D", direction = -1) + # Use viridis color palette for fill
+  scale_color_viridis_d(option = "D", direction = -1) + # Use viridis color palette for color
+  theme_light() +
+  theme(panel.border = element_blank(), text = element_text(size = 15)) +
+  guides(fill = guide_legend(title = NULL), color = guide_legend(title = NULL))
+
+# show plot
+density_plot
+```
+
+
+Proportion of mantaiend populations indicator:
+
+```{r}
+# Create a density plot for indicator2_mean without facets
+density_plot <- df %>%
+  ggplot(aes(x = indicator2_mean, fill = taxonomic_group_simplified, color = taxonomic_group_simplified)) +
+  geom_density(alpha = 0.3, size = 1) + # Increase transparency and line size
+  labs(x = "Proportion of maintained populations", y = "Density") +
+  scale_fill_viridis_d(option = "D", direction = -1) + # Use viridis color palette for fill
+  scale_color_viridis_d(option = "D", direction = -1) + # Use viridis color palette for color
+  theme_light() +
+  theme(panel.border = element_blank(), text = element_text(size = 15)) +
+  guides(fill = guide_legend(title = NULL), color = guide_legend(title = NULL))
+
+# show plot
+density_plot
+
+
+
+```
+
+
+### Histogram in a single plot by animals, plants and others:
+
+
+Ne > 500 indicator
+```{r}
+histogram_plot <- df %>%
+  ggplot(aes(x = indicator1_mean, fill = taxonomic_group_3)) +
+  geom_histogram(alpha = 0.7, bins = 20) + # Adjust the number of bins as needed
+  labs(x = "Proportion of populations with Ne>500", y = "Frequency") +
+  scale_fill_manual(
+    values = c("#9d9bb8", "#7fb4a6", "#b6a080"), # Custom colors for animals, plants, and others
+    breaks = c("animals", "plants", "others"),
+    name = "Taxonomic Group")+
+  theme_light() +
+  theme(panel.border = element_blank(), text = element_text(size = 15)) +
+  guides(fill = guide_legend(title = NULL))
+
+# Print the histogram plot
+histogram_plot
+```
+
+
+Proportion of maintained populations indicator
+```{r}
+# Create a histogram plot instead of a density plot
+histogram_plot <- df %>%
+  ggplot(aes(x = indicator2_mean, fill = taxonomic_group_3)) +
+  geom_histogram(alpha = 0.7, bins = 25) + # Adjust the number of bins as needed
+  labs(x = "Proportion of maintained populations", y = "Frequency") +
+  scale_fill_manual(
+    values = c("#9d9bb8", "#7fb4a6", "#b6a080"), # Custom colors for animals, plants, and others
+    breaks = c("animals", "plants", "others"),
+    name = "Taxonomic Group")+
+  theme_light() +
+  theme(panel.border = element_blank(), text = element_text(size = 15)) +
+  guides(fill = guide_legend(title = NULL))
+
+# Print the histogram plot
+histogram_plot
+```
+
+
 
 
 ## Values of indicator 1 and indicator 2 for multiassessed species
@@ -2441,6 +2763,11 @@ x<-indicators_averaged_one %>%
 kable(x, digits=3)
 ```
 
+## Sankey for graphical summary
+```{r}
+library(ggsankey)
+
+```
 
 
 ## Session Info for reproducibility purposes:
