@@ -146,7 +146,6 @@ transform_to_Ne
 Use function to get Ne data from NcRange or NcPoint data, and their combination (Ne estimated from Ne if Ne is available, otherwise, from Nc)
 
 ```{r}
-source("transform_to_Ne.R")
 ind1_data<-transform_to_Ne(ind1_data = ind1_data, ratio = 0.1)
 ```
 
@@ -254,10 +253,11 @@ colnames(x)[1]<-"method"
 x
 
 ```
-We can add this new column to the metadata and Proportion of maintained populations (indicator) data:
+
+We can add this new column to the metadata and indicator data:
 
 ```{r} 
-### for ind data
+### for indicators 
 indicators_full<- indicators_full %>% 
   mutate(defined_populations_simplified = case_when(
          # if the method is in the list of methods n>=19 then keep it
@@ -267,6 +267,13 @@ indicators_full<- indicators_full %>%
 
 ### for meta
 metadata<- metadata %>% 
+  mutate(defined_populations_simplified = case_when(
+         # if the method is in the list of methods n>=19 then keep it
+         defined_populations %in% x$method ~ defined_populations,
+         TRUE ~ "other_combinations"))
+
+### for ind1 raw data
+ind1_data<- ind1_data %>% 
   mutate(defined_populations_simplified = case_when(
          # if the method is in the list of methods n>=19 then keep it
          defined_populations %in% x$method ~ defined_populations,
@@ -770,6 +777,7 @@ The analyses and plots below us a subset of data filtering outliers (>500 popula
 
 ### Plot Number of maintained populations by country and method
 
+Visualizing the Number of maintained populations by country and method is useful to interpret the models that would be run below.
 ```{r}
 indicators_full %>% 
   filter(n_extant_populations<500) %>% # filter outliers
@@ -799,6 +807,44 @@ indicators_full %>%
 
 levels(indicators_full$country_assessment)
 ```
+
+### Sampling size and plot of Ne values by Ne origin and method to define populations
+
+This is useful to interpret the models that would be run below. 
+```{r}
+ind1_data %>% 
+  filter(Ne_combined < 100000) %>% # filter outliers
+
+  ggplot(aes(x=defined_populations_simplified, y=Ne_combined, 
+             color=Ne_calculated_from)) +
+          geom_boxplot(position = "dodge") +
+          geom_jitter(position = position_dodge(width = 0.75)) +  
+          facet_wrap(country_assessment ~ ., nrow=3) +
+          coord_flip() +
+          theme_light()
+
+```
+
+Summary table for sampling size by method and source of Ne:
+```{r}
+x<- ind1_data %>% 
+  filter(!is.na(Ne_calculated_from)) %>% 
+  group_by(defined_populations_simplified, Ne_calculated_from) %>%
+                summarise(n=n())
+kable(x)
+```
+
+Same as above but adding country:
+```{r}
+x<- ind1_data %>% 
+  filter(!is.na(Ne_calculated_from)) %>% 
+  group_by(country_assessment, defined_populations_simplified, Ne_calculated_from) %>%
+                summarise(n=n())
+kable(x)
+```
+
+
+
 
 ### (a) Does the number of maintained pops vary with method used? 
 
