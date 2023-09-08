@@ -146,6 +146,7 @@ transform_to_Ne
 Use function to get Ne data from NcRange or NcPoint data, and their combination (Ne estimated from Ne if Ne is available, otherwise, from Nc)
 
 ```{r}
+source("transform_to_Ne.R")
 ind1_data<-transform_to_Ne(ind1_data = ind1_data, ratio = 0.1)
 ```
 
@@ -2553,7 +2554,7 @@ indicators_averaged_one$taxonomic_group_3<- factor(indicators_averaged_one$taxon
 
 ### Violin plot for Ne > 500 indicator animals, plants, others
 ```{r}
-indicators_averaged_one<-df %>%
+p<-indicators_averaged_one %>%
                 ggplot(aes(x=taxonomic_group_3, y=indicator1_mean, fill=taxonomic_group_3, color=taxonomic_group_3)) +
                 geom_violin(width=1, linewidth = 0.2)  +
                 geom_jitter(size=.7, width = 0.1, color="darkred") +

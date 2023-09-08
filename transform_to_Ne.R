@@ -26,20 +26,44 @@ if (!is.numeric(ratio) || ratio < 0 || ratio > 1) {
       ind1_data = ind1_data
       
       ind1_data<-ind1_data %>% 
+        
+        # transform NcRange values to numeric values
         mutate(Nc_from_range = case_when(
               NcRange == "more_5000_bymuch" ~ 10000,
-              NcRange == "more_5000" ~ 5050,
+              NcRange == "more_5000" ~ 5500,
               NcRange == "less_5000_bymuch" ~ 500,
               NcRange == "less_5000" ~ 4050,
               NcRange == "range_includes_5000" ~ 5001)) %>% 
         
+        # Get Ne from Nc data 
         mutate(Ne_from_Nc = case_when(
-                    !is.na(NcPoint) ~ NcPoint*ratio,
+                    #if there is NcPoint data, use it multiplying by the ratio
+                    !is.na(NcPoint) ~ NcPoint*ratio, 
+                    
+                    # if there is NcRange data (already converted to numeric values), use it multiplying by the ratio
                     !is.na(Nc_from_range) ~ Nc_from_range * ratio)) %>% 
         
-        mutate(Ne_combined = if_else(is.na(Ne), 
-                                     Ne_from_Nc,
-                                     Ne))
+        # Get the Ne combining all different sources
+        mutate(Ne_combined = if_else(is.na(Ne), # here TRUE means Ne is NA
+                                     Ne_from_Nc, # if genetic data is not available (Ne is NA) then use the Ne estimated from Nc data
+                                     Ne)) %>% # if there is Ne from genetic data, use it
+        
+        # Create a new variable specifying for each population were the data to estimate Ne came from
+        mutate(Ne_calculated_from = if_else(is.na(Ne),  # here TRUE means Ne is NA
+                                        
+                                        # if Ne is missing check what type of Ncdata was used and use NcPoint/NcRange ratio accordingly
+                                        if_else(!is.na(NcPoint), "NcPoint ratio", 
+                                                
+                                                # if Nc_from_range exists and write "NcRange ratio"
+                                                if_else(!is.na(Nc_from_range), "NcRange ratio", 
+                                                        
+                                                        # If neither NcPoint nor Nc_from_range exists, flag it as missing data
+                                                        NA_character_)
+                                                ),
+                                        
+                                        # If Ne is NOT missing, write "genetic" source
+                                        "genetic data")
+               ) 
         
       print(ind1_data)
     }
