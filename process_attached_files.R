@@ -123,7 +123,7 @@ process_attached_files <- function(file_path, kobo_output, delim, skip=0){
       select(country_assessment, taxonomic_group, time_populations, taxon, 
              scientific_authority, name_assessor, email_assessor, kobo_tabular, genus, species, subspecies_variety,
              X_validation_status, X_uuid, year_assesment, GBIF_taxonID, NCBI_taxonID, multiassessment,
-             national_taxonID)
+             national_taxonID, defined_populations)
     
     # Join kobo_out metadata and file population data
     df<-left_join(df, matching_row, by = "X_uuid")
@@ -232,9 +232,9 @@ process_attached_files <- function(file_path, kobo_output, delim, skip=0){
   ### 5) Change columns to desired order  
        desired_order <- c(
         "country_assessment", "taxonomic_group", "taxon", "scientific_authority", 
-        "genus", "year_assesment", "name_assessor", "email_assessor", "kobo_tabular", 
+        "genus", "year_assesment", "name_assessor", "email_assessor", "kobo_tabular", "defined_populations",
         "time_populations", "X_validation_status", "X_uuid", "multiassessment", "population", 
-        "Name", "Origin", "IntroductionYear", "Ne", "NeLower", "NeUpper", 
+        "Name", "Origin", "IntroductionYear" , "Ne", "NeLower", "NeUpper", 
         "NeYear", "GeneticMarkers", "GeneticMarkersOther", "MethodNe", "SourceNe", 
         "NcType", "NcYear", "NcMethod", "NcRange", "NcRangeDetails", "NcPoint", 
         "NcLower", "NcUpper", "SourceNc", "Comments")

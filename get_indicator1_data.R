@@ -81,6 +81,9 @@ get_indicator1_data<-function(kobo_output=kobo_output){
     dplyr::select(country_assessment, taxonomic_group, taxon, scientific_authority,
                   genus, taxon, year_assesment, name_assessor, email_assessor, kobo_tabular, 
                   
+                  # method to define populations
+                  defined_populations,
+                  
                   # indicator 1 data               
                   time_populations, Name_pop1:Comments_pop25,
                   
