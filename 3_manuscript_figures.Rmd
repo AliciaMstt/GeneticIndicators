@@ -88,6 +88,8 @@ simplifiedmethods_colors<-c("#FFA07A", #"dispersal_buffer"
                             "#b34656", # "management_units" 
                             "#be72c9", # "other" 
                             "#be72c9")# "other_combinations" 
+
+grouped_taxon_colors<-c("#9f43c8", "#91c637", "#e5463c")
   
 ```
 
@@ -501,9 +503,9 @@ ggplot(metadata, aes(x=taxonomic_group, fill=popsize_data)) +
 ```
 
 
-### Ne data yes or not? & Type of Nc data
+### Ne data yes or not? & Type of Nc data 
 
-Ne available by taxa?
+Ne available by taxa? (species level)
 ```{r}
 p1<- metadata %>% 
   filter(!is.na(ne_pops_exists)) %>% 
@@ -523,7 +525,7 @@ p1
 
 ```
 
-Nc data available by taxa?
+Nc data available by taxa? (species level)
 ```{r}
 p2<-metadata %>%
   filter(!is.na(nc_pops_exists)) %>%
@@ -539,7 +541,7 @@ p2
 ```
 
 
-What kind of Nc data? (dodge bars)
+What kind of Nc data? (dodge bars) This is at population level. 
 ```{r}
 ind1_data %>%
   filter(!is.na(NcType)) %>%
@@ -556,13 +558,14 @@ ind1_data %>%
 
  
 ```
-What kind of Nc data? (fill bars)
+
+What kind of Nc data? (fill bars). This is at population level. 
 
 ```{r}
 p3<-ind1_data %>%
   filter(!is.na(NcType)) %>%
   ggplot(aes(x=country_assessment, fill=NcType))+
-  geom_bar(position = "fill") +
+  geom_bar(position = "fill", color="white") +
   scale_fill_manual(labels=c("Point", "Range \nor qualitative", "Unknown"),
                       breaks=c("Nc_point", "Nc_range", "unknown"),
                       values=c("#0072B2", "#E69F00", "grey80")) +
@@ -574,6 +577,34 @@ p3<-ind1_data %>%
 p3
  
 ```
+
+### Data availability at the population level cosidering Ne or Nc combined (ie where data came from for the Ne value used for estimating the indicator)
+
+```{r}
+p4<-ind1_data %>%
+    mutate(Ne_calculated_from = replace_na(Ne_calculated_from, "no data available")) %>%
+  ggplot(aes(x=country_assessment, fill=Ne_calculated_from))+
+  geom_bar(position = "fill", color="white") +
+  scale_fill_manual(labels=c("genetic data", "NcPoint ratio", "NcRange ratio", "no data available"),
+                      breaks=c("genetic data", "NcPoint ratio", "NcRange ratio", "no data available"),
+                      values=c("darkgreen", "#0072B2", "#E69F00", "grey80")) +
+  xlab("") +
+  ylab("Proportion of populations") +
+  labs(fill="Origin of data used to estimate Ne") +
+  theme_light() +
+  theme(text = element_text(size = 13), legend.position = "right", panel.border = element_blank())
+p4
+
+
+```
+
+Previous plot but nicer for graphical summary:
+
+```{r}
+p4 + coord_flip() + theme(legend.position="top")
+```
+
+
 
 ## Range of values for Ne and Nc data
 
@@ -685,7 +716,7 @@ So out of the `r nrow(indicators_full)`, we have **`r sum(is.na(indicators_full$
 
 ### Plot missing data extinct populations
 ```{r}
-p4<-indicators_full %>%
+p5<-indicators_full %>%
   ggplot(aes(x=country_assessment, fill=is.na(n_extint_populations))) +
   geom_bar() +
   scale_fill_manual(labels=c("number of populations known", "missing data"),
@@ -694,7 +725,7 @@ p4<-indicators_full %>%
   xlab("") + ylab("Number of taxa") +
   theme_light() +
   theme(text = element_text(size = 13), legend.position = "right", panel.border = element_blank())
-p4
+p5
 ```
 
 
@@ -808,7 +839,8 @@ indicators_full %>%
 levels(indicators_full$country_assessment)
 ```
 
-### Sampling size and plot of Ne values by Ne origin and method to define populations
+### Sampling size and plot of Ne values and Ne indicator by Ne origin and method to define populations
+
 
 This is useful to interpret the models that would be run below. 
 ```{r}
@@ -824,6 +856,23 @@ ind1_data %>%
           theme_light()
 
 ```
+
+Zoom to Ne 500
+```{r}
+ind1_data %>% 
+  filter(Ne_combined < 100000) %>% # filter outliers
+
+  ggplot(aes(x=defined_populations_simplified, y=Ne_combined, 
+             color=Ne_calculated_from)) +
+          ylim(0,2000)+
+          geom_boxplot(position = "dodge") +
+          geom_jitter(position = position_dodge(width = 0.75)) +  
+          facet_wrap(country_assessment ~ ., nrow=3) +
+          coord_flip() +
+          theme_light()
+
+```
+
 
 Summary table for sampling size by method and source of Ne:
 ```{r}
@@ -2093,13 +2142,13 @@ p1<-df %>%
       xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
       scale_x_discrete(limits=rev) +
-      scale_fill_manual(values= c(rep("#6d6b8c", 5), # for animals
-                                  rep("#548b7c", 4), # for platns
-                                  rep("#8c7a55", 1)), # for fungi and others
+      scale_fill_manual(values= c(rep(grouped_taxon_colors[1], 5), # for animals
+                                  rep(grouped_taxon_colors[2], 4), # for platns
+                                  rep(grouped_taxon_colors[3], 1)), # for fungi and others
                        breaks=c(levels(df$taxonomic_group_simplified))) +
-      scale_color_manual(values= c(rep("#6d6b8c", 5), # for animals
-                                  rep("#548b7c", 4), # for platns
-                                  rep("#8c7a55", 1)), # for fungi and others
+      scale_color_manual(values= c(rep(grouped_taxon_colors[1], 5), # for animals
+                                  rep(grouped_taxon_colors[2], 4), # for platns
+                                  rep(grouped_taxon_colors[3], 1)), # for fungi and others
                        breaks=c(levels(df$taxonomic_group_simplified))) +
       theme_light() +
       theme(panel.border = element_blank(), legend.position="none",
@@ -2197,13 +2246,13 @@ p2<-df %>%
       xlab("") + ylab("Proportion of maintained populations") +
       coord_flip() +
       scale_x_discrete(limits=rev) +
-      scale_fill_manual(values= c(rep("#6d6b8c", 5), # for animals
-                                  rep("#548b7c", 4), # for platns
-                                  rep("#8c7a55", 1)), # for fungi and others
+      scale_fill_manual(values= c(rep(grouped_taxon_colors[1], 5), # for animals
+                                  rep(grouped_taxon_colors[2], 4), # for platns
+                                  rep(grouped_taxon_colors[3], 1)), # for fungi and others
                        breaks=c(levels(df$taxonomic_group_simplified))) +
-      scale_color_manual(values= c(rep("#6d6b8c", 5), # for animals
-                                  rep("#548b7c", 4), # for platns
-                                  rep("#8c7a55", 1)), # for fungi and others
+      scale_color_manual(values= c(rep(grouped_taxon_colors[1], 5), # for animals
+                                  rep(grouped_taxon_colors[2], 4), # for platns
+                                  rep(grouped_taxon_colors[3], 1)), # for fungi and others
                        breaks=c(levels(df$taxonomic_group_simplified))) +
       theme_light() +
       theme(panel.border = element_blank(), legend.position="none",
@@ -2598,33 +2647,16 @@ indicators_averaged_one$taxonomic_group_3<- factor(indicators_averaged_one$taxon
 ```
 
 
-### Violin plot for Ne > 500 indicator animals, plants, others
-```{r}
-p<-indicators_averaged_one %>%
-                ggplot(aes(x=taxonomic_group_3, y=indicator1_mean, fill=taxonomic_group_3, color=taxonomic_group_3)) +
-                geom_violin(width=1, linewidth = 0.2)  +
-                geom_jitter(size=.7, width = 0.1, color="darkred") +
-                xlab("") + ylab("Proportion of populations with Ne>500") +
-                coord_flip() +
-                scale_x_discrete(limits=rev) +
-                scale_fill_manual(values= c("#6d6b8c", "#548b7c", "#8c7a55"),
-                                  breaks = c("animals", "plants", "others")) +
-                scale_color_manual(values= c("#6d6b8c", "#548b7c", "#8c7a55"),
-                                   breaks = c("animals", "plants", "others")) +
-                theme_light() +
-                theme(panel.border = element_blank(), legend.position="none",
-                      text= element_text(size=15))
-              p
-```
+### Histogram for Ne > 500 indicator animals, plants, others
 
 ```{r}
 # Create a histogram 
 hist_p <- indicators_averaged_one %>%
                   ggplot(aes(x = indicator1_mean, fill = taxonomic_group_3)) +
-                  geom_histogram(alpha = 0.7, bins = 25) + # Adjust the number of bins as needed
-                  labs(x = "roportion of populations with Ne>500", y = "Frequency") +
+                  geom_histogram( bins = 25, color="white") + # Adjust the number of bins as needed
+                  labs(x = "Proportion of populations with Ne>500", y = "Frequency") +
                   scale_fill_manual(
-                    values = c("#6d6b8c", "#548b7c", "#8c7a55"), # Custom colors for animals, plants, and others
+                    values = grouped_taxon_colors, # Custom colors for animals, plants, and others
                     breaks = c("animals", "plants", "others"),
                     name = "Taxonomic Group")+
                   theme_light() +
@@ -2648,7 +2680,29 @@ x  <- indicators_averaged_one %>%
                          per.below.25=sum(indicator1_mean<0.25) / n *100,
                          per.above.75=sum(indicator1_mean>0.75)/ n *100)
 
-kable(x, digits=2)
+
+
+# Calculate total counts and means
+total_counts <- indicators_averaged_one %>%
+               filter(!is.na(indicator1_mean)) %>% 
+               filter(!is.na(taxonomic_group_3)) %>% 
+               ungroup() %>% 
+               summarize(taxonomic_group_3 = "ALL",
+                          n= n(),
+                          mean = mean(indicator1_mean),
+                          median = median(indicator1_mean),
+                          per.below.25=sum(indicator1_mean<0.25) / n *100,
+                          per.above.75=sum(indicator1_mean>0.75)/ n *100)
+
+# Bind the total row to the summary_table
+summary_table <- bind_rows(x, total_counts)
+
+# keep taxonomic groups as level in desired order:
+summary_table$taxonomic_group_3<-factor(summary_table$taxonomic_group_3,
+                                                 levels = c("animals", "plants", "others", "ALL"))
+summary_table<- summary_table %>% arrange(taxonomic_group_3)
+
+kable(summary_table, digits=2)
 ```
 
 
@@ -2660,10 +2714,10 @@ Histogram
 # Create a histogram 
 hist_p <- indicators_averaged_one %>%
                   ggplot(aes(x = indicator2_mean, fill = taxonomic_group_3)) +
-                  geom_histogram(alpha = 0.7, bins = 25) + # Adjust the number of bins as needed
+                  geom_histogram(bins = 25, color="white") + # Adjust the number of bins as needed
                   labs(x = "Proportion of maintained populations", y = "Frequency") +
                   scale_fill_manual(
-                    values = c("#6d6b8c", "#548b7c", "#8c7a55"), # Custom colors for animals, plants, and others
+                    values = grouped_taxon_colors, # Custom colors for animals, plants, and others
                     breaks = c("animals", "plants", "others"),
                     name = "Taxonomic Group")+
                   theme_light() +
@@ -2685,18 +2739,32 @@ x  <- indicators_averaged_one %>%
                          mean=mean(indicator2_mean),
                          median=median(indicator2_mean),
                          per.below.25=sum(indicator2_mean<0.25) / n *100,
-                         per.above.75=sum(indicator2_mean>0.75)/ n *100)
+                         per.above.75=sum(indicator2_mean>0.75) / n *100)
 
-kable(x, digits=2)
+# Calculate total counts and means
+total_counts <- indicators_averaged_one %>%
+               filter(!is.na(indicator2_mean)) %>% 
+               filter(!is.na(taxonomic_group_3)) %>% 
+               ungroup() %>% 
+               summarize(taxonomic_group_3 = "ALL",
+                          n= n(),
+                          mean = mean(indicator2_mean),
+                          median = median(indicator2_mean),
+                          per.below.25=sum(indicator2_mean<0.25) / n *100,
+                          per.above.75=sum(indicator2_mean>0.75) / n *100)
+
+# Bind the total row to the summary_table
+summary_table <- bind_rows(x, total_counts)
+
+# keep taxonomic groups as level in desired order:
+summary_table$taxonomic_group_3<-factor(summary_table$taxonomic_group_3,
+                                                 levels = c("animals", "plants", "others", "ALL"))
+summary_table<- summary_table %>% arrange(taxonomic_group_3)
+
+kable(summary_table, digits=2)
 ```
 
 
-
-
-```{r}
-library(ggsankey)
-
-```
 
 
 ## Session Info for reproducibility purposes:
