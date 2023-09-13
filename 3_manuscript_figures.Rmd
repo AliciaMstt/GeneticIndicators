@@ -939,11 +939,38 @@ p1
 
 ```
 
+Try showing species range type:
+```{r}
+library(ggnewscale)
+# points with species range type
+  p1.1<- df %>%
+  ggplot(aes(x=myaxis, y=n_extant_populations)) +
+          geom_boxplot(aes(color=defined_populations_nicenames,
+                           fill=defined_populations_nicenames)) + 
+    xlab("") + ylab("Number of maintained populations") +
+  coord_flip() +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none",
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots
+  scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  new_scale_color() +
+  geom_jitter(size=1, width = 0.1, aes(color = species_range)) +
+  theme(text = element_text(size = 13))
+
+p1.1
+```
+
+
+
 Prepare data for model (remove outliers and NA in desired variable) and check n:
 ```{r}
 # remove missing data 
 data_for_model<-indicators_full %>% 
                       filter(!is.na(n_extant_populations)) %>%
+                      filter(species_range !="unknown") %>% # we remove "unknonw" because its n is too low, thus unbalancing the model
                       filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
 
 # check n per method
@@ -955,6 +982,9 @@ nrow(data_for_model)
 # re-level to use geographic boundaries as reference category for the analysis
 data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$defined_populations_simplified),
                                                        ref="geographic_boundaries")
+
+# make sure specis range is a factor
+data_for_model$species_range<-as.factor(data_for_model$species_range)
 
 ```
 
@@ -969,6 +999,16 @@ See results:
 ```{r}
 summary(m1)
 ```
+
+Controling for species range type (wide or restricted):
+
+```{r}
+m1.1<-glmer(data_for_model$n_extant_populations ~ data_for_model$defined_populations_simplified + data_for_model$species_range + (1|data_for_model$country_assessment), family ="poisson")
+
+summary(m1.1)
+```
+
+
 
 
 ### (b) Does the proportion of maintained populations (indicator2) vary with method used?
@@ -1017,6 +1057,30 @@ p2<- df %>%
 p2
 
 ```
+
+Try to show species range type
+```{r}
+p2.1<- df %>%
+  filter(n_extant_populations<500) %>%
+  ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_nicenames,    
+                                     fill=defined_populations_nicenames)) +
+          geom_boxplot() + xlab("") + ylab("Proportion of maintained populations") +
+  coord_flip() +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none",
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) 
+  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_x_discrete(limits=rev) +
+    new_scale_color() +
+  geom_jitter(size=1, width = 0.1, aes(color = species_range)) +
+  theme(text = element_text(size = 13))
+p2.1
+
+```
+
 
 Prepare data for model (remove outliers and NA in desired variable) and check n:
 ```{r}
@@ -1137,6 +1201,7 @@ p4<- indicators_full %>%
   filter(n_extant_populations<500) %>%
   filter(!is.na(indicator2)) %>%
   filter(!is.na(n_extant_populations)) %>%
+  filter(species_range !="unknown") %>%
   
   # plot
     ggplot(aes(x=n_extant_populations, y=indicator2, color=defined_populations_nicenames)) +
@@ -1149,6 +1214,23 @@ p4<- indicators_full %>%
     xlab("Number of maintained populations") +
     theme(text = element_text(size = 13))
 p4
+
+p4.1<- indicators_full %>%
+  # filter outliers with too many pops and missing data
+  filter(n_extant_populations<500) %>%
+  filter(!is.na(indicator2)) %>%
+  filter(!is.na(n_extant_populations)) %>%
+  filter(species_range !="unknown") %>%
+  
+  # plot
+    ggplot(aes(x=n_extant_populations, y=indicator2, color=species_range)) +
+    geom_point() +
+    theme_light() +
+    theme(legend.position = "none") +
+    ylab("Proportion of maintained populations") +
+    xlab("Number of maintained populations") +
+    theme(text = element_text(size = 13))
+p4.1
 
 ```
 
@@ -1256,6 +1338,8 @@ p5<- indicators_full %>%
   filter(n_extant_populations<500) %>%
   filter(!is.na(indicator1)) %>%
   filter(!is.na(n_extant_populations)) %>%
+  filter(species_range !="unknown") %>%
+  
   
   # plot
     ggplot(aes(x=n_extant_populations, y=indicator1, color=defined_populations_nicenames)) +
@@ -1268,6 +1352,26 @@ p5<- indicators_full %>%
     xlab("Number of maintained populations") +
     theme(text = element_text(size = 13))
 p5
+
+
+## Coloring by range 
+p5.1<- indicators_full %>%
+  # filter outliers with too many pops and missing data
+  filter(n_extant_populations<500) %>%
+  filter(!is.na(indicator1)) %>%
+  filter(!is.na(n_extant_populations)) %>%
+  filter(species_range !="unknown") %>%
+  
+  
+  # plot
+    ggplot(aes(x=n_extant_populations, y=indicator1, color=species_range)) +
+    geom_point() +
+    theme_light() +
+    theme(legend.position = "none") +
+    ylab("Proportion of populations with Ne>500") +
+    xlab("Number of maintained populations") +
+    theme(text = element_text(size = 13))
+p5.1
 
 ```
 
@@ -1517,7 +1621,7 @@ df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "Franc
 ## plot
 df  %>% 
   # filter out "unknown" range
-  filter(species_range =="wide ranging" | species_range =="restricted") %>% 
+  filter(species_range !="unknown") %>% 
   
 # plot
 ggplot(aes(x=species_range, y=indicator1_mean , fill=species_range)) +
@@ -1525,7 +1629,7 @@ ggplot(aes(x=species_range, y=indicator1_mean , fill=species_range)) +
       geom_jitter(size=.5, width = 0.1) +
       xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
-      scale_x_discrete(breaks=c("wide_ranging", "restricted"),
+      scale_x_discrete(breaks=c("wide ranging", "restricted"),
                         labels=c("wide ranging", "restricted")) +
       theme_light() +
       theme(panel.border = element_blank(), legend.position="none", text= element_text(size=15)) +
@@ -1541,7 +1645,7 @@ Test the effect of range type on Ne>500 indicator. Does the indicator vary betwe
 ## Remove unknown
 data<- indicators_averaged_one  %>%
                     filter(!is.na(indicator1_mean)) %>% 
-                    filter(species_range =="wide ranging" | species_range =="restricted")
+                    filter(species_range !="unknown")
 
 # summary of indicator
 summary(data$indicator1_mean)
@@ -1610,7 +1714,7 @@ df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "Franc
 ## plot
 df  %>% 
   # filter out "unknown" range
-  filter(species_range =="wide ranging" | species_range =="restricted") %>% 
+  filter(species_range !="unknown") %>% 
   
 # plot
 ggplot(aes(x=species_range, y=indicator2_mean , fill=species_range)) +
@@ -1632,7 +1736,7 @@ Test the effect of range type on the proportion of maitained populations. Does t
 ## Remove unknown
 data<- indicators_averaged_one  %>%
                     filter(!is.na(indicator2_mean)) %>% 
-                    filter(species_range =="wide ranging" | species_range =="restricted")
+                    filter(species_range !="unknown")
 
 # summary of indicator
 summary(data$indicator2_mean)
@@ -1643,7 +1747,7 @@ m2 <- glmmTMB(indicator2_mean ~ defined_populations_simplified + species_range +
 
 
 # summary results
-summary(m1)
+summary(m2)
 
 
 ## + country
