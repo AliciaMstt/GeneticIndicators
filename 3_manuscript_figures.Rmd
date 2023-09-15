@@ -2866,7 +2866,7 @@ x  <- indicators_averaged_one %>%
                          median=median(indicator2_mean),
                          per0=sum(indicator2_mean==0) / n *100,
                          per.below.25=sum(indicator2_mean<0.25) / n *100,
-                         per.below.90=sum(indicator1_mean<0.90) / n *100,
+                         per.below.90=sum(indicator2_mean<0.90) / n *100,
                          per.above.75=sum(indicator2_mean>0.75) / n *100,
                          per1=sum(indicator2_mean==1) / n *100)
 
