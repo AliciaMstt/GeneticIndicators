@@ -598,14 +598,6 @@ p4
 
 ```
 
-Previous plot but nicer for graphical summary:
-
-```{r}
-p4 + coord_flip() + theme(legend.position="top")
-```
-
-
-
 ## Range of values for Ne and Nc data
 
 Range of Ne values by taxonomic group, without possible outliers (Ne > 100000)
@@ -749,8 +741,6 @@ indicators_full %>%
 ```
 
 ## Distribution of Nc, Ne, types of Nc and missing extinct pops in a single figure with 4 panels:
-
-
 
 Distribution of Nc, Ne and types of Ne in a single figure with 3 panels, using count for a & b, and proportions for c:
 
@@ -2191,6 +2181,7 @@ indicators_averaged_one <- indicators_averaged_one %>%
 table(indicators_averaged_one$taxonomic_group_simplified)
 ```
 
+
 ### Violin plots and summary tables for each indicator by taxonomic group
 
 **Indicator Ne > 500**
@@ -2711,7 +2702,34 @@ x<-indicators_averaged_one %>%
 kable(x, digits=3)
 ```
 
-## Simplified figures for graphical summary and policy brief
+
+## Simplified figures and basic stats for graphical summary and policy brief
+
+### How many species and pops:
+
+How many species:
+```{r}
+nrow(indicators_averaged_one)
+```
+
+How many populations, including all pops from species that were assessed more than once:
+
+```{r}
+nrow(ind1_data)
+```
+
+
+How many populations, counting only once populations from taxa assessed more than once:
+
+```{r}
+# This looks for the id of the taxa already keeping only 1 for the multiassessed taxa, and keeps those int he ind1_data (where the pops data is)
+x<-ind1_data[ind1_data$X_uuid %in% indicators_averaged_one$X_uuid, ]
+
+# the number of rows is the number of pops counting only once multiassessed taxa
+nrow(x)
+
+```
+
 
 ### Create new variables with simplified taxonomic groups
 
@@ -2742,7 +2760,10 @@ indicators_averaged_one$taxonomic_group_3<- factor(indicators_averaged_one$taxon
 ```
 
 
-### Histogram for Ne > 500 indicator animals, plants, others
+
+### Histogram for Ne > 500 indicator 
+
+By animals, plants, others:
 
 ```{r}
 # Create a histogram 
@@ -2764,6 +2785,8 @@ hist_p
 
 Summary table:
 
+### Summary table for Ne > 500 indicator 
+
 ```{r}
 x  <- indicators_averaged_one %>%
                filter(!is.na(indicator1_mean)) %>% 
@@ -2772,8 +2795,11 @@ x  <- indicators_averaged_one %>%
                summarize(n=n(),
                          mean=mean(indicator1_mean),
                          median=median(indicator1_mean),
+                         per.0=sum(indicator1_mean==0) / n *100,
                          per.below.25=sum(indicator1_mean<0.25) / n *100,
-                         per.above.75=sum(indicator1_mean>0.75)/ n *100)
+                         per.below.90=sum(indicator1_mean<0.90) / n *100,
+                         per.above.75=sum(indicator1_mean>0.75)/ n *100,
+                         per1=sum(indicator1_mean==1) / n *100)
 
 
 
@@ -2786,8 +2812,11 @@ total_counts <- indicators_averaged_one %>%
                           n= n(),
                           mean = mean(indicator1_mean),
                           median = median(indicator1_mean),
+                          per.0=sum(indicator1_mean==0) / n *100,
                           per.below.25=sum(indicator1_mean<0.25) / n *100,
-                          per.above.75=sum(indicator1_mean>0.75)/ n *100)
+                          per.below.90=sum(indicator1_mean<0.90) / n *100,
+                          per.above.75=sum(indicator1_mean>0.75)/ n *100,
+                          per1=sum(indicator1_mean==1) / n *100)
 
 # Bind the total row to the summary_table
 summary_table <- bind_rows(x, total_counts)
@@ -2801,9 +2830,9 @@ kable(summary_table, digits=2)
 ```
 
 
-### Histogram for Proportion Mantained populations for animal, plants, others
+### Histogram for Proportion Mantained populations
 
-Histogram
+Histogram for animal, plants, others
 
 ```{r}
 # Create a histogram 
@@ -2825,6 +2854,8 @@ hist_p
 
 Summary table:
 
+### Summary table for Proportion Mantaiend populations
+
 ```{r}
 x  <- indicators_averaged_one %>%
                filter(!is.na(indicator2_mean)) %>% 
@@ -2833,8 +2864,11 @@ x  <- indicators_averaged_one %>%
                summarize(n=n(),
                          mean=mean(indicator2_mean),
                          median=median(indicator2_mean),
+                         per0=sum(indicator2_mean==0) / n *100,
                          per.below.25=sum(indicator2_mean<0.25) / n *100,
-                         per.above.75=sum(indicator2_mean>0.75) / n *100)
+                         per.below.90=sum(indicator1_mean<0.90) / n *100,
+                         per.above.75=sum(indicator2_mean>0.75) / n *100,
+                         per1=sum(indicator2_mean==1) / n *100)
 
 # Calculate total counts and means
 total_counts <- indicators_averaged_one %>%
@@ -2845,8 +2879,11 @@ total_counts <- indicators_averaged_one %>%
                           n= n(),
                           mean = mean(indicator2_mean),
                           median = median(indicator2_mean),
+                          per0=sum(indicator2_mean==0) / n *100,
                           per.below.25=sum(indicator2_mean<0.25) / n *100,
-                          per.above.75=sum(indicator2_mean>0.75) / n *100)
+                          per.below.90=sum(indicator2_mean<0.90) / n *100,
+                          per.above.75=sum(indicator2_mean>0.75) / n *100,
+                          per1=sum(indicator2_mean==1) / n *100)
 
 # Bind the total row to the summary_table
 summary_table <- bind_rows(x, total_counts)
@@ -2860,6 +2897,87 @@ kable(summary_table, digits=2)
 ```
 
 
+
+
+
+### Data availability at population level (combining Nc and Ne) by country
+
+```{r}
+ind1_data %>%
+  mutate(Ne_calculated_from = replace_na(Ne_calculated_from, "no data available")) %>%
+  ggplot(aes(x=country_assessment, fill=Ne_calculated_from))+
+  geom_bar(position = "fill", color="white") +
+  scale_fill_manual(labels=c("genetic data", "NcPoint ratio", "NcRange ratio", "no data available"),
+                      breaks=c("genetic data", "NcPoint ratio", "NcRange ratio", "no data available"),
+                      values=c("darkgreen", "#0072B2", "#E69F00", "grey80")) +
+  xlab("") +
+  scale_x_discrete(limits=rev) + 
+  ylab("Proportion of populations") +
+  labs(fill="Origin of data used to estimate Ne") +
+  theme_light() +
+  coord_flip() +
+  theme(text = element_text(size = 13), legend.position = "top", panel.border = element_blank())
+  
+```
+
+### Data availability donuts
+
+Species level yes/no
+```{r}
+df<- metadata %>%
+     filter(popsize_data != "data_for_species") %>% # we want to show only data for pops or insufficient
+     group_by(popsize_data) %>%
+   summarise(n=n(),
+             percentage = (n / nrow(metadata)) * 100)
+   
+kable(df, digits = 0)
+
+# variable to make change the size of the hole
+hsize <- 2 # to change the size of the hole. larger=bigger 
+df <- df %>% 
+  mutate(x = hsize)  
+
+# donut plot
+p <- ggplot(df, aes(x = hsize, y = n, fill = popsize_data)) +
+  geom_col() +
+  coord_polar(theta = "y") +
+  scale_fill_manual(values=c("#2ca02c", "grey80"),
+                    breaks=c("yes", "insuff_data_species"),
+                    labels=c("Population level", "Insufficient data")) +
+
+  xlim(c(0.2, hsize + 0.5)) + theme_void()
+p
+
+
+```
+
+Population level, what kind?
+```{r}
+# we first need the column numbers
+df<-ind1_data %>%
+   mutate(Ne_calculated_from = replace_na(Ne_calculated_from, "no data available")) %>%
+   group_by(Ne_calculated_from) %>%
+   summarise(n=n(),
+             percentage = (n / nrow(ind1_data)) * 100)
+   
+kable(df, digits = 0)
+
+# variable to make change the size of the hole
+hsize <- 3 # to change the size of the hole. larger=bigger 
+df <- df %>% 
+  mutate(x = hsize)  
+
+# donut plot
+p <- ggplot(df, aes(x = hsize, y = n, fill = Ne_calculated_from)) +
+  geom_col() +
+  coord_polar(theta = "y") +
+  scale_fill_manual(labels=c("genetic data", "NcPoint ratio", "NcRange ratio", "no data available"),
+                      breaks=c("genetic data", "NcPoint ratio", "NcRange ratio", "no data available"),
+                      values=c("darkgreen", "#0072B2", "#E69F00", "grey80")) +
+  xlim(c(0.2, hsize + 0.5)) + theme_void()
+p
+
+```
 
 
 ## Session Info for reproducibility purposes:
