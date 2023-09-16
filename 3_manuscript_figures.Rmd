@@ -2064,32 +2064,32 @@ df$myaxis<-factor(df$myaxis,
                              grep("fish" , unique(df$myaxis), value = TRUE),
                              grep("invertebrate", unique(df$myaxis), value = TRUE),
                              grep("mammal", unique(df$myaxis), value = TRUE),
+                             grep("reptile", unique(df$myaxis), value = TRUE),
                              grep("angiosperm", unique(df$myaxis), value = TRUE),
                              grep("gymnosperm", unique(df$myaxis), value = TRUE),
-                             grep("reptile", unique(df$myaxis), value = TRUE),
                              grep("pteridophytes", unique(df$myaxis), value = TRUE),
                              grep("others" , unique(df$myaxis), value = TRUE)))
 
 df$taxonomic_group_simplified<-factor(df$taxonomic_group_simplified, 
-                                       levels=c("amphibian", "bird" , "fish" , "invertebrate", "mammal",
-                                                 "angiosperm",  "gymnosperm",  "reptile", "pteridophytes",
-                                                "others"))
+                                       levels=c("amphibian", "bird" , "fish" , "invertebrate", "mammal", "reptile",
+                                                 "angiosperm",  "gymnosperm", "pteridophytes",
+                                                 "others"))
 
         
 # plot
 p1<-df %>%
     ggplot(aes(x=myaxis, y=indicator1_mean, fill=taxonomic_group_simplified, color=taxonomic_group_simplified)) +
       geom_violin(width=1.5, linewidth = 0.2)  +
-      geom_jitter(size=.7, width = 0.1, color="darkred") +
+      geom_jitter(size=.7, width = 0.1, color="black") +
       xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
       scale_x_discrete(limits=rev) +
-      scale_fill_manual(values= c(rep(grouped_taxon_colors[1], 5), # for animals
-                                  rep(grouped_taxon_colors[2], 4), # for platns
+      scale_fill_manual(values= c(rep(grouped_taxon_colors[1], 6), # for animals
+                                  rep(grouped_taxon_colors[2], 3), # for platns
                                   rep(grouped_taxon_colors[3], 1)), # for fungi and others
                        breaks=c(levels(df$taxonomic_group_simplified))) +
-      scale_color_manual(values= c(rep(grouped_taxon_colors[1], 5), # for animals
-                                  rep(grouped_taxon_colors[2], 4), # for platns
+      scale_color_manual(values= c(rep(grouped_taxon_colors[1], 6), # for animals
+                                  rep(grouped_taxon_colors[2], 3), # for platns
                                   rep(grouped_taxon_colors[3], 1)), # for fungi and others
                        breaks=c(levels(df$taxonomic_group_simplified))) +
       theme_light() +
@@ -2168,15 +2168,15 @@ df$myaxis<-factor(df$myaxis,
                              grep("fish" , unique(df$myaxis), value = TRUE),
                              grep("invertebrate", unique(df$myaxis), value = TRUE),
                              grep("mammal", unique(df$myaxis), value = TRUE),
+                             grep("reptile", unique(df$myaxis), value = TRUE),
                              grep("angiosperm", unique(df$myaxis), value = TRUE),
                              grep("gymnosperm", unique(df$myaxis), value = TRUE),
-                             grep("reptile", unique(df$myaxis), value = TRUE),
                              grep("pteridophytes", unique(df$myaxis), value = TRUE),
                              grep("others" , unique(df$myaxis), value = TRUE)))
 
 df$taxonomic_group_simplified<-factor(df$taxonomic_group_simplified, 
-                           levels=c("amphibian", "bird" , "fish" , "invertebrate", "mammal",
-                                     "angiosperm",  "gymnosperm",  "reptile", "pteridophytes",
+                           levels=c("amphibian", "bird" , "fish" , "invertebrate", "mammal",  "reptile",
+                                     "angiosperm",  "gymnosperm", "pteridophytes",
                                      "others"))
 
         
@@ -2184,16 +2184,16 @@ df$taxonomic_group_simplified<-factor(df$taxonomic_group_simplified,
 p2<-df %>%
     ggplot(aes(x=myaxis, y=indicator2_mean, fill=taxonomic_group_simplified, color=taxonomic_group_simplified)) +
       geom_violin(width=1, linewidth = 0.2)  +
-      geom_jitter(size=.7, width = 0.1, color="darkred") +
+      geom_jitter(size=.7, width = 0.1, color="black") +
       xlab("") + ylab("Proportion of maintained populations") +
       coord_flip() +
       scale_x_discrete(limits=rev) +
-      scale_fill_manual(values= c(rep(grouped_taxon_colors[1], 5), # for animals
-                                  rep(grouped_taxon_colors[2], 4), # for platns
+      scale_fill_manual(values= c(rep(grouped_taxon_colors[1], 6), # for animals
+                                  rep(grouped_taxon_colors[2], 3), # for platns
                                   rep(grouped_taxon_colors[3], 1)), # for fungi and others
                        breaks=c(levels(df$taxonomic_group_simplified))) +
-      scale_color_manual(values= c(rep(grouped_taxon_colors[1], 5), # for animals
-                                  rep(grouped_taxon_colors[2], 4), # for platns
+      scale_color_manual(values= c(rep(grouped_taxon_colors[1], 6), # for animals
+                                  rep(grouped_taxon_colors[2], 3), # for platns
                                   rep(grouped_taxon_colors[3], 1)), # for fungi and others
                        breaks=c(levels(df$taxonomic_group_simplified))) +
       theme_light() +
@@ -2632,7 +2632,8 @@ hist_p <- indicators_averaged_one %>%
                     breaks = c("animals", "plants", "others"),
                     name = "Taxonomic Group")+
                   theme_light() +
-                  theme(panel.border = element_blank(), text = element_text(size = 15)) +
+                  theme(panel.border = element_blank(), text = element_text(size = 15), 
+                        legend.position = "bottom") +
                   guides(fill = guide_legend(title = NULL))
 
 # plot
@@ -2653,7 +2654,6 @@ hist_p <- indicators_averaged_one %>%
 
 # plot
 hist_p
-```
 ```
 
 
