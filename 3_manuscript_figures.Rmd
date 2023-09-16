@@ -2783,6 +2783,25 @@ hist_p <- indicators_averaged_one %>%
 hist_p
 ```
 
+Plain histogram:
+
+```{r}
+# Create a histogram 
+hist_p <- indicators_averaged_one %>%
+                  ggplot(aes(x = indicator1_mean)) +
+                  geom_histogram( bins = 25, fill="grey30") + # Adjust the number of bins as needed
+                  labs(x = "Proportion of populations with Ne>500", y = "Frequency") +
+                  theme_light() +
+                  theme(panel.border = element_blank(), text = element_text(size = 15)) +
+                  guides(fill = guide_legend(title = NULL))
+
+# plot
+hist_p
+```
+```
+
+
+
 Summary table:
 
 ### Summary table for Ne > 500 indicator 
@@ -2832,7 +2851,7 @@ kable(summary_table, digits=2)
 
 ### Histogram for Proportion Mantained populations
 
-Histogram for animal, plants, others
+Histogram for animal, plants, others:
 
 ```{r}
 # Create a histogram 
@@ -2844,6 +2863,22 @@ hist_p <- indicators_averaged_one %>%
                     values = grouped_taxon_colors, # Custom colors for animals, plants, and others
                     breaks = c("animals", "plants", "others"),
                     name = "Taxonomic Group")+
+                  theme_light() +
+                  theme(panel.border = element_blank(), text = element_text(size = 15)) +
+                  guides(fill = guide_legend(title = NULL))
+
+# plot
+hist_p
+```
+
+Plain histogram
+
+```{r}
+# Create a histogram 
+hist_p <- indicators_averaged_one %>%
+                  ggplot(aes(x = indicator2_mean)) +
+                  geom_histogram(bins = 25, fill="grey30") + # Adjust the number of bins as needed
+                  labs(x = "Proportion of maintained populations", y = "Frequency") +
                   theme_light() +
                   theme(panel.border = element_blank(), text = element_text(size = 15)) +
                   guides(fill = guide_legend(title = NULL))
@@ -2895,8 +2930,6 @@ summary_table<- summary_table %>% arrange(taxonomic_group_3)
 
 kable(summary_table, digits=2)
 ```
-
-
 
 
 
