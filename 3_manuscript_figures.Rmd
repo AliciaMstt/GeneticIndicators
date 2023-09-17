@@ -1757,6 +1757,85 @@ summary(m2.1)
 plot_grid(p1, p2,  ncol=1, align = "v", labels=c("a)", "b)"))  
 ```
 
+### Violin plots coloring points to show genetic clusters
+
+```{r}
+
+# add variable stating if genetic methods are used
+indicators_averaged_one<- indicators_averaged_one  %>%
+mutate(genetic_to_define_pops = ifelse(grepl("genetic", defined_populations_simplified), 'genetic method', 'non genetic'))
+
+
+# get sample size by desired category
+sample_size <- indicators_averaged_one  %>%
+                    filter(!is.na(indicator1_mean)) %>% 
+                    filter(!is.na(species_range)) %>% 
+                    group_by(species_range) %>% summarize(num=n())
+
+# plot
+indicators_averaged_one %>% 
+    filter(!is.na(indicator1_mean)) %>% 
+    filter(!is.na(species_range)) %>% 
+  
+  # add sampling size 
+  left_join(sample_size) %>% 
+  mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=myaxis, y=indicator1_mean)) +
+      geom_violin(width=1, linewidth = 0, fill="grey70")  +
+      xlab("") + ylab("Proportion of populations with Ne>500") +
+      coord_flip() +
+      # scale_fill_manual(breaks=c("wide ranging", "restricted", "unknown"),
+      #                  labels=c("wide ranging", "restricted", "unknown"),
+      #                  values=c("#00BFC4", "#F8766D", "grey80"),
+      #                   guide = "none") + # hide legend)
+      # 
+    new_scale_color() +
+    geom_jitter(size=1.2, width = 0.1, aes(color = genetic_to_define_pops)) +
+    scale_color_manual(values=c("red", "black")) +
+  
+      theme_light() +
+      theme(panel.border = element_blank(), legend.position="bottom", text= element_text(size=20))
+```
+```{r}
+# add variable stating if genetic methods are used
+indicators_averaged_one<- indicators_averaged_one  %>%
+mutate(genetic_to_define_pops = ifelse(grepl("genetic", defined_populations_simplified), 'genetic method', 'non genetic'))
+
+
+# get sample size by desired category
+sample_size <- indicators_averaged_one  %>%
+                    filter(!is.na(indicator2_mean)) %>% 
+                    filter(!is.na(species_range)) %>% 
+                    group_by(species_range) %>% summarize(num=n())
+
+# plot
+indicators_averaged_one %>% 
+    filter(!is.na(indicator2_mean)) %>% 
+    filter(!is.na(species_range)) %>% 
+  
+  # add sampling size 
+  left_join(sample_size) %>% 
+  mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=myaxis, y=indicator2_mean)) +
+      geom_violin(width=1, linewidth = 0, fill="grey70")  +
+      xlab("") + ylab("Proportion of populations maintained") +
+      coord_flip() +
+      # scale_fill_manual(breaks=c("wide ranging", "restricted", "unknown"),
+      #                  labels=c("wide ranging", "restricted", "unknown"),
+      #                  values=c("#00BFC4", "#F8766D", "grey80"),
+      #                   guide = "none") + # hide legend)
+      # 
+    new_scale_color() +
+    geom_jitter(size=1.2, width = 0.1, aes(color = genetic_to_define_pops)) +
+    scale_color_manual(values=c("red", "black")) +
+  
+      theme_light() +
+      theme(panel.border = element_blank(), legend.position="bottom", text= element_text(size=20))
+```
 
 
 ## Indicatros by threat status (IUCN Red List)
@@ -2011,8 +2090,133 @@ indicators_averaged_one %>%
 ```{r}
 plot_grid(p1,
           p2,
-          ncol=2, align = "v", labels=c("a)", "b)"))  
+          ncol=1, align = "v", labels=c("a)", "b)"))  
 ```
+
+### Comparing the Ne indicator against a mock IUCN assessment adding up all populations
+
+Generate mock Ne data for the entire species, by adding up the Ne of each population within each species.
+
+```{r}
+# Sum the Ne of each population within spp
+x <- ind1_data %>% group_by(X_uuid, taxon, country_assessment, multiassessment) %>% # this groups by individual species, considering mutliassessed species
+              # sum Ne by individual species, keeping multiassesments separate
+              summarise(Ne_mock_species = sum(Ne_combined, na.rm = TRUE))   %>%
+
+              # average for multiassessed records in a single species
+              group_by(country_assessment, multiassessment, taxon) %>% 
+              summarise(Ne_mock_species=mean(Ne_mock_species, na.rm=TRUE))  
+
+# Add mto indicator data
+indicators_averaged_one<- left_join(indicators_averaged_one, x) %>%
+
+  # add a below above category
+  mutate(Ne_mock_category = ifelse(Ne_mock_species > 500, 'Above 500', 'Below 500'))
+
+
+
+indicators_averaged_one %>% select(taxon, country_assessment, Ne_mock_species, Ne_mock_category) %>% head()
+              
+```
+
+Plot the Ne indicator as in the violion plots above, but coloring the points showing which species would be below or above Ne 500 if considering Ne at the species level.
+
+```{r}
+# add sampling size
+sample_size <- indicators_averaged_one %>%
+               filter(!is.na(Ne_mock_species)) %>% 
+               filter(!is.na(global_IUCN)) %>% 
+               filter(Ne_mock_species<1000000) %>% 
+               group_by(global_IUCN) %>% summarize(num=n())
+
+# new df 
+df<- indicators_averaged_one %>% 
+     filter(!is.na(Ne_mock_species)) %>% 
+     filter(!is.na(global_IUCN)) %>% 
+     filter(Ne_mock_species<1000000) %>% 
+        # add sampling size 
+        left_join(sample_size) %>%
+        mutate(myaxis = paste0(global_IUCN, " (n= ", num, ")"))
+
+
+# change order of levels so that they are in the desired order
+df$myaxis<-factor(df$myaxis, 
+                  #grep is used below to get the sample size, which may change depending on the data
+                  levels=c(grep("cr", unique(df$myaxis), value = TRUE),
+                          grep("en", unique(df$myaxis), value = TRUE),
+                          grep("vu", unique(df$myaxis), value = TRUE),
+                          grep("nt", unique(df$myaxis), value = TRUE),
+                          grep("lc", unique(df$myaxis), value = TRUE),
+                          grep("dd", unique(df$myaxis), value = TRUE),
+                          grep("not_assessed", unique(df$myaxis), value = TRUE),
+                          grep("unknown", unique(df$myaxis), value = TRUE)))
+
+df$global_IUCN<-factor(df$global_IUCN, levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
+
+      
+# Plot the Ne indicator as above, but with points colored by Ne_mock above or below 500
+
+df %>%
+    ggplot(aes(x=myaxis, y=indicator1_mean , fill=global_IUCN)) +
+      geom_violin(width=1, linewidth = 0)  +
+      xlab("") + ylab("Proportion of populations with Ne>500") +
+      coord_flip() +
+      scale_fill_manual(values= IUCNcolors, # iucn color codes
+                        breaks=c(levels(df$global_IUCN)), 
+                        guide = "none") + # hide legend
+      scale_x_discrete(limits=rev) +
+   
+     # add new scale color for points
+     new_scale_color() +
+     geom_jitter(size=1, width = 0.1, aes(color = Ne_mock_category)) +
+     scale_color_manual(values=c("black", "#F0A6CA")) +
+     labs(color= "Species (mock) Ne") +
+  
+  # theme stuff
+      theme_light() +
+      theme(panel.border = element_blank(), legend.position = "bottom",
+            plot.title = element_text(hjust = 0.5), # center title
+            text= element_text(size=15))
+
+
+
+
+```
+
+
+```{r}
+indicators_averaged_one %>%
+  filter(!is.na(Ne_mock_category)) %>% 
+  ggplot(aes(x=global_IUCN, fill=Ne_mock_category))+
+  geom_bar(position = "dodge") +
+  scale_fill_manual(values=c("black", "#F0A6CA")) +
+                  labs(color= "Species (mock) Ne") +
+  coord_flip() + 
+  theme_light() +
+  scale_x_discrete(limits=rev) +
+  theme(text = element_text(size = 13), legend.position = "right", panel.border = element_blank())
+```
+
+
+Summnary table
+
+```{r}
+x  <- indicators_averaged_one %>%
+               filter(!is.na(indicator1_mean)) %>% 
+               group_by(global_IUCN, Ne_mock_category) %>% 
+               summarize(n=n(),
+                         mean=mean(indicator1_mean),
+                         median=median(indicator1_mean),
+                         per.0=sum(indicator1_mean==0) / n *100,
+                         per.below.25=sum(indicator1_mean<0.25) / n *100,
+                         per.below.90=sum(indicator1_mean<0.90) / n *100,
+                         per.above.75=sum(indicator1_mean>0.75)/ n *100,
+                         per1=sum(indicator1_mean==1) / n *100)
+
+kable(x, digits = 2)
+```
+
+
 
 ## Indicator values by taxonomic group
 
