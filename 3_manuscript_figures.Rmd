@@ -417,17 +417,18 @@ nrow(indicators_averaged_one)
 Plot taxa assessed excluding duplicates, i.e. the real number of taxa assessed:
 
 ```{r, out.width="700px", out.height="400px"}
-ggplot(indicators_averaged_one, aes(x=country_assessment)) + 
+p1<-ggplot(indicators_averaged_one, aes(x=country_assessment)) + 
   geom_bar(stat = "count") +
   xlab("") +
   ggtitle("Number of taxa assessed by country") +
   theme_light()
+p1
 
 ```
 
 Of which countries and taxonomic groups are the taxa that were assessed more than once?
 ```{r multiassessed}
-indicators_averaged_one %>% # we use the _unique dataset so that multiassesed records are counted only once
+p2<- indicators_averaged_one %>% # we use the _unique dataset so that multiassesed records are counted only once
         filter(multiassessment=="multiassessment") %>%
 
 ggplot(aes(x=taxonomic_group, fill=country_assessment)) + 
@@ -438,31 +439,21 @@ ggplot(aes(x=taxonomic_group, fill=country_assessment)) +
   ggtitle("Number of taxa assessed more than once") +
   theme_light()
 
-
+p2
 ```
+### Supplementary Figure: Number of species and multiassessed species per country
+
+```{r}
+plot_grid(p1 + ggtitle(""),
+          p2 + ggtitle(""), ncol = 1, labels = c("a)", "b)"))
+```
+
 
 ## Population size data (Has Nc or Ne? what type of Nc?)
 
-### Population size data availability by country
-Countries have population size data (Nc or Ne) regardless of the taxonomic group.
+### Supplementary Figure: Population size data availability by country
 
-```{r}
-ggplot(metadata, aes(x=taxonomic_group, fill=popsize_data)) + 
-  geom_bar(stat = "count") +
-  coord_flip() +
-  facet_wrap(~country_assessment, ncol = 5) +
-  scale_fill_manual(values=c("#2ca02c", "#1f77b4", "grey80"),
-                    breaks=c("yes", "data_for_species", "insuff_data_species"),
-                    labels=c("Population level", "Species or subspecies level", "Insufficient data")) +
-  labs(fill="Population size data availability",
-       x="",
-       y="Number of taxa (including records of taxa assessed more than once)") +
-  theme_light() +
-  theme(panel.border = element_blank(), legend.position="top")
-  
-```
-
-Same plot but including a panel for the entire dataset:
+Countries have population size data (Nc or Ne) regardless of the taxonomic group. The last panel includes the entire dataset:
 
 ```{r}
 ## Duplicate data with an additional column "facet"
@@ -578,25 +569,35 @@ p3
  
 ```
 
-### Data availability at the population level cosidering Ne or Nc combined (ie where data came from for the Ne value used for estimating the indicator)
+Data availability at the population level cosidering Ne and Nc combined. This plot shows where data came from for the Ne value used for estimating the indicator.
 
 ```{r}
 p4<-ind1_data %>%
-    mutate(Ne_calculated_from = replace_na(Ne_calculated_from, "no data available")) %>%
+  mutate(Ne_calculated_from = replace_na(Ne_calculated_from, "NA")) %>%
   ggplot(aes(x=country_assessment, fill=Ne_calculated_from))+
   geom_bar(position = "fill", color="white") +
-  scale_fill_manual(labels=c("genetic data", "NcPoint ratio", "NcRange ratio", "no data available"),
-                      breaks=c("genetic data", "NcPoint ratio", "NcRange ratio", "no data available"),
+  scale_fill_manual(labels=c("genetic data", "NcPoint ratio", "NcRange ratio", "NA"),
+                      breaks=c("genetic data", "NcPoint ratio", "NcRange ratio", "NA"),
                       values=c("darkgreen", "#0072B2", "#E69F00", "grey80")) +
   xlab("") +
+  scale_x_discrete(limits=rev) + 
   ylab("Proportion of populations") +
-  labs(fill="Origin of data used to estimate Ne") +
+  labs(fill="Data used to estimate Ne") +
   theme_light() +
-  theme(text = element_text(size = 13), legend.position = "right", panel.border = element_blank())
+  coord_flip() +
+  theme(text = element_text(size = 13), legend.position = "bottom", panel.border = element_blank())
 p4
 
+```
+
+### Supplementary Figure: Ne and Nc data availabiltiy by species
+```{r}
+plot_grid(p1 + theme(legend.justification = c(0,.5)),  # legend.justification is used to aling legends
+          p2 + theme(legend.justification = c(0,.5)),
+          ncol=1, rel_widths = c(1,1,1,1), align = "v", labels=c("a)", "b)"), vjust = .7)  
 
 ```
+
 
 ## Range of values for Ne and Nc data
 
@@ -721,7 +722,7 @@ p5
 ```
 
 
-### Plot missing data extinct populations by country
+### Supplementary Figure: Missing data in extinct populations by country
 
 Missing data in number of extinct populations by method to define populations:
 
@@ -740,14 +741,22 @@ indicators_full %>%
   
 ```
 
-## Distribution of Nc, Ne, types of Nc and missing extinct pops in a single figure with 4 panels:
+## Main Figure: Data availability to estimate Ne indciator (origion of data to estimate Ne) and PM indicator (missing data on pop extinction):
 
 Distribution of Nc, Ne and types of Ne in a single figure with 3 panels, using count for a & b, and proportions for c:
 
 
 ```{r, out.width="900px", out.height="1100px"}
 # plot
-plot_grid(p1 + theme(legend.justification = c(0,.5)), # legend.justification aligns legends
+
+plot_grid(p4  + theme(legend.position = "right", legend.justification = c(0,.5)), # legend.justification aligns legends
+          p5 + coord_flip() + 
+               scale_x_discrete(limits=rev) +
+               theme(legend.position = "right", legend.justification = c(0,.5)), 
+          ncol = 1, labels = c("a)", "b)"), align = "v")
+
+
+plot_grid(p1 + theme(legend.justification = c(0,.5)), 
           p2 + theme(legend.justification = c(0,.5)),
           p3 + theme(legend.justification = c(0,.5)),
           p4 + theme(legend.justification = c(0,.5)),
@@ -755,7 +764,7 @@ plot_grid(p1 + theme(legend.justification = c(0,.5)), # legend.justification ali
 ```
 
 
-## Method to define populations used by country (alluvial)
+## Main Figure: Method to define populations used by country and taxa (alluvial)
 
 Reformat data
 ```{r}
@@ -796,7 +805,7 @@ alluvial(foralluvial[,1:3], freq = foralluvial$n,
 
 The analyses and plots below us a subset of data filtering outliers (>500 populations) and using the simplified methods (see above). Multiassessed species are considered independently (each assessment is a data point).
 
-### Plot Number of maintained populations by country and method
+### Supplementary Figure: Number of maintained populations by country and method
 
 Visualizing the Number of maintained populations by country and method is useful to interpret the models that would be run below.
 ```{r}
@@ -825,8 +834,6 @@ indicators_full %>%
         text = element_text(size = 15)) 
 
 
-
-levels(indicators_full$country_assessment)
 ```
 
 ### Sampling size and plot of Ne values and Ne indicator by Ne origin and method to define populations
@@ -881,8 +888,6 @@ x<- ind1_data %>%
                 summarise(n=n())
 kable(x)
 ```
-
-
 
 
 ### (a) Does the number of maintained pops vary with method used? 
@@ -1459,7 +1464,7 @@ Summary:
 
 
 
-### Single plot 3 panels box plots for the effect of method on: number of populations, proportion of maintained populations (indicator 2) and Proportion of populations with Ne>500 (indicator 1).
+### Main Figure: Single plot 3 panels box plots for the effect of method on: number of populations, proportion of maintained populations (indicator 2) and Proportion of populations with Ne>500 (indicator 1).
 
 Plot in three panels. 
 ```{r, out.height="400px", out.width="1600px"}
@@ -1545,7 +1550,7 @@ plot_grid(p1, p2.1, p3.1, ncol=3, rel_widths = c(1.9,1,1), align = "h", labels=c
 
 ```
 
-### Single figure 2 panels scatter plots number of populations vs indicators
+### Supplementary Figure: Single figure 2 panels scatter plots number of populations vs indicators
 
 ```{r, out.height= "800px", out.width="500px"}
 # plot
@@ -1599,7 +1604,7 @@ p1<-indicators_averaged_one %>%
 p1
 ```
 
-Plot Indicator 1 by country and type of range. Remove "unknown" and NA for better visualization.
+### Supplementary Figure: Plot Ne Indicator by country and type of range. Remove "unknown" and NA for better visualization.
 
 ```{r indicator1 by country and range}
 ### Duplicate dataframe to have a column with "all data" for faceting
@@ -1757,8 +1762,10 @@ summary(m2.1)
 plot_grid(p1, p2,  ncol=1, align = "v", labels=c("a)", "b)"))  
 ```
 
-### Violin plots coloring points to show genetic clusters
+### Main Figure: Violin plots indicatrors by of range type coloring points to show genetic clusters
 
+
+For Ne indicator: 
 ```{r}
 
 # add variable stating if genetic methods are used
@@ -1773,7 +1780,7 @@ sample_size <- indicators_averaged_one  %>%
                     group_by(species_range) %>% summarize(num=n())
 
 # plot
-indicators_averaged_one %>% 
+p1 <- indicators_averaged_one %>% 
     filter(!is.na(indicator1_mean)) %>% 
     filter(!is.na(species_range)) %>% 
   
@@ -1786,18 +1793,16 @@ indicators_averaged_one %>%
       geom_violin(width=1, linewidth = 0, fill="grey70")  +
       xlab("") + ylab("Proportion of populations with Ne>500") +
       coord_flip() +
-      # scale_fill_manual(breaks=c("wide ranging", "restricted", "unknown"),
-      #                  labels=c("wide ranging", "restricted", "unknown"),
-      #                  values=c("#00BFC4", "#F8766D", "grey80"),
-      #                   guide = "none") + # hide legend)
-      # 
-    new_scale_color() +
+    new_scale_color() + # to color the points without confusing ggplot
     geom_jitter(size=1.2, width = 0.1, aes(color = genetic_to_define_pops)) +
     scale_color_manual(values=c("red", "black")) +
-  
-      theme_light() +
-      theme(panel.border = element_blank(), legend.position="bottom", text= element_text(size=20))
+    theme_light() +
+    labs(color=NULL) + # hide legend title
+    theme(panel.border = element_blank(), legend.position="bottom", text= element_text(size=20))
+p1
 ```
+
+For PM indicator: 
 ```{r}
 # add variable stating if genetic methods are used
 indicators_averaged_one<- indicators_averaged_one  %>%
@@ -1811,7 +1816,7 @@ sample_size <- indicators_averaged_one  %>%
                     group_by(species_range) %>% summarize(num=n())
 
 # plot
-indicators_averaged_one %>% 
+p2<-indicators_averaged_one %>% 
     filter(!is.na(indicator2_mean)) %>% 
     filter(!is.na(species_range)) %>% 
   
@@ -1824,17 +1829,21 @@ indicators_averaged_one %>%
       geom_violin(width=1, linewidth = 0, fill="grey70")  +
       xlab("") + ylab("Proportion of populations maintained") +
       coord_flip() +
-      # scale_fill_manual(breaks=c("wide ranging", "restricted", "unknown"),
-      #                  labels=c("wide ranging", "restricted", "unknown"),
-      #                  values=c("#00BFC4", "#F8766D", "grey80"),
-      #                   guide = "none") + # hide legend)
-      # 
-    new_scale_color() +
+    new_scale_color() + # to color points without confuisng ggplot
     geom_jitter(size=1.2, width = 0.1, aes(color = genetic_to_define_pops)) +
     scale_color_manual(values=c("red", "black")) +
-  
+    labs(color=NULL) + # hide legend title
       theme_light() +
       theme(panel.border = element_blank(), legend.position="bottom", text= element_text(size=20))
+p2
+```
+Two panel figure:
+
+```{r}
+plot_grid(p1 + theme(legend.position = "non2"), # legend can be shown only below both plots 
+          p2,
+          ncol = 1,
+          align = "v")
 ```
 
 
@@ -2085,7 +2094,7 @@ indicators_averaged_one %>%
       theme(panel.spacing = unit(1.5, "lines"))
 ```
 
-### Single plot 2 pannels IUCN redlist and indicator range values
+### Main Figure: Single plot 2 pannels IUCN redlist and indicator range values
 
 ```{r}
 plot_grid(p1,
@@ -2993,29 +3002,10 @@ kable(summary_table, digits=2)
 
 
 
-### Data availability at population level (combining Nc and Ne) by country
 
-```{r}
-ind1_data %>%
-  mutate(Ne_calculated_from = replace_na(Ne_calculated_from, "no data available")) %>%
-  ggplot(aes(x=country_assessment, fill=Ne_calculated_from))+
-  geom_bar(position = "fill", color="white") +
-  scale_fill_manual(labels=c("genetic data", "NcPoint ratio", "NcRange ratio", "no data available"),
-                      breaks=c("genetic data", "NcPoint ratio", "NcRange ratio", "no data available"),
-                      values=c("darkgreen", "#0072B2", "#E69F00", "grey80")) +
-  xlab("") +
-  scale_x_discrete(limits=rev) + 
-  ylab("Proportion of populations") +
-  labs(fill="Origin of data used to estimate Ne") +
-  theme_light() +
-  coord_flip() +
-  theme(text = element_text(size = 13), legend.position = "top", panel.border = element_blank())
-  
-```
+### Data availability donuts and plot bars
 
-### Data availability donuts
-
-Species level yes/no
+Species level yes/no. Donut.
 ```{r}
 df<- metadata %>%
      filter(popsize_data != "data_for_species") %>% # we want to show only data for pops or insufficient
@@ -3043,6 +3033,24 @@ p
 
 
 ```
+
+Species level yes/no. Bar plot
+```{r}
+metadata %>%
+     filter(popsize_data != "data_for_species") %>% # we want to show only data for pops or insufficient
+      ggplot(aes(x=country_assessment, fill = popsize_data)) +
+      geom_bar(position = "fill", color="white") +
+      scale_fill_manual(values=c("#2ca02c", "grey80"),
+                        breaks=c("yes", "insuff_data_species"),
+                        labels=c("Population level", "Insufficient data")) +
+      scale_x_discrete(limits=rev) + xlab("") + ylab("Data availability (% of species)") +
+      coord_flip() +
+      theme_light()
+
+
+```
+
+
 
 Population level, what kind?
 ```{r}
