@@ -2165,7 +2165,7 @@ df$global_IUCN<-factor(df$global_IUCN, levels=c("cr", "en", "vu", "nt", "lc", "d
       
 # Plot the Ne indicator as above, but with points colored by Ne_mock above or below 500
 
-df %>%
+p1<- df %>%
     ggplot(aes(x=myaxis, y=indicator1_mean , fill=global_IUCN)) +
       geom_violin(width=1, linewidth = 0)  +
       xlab("") + ylab("Proportion of populations with Ne>500") +
@@ -2179,7 +2179,7 @@ df %>%
      new_scale_color() +
      geom_jitter(size=1, width = 0.1, aes(color = Ne_mock_category)) +
      scale_color_manual(values=c("black", "#F0A6CA")) +
-     labs(color= "Species (mock) Ne") +
+     labs(color= "Species total Ne") +
   
   # theme stuff
       theme_light() +
@@ -2187,23 +2187,24 @@ df %>%
             plot.title = element_text(hjust = 0.5), # center title
             text= element_text(size=15))
 
-
+p1
 
 
 ```
-
+Plot bar with numbers
 
 ```{r}
-indicators_averaged_one %>%
+p2<-indicators_averaged_one %>%
   filter(!is.na(Ne_mock_category)) %>% 
   ggplot(aes(x=global_IUCN, fill=Ne_mock_category))+
   geom_bar(position = "dodge") +
   scale_fill_manual(values=c("black", "#F0A6CA")) +
-                  labs(color= "Species (mock) Ne") +
-  coord_flip() + 
+                  labs(fill= "Species total Ne") +
+  coord_flip() + xlab("") +
   theme_light() +
   scale_x_discrete(limits=rev) +
   theme(text = element_text(size = 13), legend.position = "right", panel.border = element_blank())
+p2
 ```
 
 
@@ -2223,6 +2224,13 @@ x  <- indicators_averaged_one %>%
                          per1=sum(indicator1_mean==1) / n *100)
 
 kable(x, digits = 2)
+```
+
+### Supplementary figure: 2 panels IUCN violin plots + mock Ne, and bar plot
+```{r}
+plot_grid(p1 + theme(legend.position = ""), 
+          p2 ,
+          ncol = 1, labels=c("a)", "b)"))
 ```
 
 
