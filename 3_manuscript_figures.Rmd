@@ -983,7 +983,7 @@ data_for_model$species_range<-as.factor(data_for_model$species_range)
 
 ```
 
-Run model asking: Does the number of maintained pops vary with method used? Test controlling for variation in the number of maintaiend populations among countries:
+Run model asking: Does method still influence number of populations if we exclude range type from the model:
 
 ```{r}
 m1<-glmer(data_for_model$n_extant_populations ~ data_for_model$defined_populations_simplified + 
@@ -995,7 +995,7 @@ See results:
 summary(m1)
 ```
 
-Controling for species range type (wide or restricted):
+Do different methods give different numbers of populations, when controlling for range type? Does range type influence the number of populations, when controlling for method ?
 
 ```{r}
 m1.1<-glmer(data_for_model$n_extant_populations ~ data_for_model$defined_populations_simplified + data_for_model$species_range + (1|data_for_model$country_assessment), family ="poisson")
@@ -1003,6 +1003,12 @@ m1.1<-glmer(data_for_model$n_extant_populations ~ data_for_model$defined_populat
 summary(m1.1)
 ```
 
+Does range type still influence the number of populations even if we exclude method from the model?
+```{r}
+m1.2<-glmer(n_extant_populations ~ species_range + (1|country_assessment), family = "poisson", data = data_for_model)
+
+summary(m1.2)
+```
 
 
 
@@ -1107,8 +1113,16 @@ See results:
 ```{r}
 summary(m2)
 ```
+Method influences the number of populations, and method influences indicator2. Is the relationship between method and indicator2 an indirect result of the effect of number of populations on indicator2? I.e. does method still influence indicator2 if we control for number of populations? [
+```{r}
+m2.1<-glmmTMB(indicator2 ~ defined_populations_simplified + n_extant_populations + (1|country_assessment), family = "ordbeta", data = data_for_model)
 
-### (c) Does the proportion of populations with Ne>500 (indicator1) vary with method used?
+summary(m2.1)
+```
+
+
+
+### (c) Proportion of populations with Ne>500 (indicator1) 
 
 Plot
 
@@ -1173,8 +1187,7 @@ data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$
 
 ```
 
-Run model asking: Does indicator 1 vary with method used? Controlling for variation in indicator1 among countries:
-
+Run model asking: Does indicator 1 vary with method used? Controlling for variation in indicator1 among countries:  
 
 ```{r}
 m3<-glmmTMB(indicator1 ~ defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = data_for_model)
@@ -1184,7 +1197,13 @@ See results:
 ```{r}
 summary(m3)
 ```
+Method influences the number of populations, and method influences indicator1. Is the relationship between method and indicator1 an indirect result of the effect of number of populations on indicator1? I.e. does method still influence indicator1 if we control for number of populations?
 
+```{r}
+m3.1 <- glmmTMB(indicator1 ~ defined_populations_simplified + n_extant_populations + (1|country_assessment), family = "ordbeta", data = data_for_model)
+
+summary(m3.1)
+```
 
 
 ### (A) Is there a relationship between number of maintained populations and Indicator2, overall, and/or with some methods?
@@ -1267,7 +1286,7 @@ summary(m4)
 ```
 
 
-We run a similar model than above, but limited to relationship of interest:
+We run a similar model than above, but limited to relationship of interest. Does number of populations alone affect indicator2 (i.e. not controlling for method)?:
 
 ```{r}
 m4.1 <- glmmTMB(indicator2 ~ n_extant_populations + (1|country_assessment), family = "ordbeta", data= data_for_model)
@@ -1312,7 +1331,7 @@ Run model:
 
 ```{r}
 # run model
-m4.2 <- glm(ind2_single_methods$indicator2 ~ ind2_single_methods$n_extant_populations + 
+m4.2glm <- glm(ind2_single_methods$indicator2 ~ ind2_single_methods$n_extant_populations + 
             ind2_single_methods$defined_populations_simplified + 
             ind2_single_methods$n_extant_populations*ind2_single_methods$defined_populations_simplified, family = "quasibinomial")
 ```
@@ -1320,8 +1339,16 @@ m4.2 <- glm(ind2_single_methods$indicator2 ~ ind2_single_methods$n_extant_popula
 Summary:
 
 ```{r}
+summary(m4.2glm)
+```
+
+```{r}
+m4.2<-glmmTMB(indicator2 ~ n_extant_populations + defined_populations_simplified +        n_extant_populations*defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = ind2_single_methods)
+
+# summary
 summary(m4.2)
 ```
+
 
 
 ### (B) Is there a relationship between number of maintained populations and indicator1, overall, and/or with some methods?
@@ -1392,8 +1419,7 @@ data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$
                                                        ref="geographic_boundaries")
 
 ```
-
-Run model:
+Does the effect of method depend on the number of populations? Or put another way, does the importance of number of populations also depend on method? 
 
 ```{r}
 # run model
@@ -1407,17 +1433,15 @@ summary(m5)
 ```
 
 
-We run a similar model than above, but limited to relationship of interest:
-
-
+We run a similar model than above, but limited to relationship of interest. We are asking: Does number of populations alone influence indicator 1 (i.e. not controlling for method)? 
 
 ```{r}
-# m5.1 pending to update when 4.1 is checked ok
+m5.1<-glmmTMB(indicator1 ~ n_extant_populations + (1|country_assessment), family = "ordbeta", data= data_for_model)
 ```
 
 Summary:
 ```{r}
-# summary(m5.1)
+summary(m5.1)
 ```
 
 Because “what’s a population and how do you define them?” is such an important question, we can also test the effect of methods alone. First, subset the data to only those taxa where a single method was used: 
@@ -1453,13 +1477,13 @@ Run model:
 
 ```{r, }
 # run model
-# m5.2 pending
+m5.2 <- glmmTMB(indicator1 ~ n_extant_populations + defined_populations_simplified +        n_extant_populations*defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = ind2_single_methods)
 ```
 
 Summary:
 
 ```{r}
-# summary(m5.2) pending
+summary(m5.2)
 ```
 
 
