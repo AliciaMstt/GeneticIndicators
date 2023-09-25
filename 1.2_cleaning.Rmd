@@ -700,7 +700,7 @@ Please check the logs below and manually check the original and the processed fi
 ```{r}
 # files separated by "\t": australia, france, japan, sweden, most US 
 df<-data.frame()
-for(i in c(1:2, 16:17, 18:20, 21, 26:28, 31:33,34,35)){ # change numbers to reflect indexes of the files with the desired delim in result_files[i]
+for(i in c(1:2, 11,13, 16:17, 18:20, 21, 22:28, 31:33,34,35)){ # change numbers to reflect indexes of the files with the desired delim in result_files[i]
   file<-paste0(original_files_dir,"/", result_files[i])
   cat(paste("##     processing element:", i, "\n",
             "   file:", file, " \n", " \n"))
@@ -717,7 +717,7 @@ for(i in c(1:2, 16:17, 18:20, 21, 26:28, 31:33,34,35)){ # change numbers to refl
 }
 
 ## files separated by ";" belgium 
-for(i in c(3:15)){
+for(i in c(3:10, 12, 14, 15)){
   file<-paste0(original_files_dir,"/", result_files[i])
   cat(paste("##     processing element:", i, "\n",
             "   file:", file, " \n", " \n"))
