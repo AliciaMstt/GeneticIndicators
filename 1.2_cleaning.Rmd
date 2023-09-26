@@ -27,6 +27,7 @@ library(readxl)
 ```
 
 Useful custom functions
+
 ```{r}
 source("process_attached_files.R")
 source("download_kobo_attachment.R")
@@ -36,10 +37,10 @@ source("recover_nocoincidence_files.R")
 "%!in%" <- function(x, y)!('%in%'(x,y))
 ```
 
-
 Get Kobo raw output data:
+
 ```{r}
-kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-08-23-07-19-11.csv", sep=";", header=TRUE) %>%
+kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-09-26-07-33-41.csv", sep=";", header=TRUE) %>%
 
 ## add  taxon column
 mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE))) %>%
@@ -47,7 +48,6 @@ mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE)
     mutate(taxon=str_trim(taxon, "right"))
 
 ```
-
 
 ## Filter tests and records marked as not approved
 
@@ -85,8 +85,8 @@ kobo_clean<- kobo_clean %>%
 
 ## Number of populations
 
-
 ### Change -999 to NA
+
 In the form, -999 was used to mark taxa with unknown number of extant populations. This was used because answering the question was mandatory, so leaving it blank wasn't possible. We have to change -999 to NA.
 
 For n extant populations:
@@ -103,8 +103,8 @@ kobo_clean<- kobo_clean %>%
              mutate(n_extint_populations= na_if(n_extint_populations, -999))
 ```
 
-
 ### Correct "negative populations"
+
 Once -999 was replaced by NA there should be no negative number of populations (if they are, they are typos that need to be corrected).
 
 Check for extant populations:
@@ -128,6 +128,7 @@ kobo_clean %>%
 Show which species (if any) have 999 EXTINCT populations. **Should this be -999?**
 
 Check for extinct populations:
+
 ```{r}
 kobo_clean %>%
       filter(n_extint_populations==999) %>%
@@ -135,6 +136,7 @@ kobo_clean %>%
 ```
 
 Check for extant populations:
+
 ```{r}
 kobo_clean %>%
       filter(n_extant_populations==999) %>%
@@ -144,6 +146,7 @@ kobo_clean %>%
 ### Double check 0 (zero) extant populations
 
 Show which taxa (if any) have 0 (zero) extant populations. **Is this correct? needs to be manually checked**
+
 ```{r}
 kobo_clean %>%
       filter(n_extant_populations==0) %>%
@@ -170,7 +173,6 @@ kobo_clean %>%
 
 ```
 
-
 ### Create an object with all "n pops" issues together
 
 If there are any remaining taxa with weird number of populations put them together in a single object.
@@ -194,7 +196,6 @@ check_n_pops <- kobo_clean %>%
        mutate(need_to_check="check number of extant or extint populations. Are 0 correct? should 999 be -999? are extant/extint confused?")
 check_n_pops
 ```
-
 
 ## Correct GBIF ids
 
@@ -281,7 +282,6 @@ ok_GBIF<-c(ok_GBIF,
 
 ```
 
-
 ### an object with all GBIF issues together
 
 If there are any remaining taxa with weird GBIF ids put them together in a single object.
@@ -300,7 +300,7 @@ check_GBIF
 
 ## Taxon names
 
-Genus, species and subspecies should be a single word, check if there are cases where it isn't. Only exception would be "var." or "subsp." in the subspecies_variety field: 
+Genus, species and subspecies should be a single word, check if there are cases where it isn't. Only exception would be "var." or "subsp." in the subspecies_variety field:
 
 ```{r}
 kobo_clean %>% 
@@ -314,7 +314,6 @@ kobo_clean %>%
             select(country_assessment, name_assessor, taxon, genus, species, subspecies_variety, end)
 
 ```
-
 
 Corrections requested:
 
@@ -434,13 +433,14 @@ happy_message<-"congratulations! there are no more taxa with issues to be correc
 
 ## Change managment_unitis and other relevant methods to dispersal_buffer in Methods to define populations.
 
-The method "management units" to define populations was interpreted differently by countries. For example, Belgium called "management units" a method in which they created a buffer polygons based on reported dispersal distances for each species around observation points, which are used as occurrence points. Polygons that overlap are fused together, and the resulting polygon, along with the points falling within its area, are considered a single population. However, for other countries "management units" refers to managed populations in the wild, sometimes enclosed, for instance as part of hunting schemes. Similarly, Japan used occurrence data in about 10-km grids and known dispersal distances to define populations as one or more grids, but called this a combination of management_units and geographic_boundaries. 
+The method "management units" to define populations was interpreted differently by countries. For example, Belgium called "management units" a method in which they created a buffer polygons based on reported dispersal distances for each species around observation points, which are used as occurrence points. Polygons that overlap are fused together, and the resulting polygon, along with the points falling within its area, are considered a single population. However, for other countries "management units" refers to managed populations in the wild, sometimes enclosed, for instance as part of hunting schemes. Similarly, Japan used occurrence data in about 10-km grids and known dispersal distances to define populations as one or more grids, but called this a combination of management_units and geographic_boundaries.
 
 Since we would be evaluating the effect of method on the indicators, we decided to leave management units into real management units and to create a new category, called "dispersal buffers", which would better reflect what countries did.
 
 This is also reflected in the new versions of the Kobo form, where "dispersal buffer" has been added as an option.
 
 Re-label data for Belgium:
+
 ```{r}
 # select management_units that need to be changed to "dispersal_buffer" 
   # look for "managegment_units" in belgium and change that text to "dispersal_buffer" keeping any_text before or after
@@ -455,6 +455,7 @@ grep("dispersal_buffer", levels(as.factor(kobo_clean$defined_populations)), valu
 ```
 
 Re-label data for Japan. After manually reviweing the data and discussing it with Fumiko, we believe that all taxa fit better in the new category "dispersal_buffer", except for the following taxa, which we thin would be better labeled as geographic_boundaries:
+
 ```{r}
 
 # geographic_boundaries species:
@@ -491,7 +492,6 @@ filter(kobo_clean, country_assessment == "sweden" & taxon %in% x) %>% select(cou
 
 ```
 
-
 ## Save the clean koboutput version:
 
 Remove from the clean version any remaining taxa with issues
@@ -509,11 +509,12 @@ write.csv(kobo_clean, "kobo_output_clean.csv", row.names = FALSE, fileEncoding =
 
 ## Get and if needed correct population data provided in the templates
 
-If information of more than 25 populations was be used to collect data for Ne >500 indicator (Section 5 of the Kobo form), it is possible to use a template to upload data instead of using the kobo form. This section of the cleaning script processes those files to create a single clean object as expected to estimate indicator 1 (Ne >500).
+If information of more than 25 populations was be used to collect data for Ne \>500 indicator (Section 5 of the Kobo form), it is possible to use a template to upload data instead of using the kobo form. This section of the cleaning script processes those files to create a single clean object as expected to estimate indicator 1 (Ne \>500).
 
-### Get files 
+### Get files
 
 Create directories to save files
+
 ```{r}
 ## original files
 
@@ -552,10 +553,8 @@ processed_files_dir="processed_files/processed_files"
 
 The url to the attachment file is avaialbe in the kobo_output under the variable `pop_tabular_file_URL`. This url could be used to download each of the attachments. For this, it is necessary to provide a kobo username with reading permissions and its password. To avoid showing passwords and usernames within this script, you have to create a `credentials.txt` file and save it in the working directory of this script. The `credentials.txt` should have ONLY two rows and one column (no headers). The first row should be the kobo user name and the second your password. For instance in the following example `myusername` is the username and `12334` is the password:
 
-```{}
-myusername
-12334
-```
+    myusername
+    12334
 
 The following code uses the credentials and the url stored in the kobo_output, for each of the records were population data was recorded using the tabular template and for which there is a url avaiable:
 
@@ -596,6 +595,7 @@ result_files
 ```
 
 If there were files stored as .xlsx, we need to transform those to txt files before proceeding.
+
 ```{r}
 # get excel files, if any
 excels<- grep(".xlsx", result_files, value = TRUE)
@@ -622,12 +622,14 @@ if(length(excels)>0){
 ```
 
 Result files should only be txt or csv files
+
 ```{r}
 result_files<-grep("\\.(txt|csv)$", list.files(original_files_dir), value = TRUE)
+result_files
 ```
 
-
 How many attached files we have (sucessfully downloaded and transformed frome excel, if needed)?
+
 ```{r}
 length(result_files)
 ```
@@ -644,11 +646,13 @@ nrow(expected)
 ```
 
 From which country(ies)?
+
 ```{r}
 table(expected$country_assessment)
 ```
 
 Which are the missing files?
+
 ```{r}
 missing<-expected[expected$X_uuid %!in% str_match(result_files, "(?<=__).*?(?=__)"),]  # get the Xuud ie the characters after the first "__" and the second "__".
 missing
@@ -656,9 +660,9 @@ missing
 
 ### Check and, if needed clean attachment data.
 
-The function [`process_attached_files()`](process_attached_files.R) processes the original attachment files to make them compatible with how population data is expected to estimate the Ne >500 indicator. You can check the details in the function code. 
+The function [`process_attached_files()`](process_attached_files.R) processes the original attachment files to make them compatible with how population data is expected to estimate the Ne \>500 indicator. You can check the details in the function code.
 
-Importantly, it checks the columns that  **should be numbers**, but they may have been stored as characters because "," "-" "(" or other characters may have been typed. The function will try to correct this, which **may change the original data**. Please manually check any file flagged as transformed (log below) to ensure everything is correct. 
+Importantly, it checks the columns that **should be numbers**, but they may have been stored as characters because "," "-" "(" or other characters may have been typed. The function will try to correct this, which **may change the original data**. Please manually check any file flagged as transformed (log below) to ensure everything is correct.
 
 These are the transformations that the function does and you should check:
 
@@ -668,39 +672,40 @@ Example: `86 (95% CI)` will be transformed to: `86`
 
 **2) In numeric variables (Nc, Ne and their bounds): convert `,` to `''` (nothing) IF more than 3 digits followed the `,` (ie we assumed `,` is separating thousands), OR convert `,` to `.` IF 2 digits followed the `,` (ie we assumed `,` is separating decimal points)**
 
-Example:
-"3,00" "5000,000" "666"  will be transformed to: "3.00" "5000000" "666" 
+Example: "3,00" "5000,000" "666" will be transformed to: "3.00" "5000000" "666"
 
 **3) In numeric variables (Nc, Ne and their bounds): use as.numeric().**
 
-Example:
-NcPoint expects ONLY numbers, an no other character. Therefore 400-600 stored in NcPoint will be transformed to NA. And there would be a warning saying "NAs introduced by coercion". In this example, if you want to keep "400-600" then you should have filled the column NcRange with in this case less_5000_by_much.
+Example: NcPoint expects ONLY numbers, an no other character. Therefore 400-600 stored in NcPoint will be transformed to NA. And there would be a warning saying "NAs introduced by coercion". In this example, if you want to keep "400-600" then you should have filled the column NcRange with in this case less_5000_by_much.
 
 **4) NcType and NcRange should only have values from the specified categories, any other value will be changed to NA**
 
-Example:
-* NcRange values could only be 'less_5000', 'less_5000_bymuch', 'more_5000', 'more_5000_bymuch', 'range_includes_5000'. If the assessor types "600-8000" this will be transformed to NA.
+Example: \* NcRange values could only be 'less_5000', 'less_5000_bymuch', 'more_5000', 'more_5000_bymuch', 'range_includes_5000'. If the assessor types "600-8000" this will be transformed to NA.
 
-* NcType values could only be 'Nc_point', 'Nc_range'. If the assessor types "qualitative" it will be changed to NA.
-  
+-   NcType values could only be 'Nc_point', 'Nc_range'. If the assessor types "qualitative" it will be changed to NA.
 
 **Other less serious edits, but that you should also know about, are the following:**
 
-* Population ids should be pop1, pop2.... Since people could have written all sort of things, we change the populationID of records to pop1, pop2, format instead of whatever people wrote.
-* If NcPoint data was provided NcType should exist, but if NcType was not provided, we set `NcType = Nc_point` for all pops
-* If NcRange data was provided NcType should exist, but if NcType not provided, we set `NcType = Nc_range` for all pops
-* If there is no Nc data, NcMethod and NcType should be NA, this was not the case so NA were introduced to replace the value.
-* People made mistakes when capturing the metadata (species name, GBIF_taxonID etc) in the population file, so it is not the same than the metadata stored in kobo_output. Because we trust more the data captured in kobo, we replaced ALL the following columns of ALL files with the variables stored in kobo_output: country_assessment, taxonomic_group, time_populations, taxon, scientific_authority, name_assessor, email_assessor, kobo_tabular, genus, species, subspecies_variety, year_assesment, GBIF_taxonID, NCBI_taxonID, multiassessment, national_taxonID.
+-   Population ids should be pop1, pop2.... Since people could have written all sort of things, we change the populationID of records to pop1, pop2, format instead of whatever people wrote.
+-   If NcPoint data was provided NcType should exist, but if NcType was not provided, we set `NcType = Nc_point` for all pops
+-   If NcRange data was provided NcType should exist, but if NcType not provided, we set `NcType = Nc_range` for all pops
+-   If there is no Nc data, NcMethod and NcType should be NA, this was not the case so NA were introduced to replace the value.
+-   People made mistakes when capturing the metadata (species name, GBIF_taxonID etc) in the population file, so it is not the same than the metadata stored in kobo_output. Because we trust more the data captured in kobo, we replaced ALL the following columns of ALL files with the variables stored in kobo_output: country_assessment, taxonomic_group, time_populations, taxon, scientific_authority, name_assessor, email_assessor, kobo_tabular, genus, species, subspecies_variety, year_assesment, GBIF_taxonID, NCBI_taxonID, multiassessment, national_taxonID.
 
 Also, remember that excel files (if any), were transformed to .txt, so below we will only process the .txt and .csv files (see transformation above).
 
 Please check the logs below and manually check the original and the processed files to ensure everything is correct.
 
-
 ```{r}
 # files separated by "\t": australia, france, japan, sweden, most US 
 df<-data.frame()
-for(i in c(1:2, 16:17, 18:20, 21, 26:28, 31:33,34,35)){ # change numbers to reflect indexes of the files with the desired delim in result_files[i]
+# numbers  reflect indexes of the files with the desired delim in result_files[i]
+for(i in c(1:2, # australia
+           16:17, # France
+           18:20, # Japan
+           21, # sweden
+           22:26, 28, 30:35) # US
+    ){ 
   file<-paste0(original_files_dir,"/", result_files[i])
   cat(paste("##     processing element:", i, "\n",
             "   file:", file, " \n", " \n"))
@@ -735,7 +740,7 @@ for(i in c(3:15)){
 
 
 ## files separated by "," some Us
-for(i in c(29)){
+for(i in c(27)){
   file<-paste0(original_files_dir,"/", result_files[i])
   cat(paste("##     processing element:", i, "\n",
             "   file:", file, " \n", " \n"))
@@ -774,7 +779,7 @@ ind1_data_from_templates<-df
   
 ```
 
-### Check final population data looks as it should. 
+### Check final population data looks as it should.
 
 Are columns looking good?:
 
@@ -797,20 +802,20 @@ class(ind1_data_from_templates$NeUpper)
 
 ```
 
-Are the expected levels found in NcRange? The only categories should be:   "less_5000"           "less_5000_bymuch"    "more_5000"           "more_5000_bymuch"    "range_includes_5000".
- 
+Are the expected levels found in NcRange? The only categories should be: "less_5000" "less_5000_bymuch" "more_5000" "more_5000_bymuch" "range_includes_5000".
+
 ```{r}
 # check levels
 levels(as.factor(ind1_data_from_templates$NcRange))
 
 ```
 
-Are the expected levels found in NcType? The only categories should be:   "Nc_point" "Nc_range".
+Are the expected levels found in NcType? The only categories should be: "Nc_point" "Nc_range".
+
 ```{r}
 # check levels
 levels(as.factor(ind1_data_from_templates$NcType))
 ```
-
 
 ### Save indicator 1 data extracted from the tabular kobo templates into a file with indicator 1 data format:
 
@@ -818,12 +823,8 @@ levels(as.factor(ind1_data_from_templates$NcType))
 write.csv(ind1_data_from_templates, "ind1_data_from_templates.csv", row.names = FALSE)
 ```
 
-
-
 ## Session Info for reproducibility purposes:
 
 ```{r}
 sessionInfo()
 ```
-
-
