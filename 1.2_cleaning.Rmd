@@ -40,7 +40,7 @@ source("recover_nocoincidence_files.R")
 Get Kobo raw output data:
 
 ```{r}
-kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-09-26-07-33-41.csv", sep=";", header=TRUE) %>%
+kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-09-26-14-20-04.csv", sep=";", header=TRUE) %>%
 
 ## add  taxon column
 mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE))) %>%
@@ -704,8 +704,8 @@ for(i in c(1:2, # australia
            5,11, # belgium
            16:17, # France
            18:20, # Japan
-           21, # sweden
-           22:26, 28:30:35) # US
+           21:23, # sweden
+           24:28, 30:38) # US
     ){ 
   file<-paste0(original_files_dir,"/", result_files[i])
   cat(paste("##     processing element:", i, "\n",
@@ -741,7 +741,7 @@ for(i in c(3,4,6:10,12:15)){
 
 
 ## files separated by "," some Us
-for(i in c(27)){
+for(i in c(29)){
   file<-paste0(original_files_dir,"/", result_files[i])
   cat(paste("##     processing element:", i, "\n",
             "   file:", file, " \n", " \n"))
