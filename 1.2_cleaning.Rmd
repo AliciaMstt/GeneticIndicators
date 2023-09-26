@@ -697,14 +697,15 @@ Also, remember that excel files (if any), were transformed to .txt, so below we 
 Please check the logs below and manually check the original and the processed files to ensure everything is correct.
 
 ```{r}
-# files separated by "\t": australia, france, japan, sweden, most US 
+# files separated by "\t": australia, france, japan, sweden, most US, some belgium
 df<-data.frame()
 # numbers  reflect indexes of the files with the desired delim in result_files[i]
 for(i in c(1:2, # australia
+           5,11, # belgium
            16:17, # France
            18:20, # Japan
            21, # sweden
-           22:26, 28, 30:35) # US
+           22:26, 28:30:35) # US
     ){ 
   file<-paste0(original_files_dir,"/", result_files[i])
   cat(paste("##     processing element:", i, "\n",
@@ -722,7 +723,7 @@ for(i in c(1:2, # australia
 }
 
 ## files separated by ";" belgium 
-for(i in c(3:15)){
+for(i in c(3,4,6:10,12:15)){
   file<-paste0(original_files_dir,"/", result_files[i])
   cat(paste("##     processing element:", i, "\n",
             "   file:", file, " \n", " \n"))
@@ -745,23 +746,6 @@ for(i in c(27)){
   cat(paste("##     processing element:", i, "\n",
             "   file:", file, " \n", " \n"))
   temp<-process_attached_files(file_path=file, kobo_output=kobo_clean, delim = ',')
-  
-  # save processed file
-  processed_file_path<-paste0(processed_files_dir,"/", "processed__", result_files[i])
-  write.csv(temp, processed_file_path, row.names = FALSE)
-  
-  # attach object to df with all results
-  df<-rbind(df, temp)
-  
-  cat(" \n") # white space before next text message
-}
-
-## US special cases not removing instruction lines (we need to use skip)
-for(i in c(30)){
-  file<-paste0(original_files_dir,"/", result_files[i])
-  cat(paste("##     processing element:", i, "\n",
-            "   file:", file, " \n", " \n"))
-  temp<-process_attached_files(file_path=file, kobo_output=kobo_clean, delim = '\t', skip=13)
   
   # save processed file
   processed_file_path<-paste0(processed_files_dir,"/", "processed__", result_files[i])
