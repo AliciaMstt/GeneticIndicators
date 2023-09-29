@@ -20,6 +20,7 @@ library(utile.tools)
 library(stringr)
 library(ggplot2)
 library(ggsankey)
+library(ggnewscale)
 library(alluvial)
 library(viridis)
 library(cowplot)
@@ -800,792 +801,7 @@ alluvial(foralluvial[,1:3], freq = foralluvial$n,
 
 ```
 
-
-## Effect of method used to define populations on number of populations and PM and Ne>500 indicators
-
-The analyses and plots below us a subset of data filtering outliers (>500 populations) and using the simplified methods (see above). Multiassessed species are considered independently (each assessment is a data point).
-
-### Supplementary Figure: Number of maintained populations by country and method
-
-Visualizing the Number of maintained populations by country and method is useful to interpret the models that would be run below.
-```{r}
-indicators_full %>% 
-  filter(n_extant_populations<500) %>% # filter outliers
-  # order countries vertically by similar number of pops
-  mutate(country_assessment = factor(country_assessment, 
-                                     levels=c("Colombia", "Australia", "Belgium",
-                                               "Mexico", "France", "US", 
-                                               "S. Africa", "Japan", "Sweden"))) %>%
-  ggplot(aes(x=defined_populations_nicenames, y=n_extant_populations, 
-             fill=defined_populations_nicenames, color=defined_populations_nicenames)) +
-          geom_boxplot() +
-          geom_jitter(size=.3, width = 0.1, color="black") +
-  coord_flip() +
-  facet_wrap(country_assessment ~ ., nrow=3, scales="free_x") +
-  xlab("")  +
-  ylab("Number of maintained populations") +
-  scale_fill_manual(values=alpha(simplifiedmethods_colors, .3),
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_x_discrete(limits=rev) +
-  theme_light() +
-  theme(panel.border = element_blank(), legend.position="none",
-        text = element_text(size = 15)) 
-
-
-```
-
-### Sampling size and plot of Ne values and Ne indicator by Ne origin and method to define populations
-
-
-This is useful to interpret the models that would be run below. 
-```{r}
-ind1_data %>% 
-  filter(Ne_combined < 100000) %>% # filter outliers
-
-  ggplot(aes(x=defined_populations_simplified, y=Ne_combined, 
-             color=Ne_calculated_from)) +
-          geom_boxplot(position = "dodge") +
-          geom_jitter(position = position_dodge(width = 0.75)) +  
-          facet_wrap(country_assessment ~ ., nrow=3) +
-          coord_flip() +
-          theme_light()
-
-```
-
-Zoom to Ne 500
-```{r}
-ind1_data %>% 
-  filter(Ne_combined < 100000) %>% # filter outliers
-
-  ggplot(aes(x=defined_populations_simplified, y=Ne_combined, 
-             color=Ne_calculated_from)) +
-          ylim(0,2000)+
-          geom_boxplot(position = "dodge") +
-          geom_jitter(position = position_dodge(width = 0.75)) +  
-          facet_wrap(country_assessment ~ ., nrow=3) +
-          coord_flip() +
-          theme_light()
-
-```
-
-
-Summary table for sampling size by method and source of Ne:
-```{r}
-x<- ind1_data %>% 
-  filter(!is.na(Ne_calculated_from)) %>% 
-  group_by(defined_populations_simplified, Ne_calculated_from) %>%
-                summarise(n=n())
-kable(x)
-```
-
-Same as above but adding country:
-```{r}
-x<- ind1_data %>% 
-  filter(!is.na(Ne_calculated_from)) %>% 
-  group_by(country_assessment, defined_populations_simplified, Ne_calculated_from) %>%
-                summarise(n=n())
-kable(x)
-```
-
-
-### (a) Does the number of maintained pops vary with method used? 
-
-Plot number of populations by method
-```{r, out.height="500px", out.width="1064px"}
-# Prepare data for plot with nice labels:
-# sample size of TOTAL populations
-sample_size <- indicators_full %>%
-                    filter(!is.na(n_extant_populations)) %>% 
-                    filter(n_extant_populations<500) %>%
-                    group_by(defined_populations_nicenames) %>% summarize(num=n())
-
-# custom axis
-## new dataframe
-df<-indicators_full %>% 
-  filter(!is.na(n_extant_populations)) %>% 
-  filter(n_extant_populations<500) %>%
-    # add sampling size 
-  left_join(sample_size) %>%
-  mutate(myaxis = paste0(defined_populations_nicenames, " (n= ", num, ")")) %>%
-#myaxis needs levels in the same order than defined_populations_nicenames
-  mutate(myaxis = factor(myaxis, 
-                  levels=levels(as.factor(myaxis))[c(1,12,2:11,13)])) # reorders levels
-
-
-# plot for number of pops
-  p1<- df %>%
-  ggplot(aes(x=myaxis, y=n_extant_populations, color=defined_populations_nicenames,
-                                               fill=defined_populations_nicenames)) +
-          geom_boxplot() + xlab("") + ylab("Number of maintained populations") +
-          geom_jitter(size=.4, width = 0.1, color="black") +
-  coord_flip() +
-  theme_light() +
-  theme(panel.border = element_blank(), legend.position="none",
-        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots
-  scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_x_discrete(limits=rev) +  
-  theme(text = element_text(size = 13))
-p1
-
-```
-
-Try showing species range type:
-```{r}
-library(ggnewscale)
-# points with species range type
-  p1.1<- df %>%
-  ggplot(aes(x=myaxis, y=n_extant_populations)) +
-          geom_boxplot(aes(color=defined_populations_nicenames,
-                           fill=defined_populations_nicenames)) + 
-    xlab("") + ylab("Number of maintained populations") +
-  coord_flip() +
-  theme_light() +
-  theme(panel.border = element_blank(), legend.position="none",
-        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots
-  scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  new_scale_color() +
-  geom_jitter(size=1, width = 0.1, aes(color = species_range)) +
-  theme(text = element_text(size = 13))
-
-p1.1
-```
-
-
-
-Prepare data for model (remove outliers and NA in desired variable) and check n:
-```{r}
-# remove missing data 
-data_for_model<-indicators_full %>% 
-                      filter(!is.na(n_extant_populations)) %>%
-                      filter(species_range !="unknown") %>% # we remove "unknonw" because its n is too low, thus unbalancing the model
-                      filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
-
-# check n per method
-table(data_for_model$defined_populations_simplified)
-
-# total n
-nrow(data_for_model)
-
-# re-level to use geographic boundaries as reference category for the analysis
-data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$defined_populations_simplified),
-                                                       ref="geographic_boundaries")
-
-# make sure specis range is a factor
-data_for_model$species_range<-as.factor(data_for_model$species_range)
-
-```
-
-Run model asking: Does method still influence number of populations if we exclude range type from the model:
-
-```{r}
-m1<-glmer(data_for_model$n_extant_populations ~ data_for_model$defined_populations_simplified + 
-            (1|data_for_model$country_assessment), family ="poisson")
-```
-
-See results:
-```{r}
-summary(m1)
-```
-
-Do different methods give different numbers of populations, when controlling for range type? Does range type influence the number of populations, when controlling for method ?
-
-```{r}
-m1.1<-glmer(data_for_model$n_extant_populations ~ data_for_model$defined_populations_simplified + data_for_model$species_range + (1|data_for_model$country_assessment), family ="poisson")
-
-summary(m1.1)
-```
-
-Does range type still influence the number of populations even if we exclude method from the model?
-```{r}
-m1.2<-glmer(n_extant_populations ~ species_range + (1|country_assessment), family = "poisson", data = data_for_model)
-
-summary(m1.2)
-```
-
-
-
-### (b) Does the proportion of maintained populations (indicator2) vary with method used?
-
-Plot
-
-```{r}
-# Prepare data for plot with nice labels:
-# sample size of TOTAL populations
-sample_size <- indicators_full %>%
-                    filter(!is.na(indicator2)) %>% 
-                    filter(n_extant_populations<500) %>% 
-                    group_by(defined_populations_nicenames) %>% summarize(num=n())
-
-# custom axis
-## new dataframe
-df<-indicators_full %>% 
-  filter(n_extant_populations<500) %>%
-  filter(!is.na(indicator2)) %>% 
-    # add sampling size 
-  left_join(sample_size) %>%
-  mutate(myaxis = paste0(defined_populations_nicenames, " (n= ", num, ")")) %>%
-#myaxis needs levels in the same order than defined_populations_nicenames
-  mutate(myaxis = factor(myaxis, 
-                  levels=levels(as.factor(myaxis))[c(1,12,2:11,13)])) # reorders levels
-
-
-
-## plot for Proportion of maintained populations (indicator)
-p2<- df %>%
-  filter(n_extant_populations<500) %>%
-  ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_nicenames,    
-                                     fill=defined_populations_nicenames)) +
-          geom_boxplot() + xlab("") + ylab("Proportion of maintained populations") +
-          geom_jitter(size=.4, width = 0.1, color="black") +
-  coord_flip() +
-  theme_light() +
-  theme(panel.border = element_blank(), legend.position="none",
-        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) 
-  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_x_discrete(limits=rev) +
-  theme(text = element_text(size = 13))
-p2
-
-```
-
-Try to show species range type
-```{r}
-p2.1<- df %>%
-  filter(n_extant_populations<500) %>%
-  ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_nicenames,    
-                                     fill=defined_populations_nicenames)) +
-          geom_boxplot() + xlab("") + ylab("Proportion of maintained populations") +
-  coord_flip() +
-  theme_light() +
-  theme(panel.border = element_blank(), legend.position="none",
-        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) 
-  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_x_discrete(limits=rev) +
-    new_scale_color() +
-  geom_jitter(size=1, width = 0.1, aes(color = species_range)) +
-  theme(text = element_text(size = 13))
-p2.1
-
-```
-
-
-Prepare data for model (remove outliers and NA in desired variable) and check n:
-```{r}
-# remove missing data 
-data_for_model<-indicators_full %>% 
-                      filter(!is.na(indicator2)) %>%
-                      filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
-
-# check n per method
-table(data_for_model$defined_populations_simplified)
-
-# total n
-nrow(data_for_model)
-
-# re-level to use geographic boundaries as reference category for the analysis
-data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$defined_populations_simplified),
-                                                       ref="geographic_boundaries")
-
-```
-
-Run model asking: Does indicator 2 vary with method used? Controlling for variation in indicator2 among countries:
-
-
-```{r}
-m2<-glmmTMB(indicator2 ~ defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = data_for_model)
-```
-
-See results:
-```{r}
-summary(m2)
-```
-Method influences the number of populations, and method influences indicator2. Is the relationship between method and indicator2 an indirect result of the effect of number of populations on indicator2? I.e. does method still influence indicator2 if we control for number of populations? [
-```{r}
-m2.1<-glmmTMB(indicator2 ~ defined_populations_simplified + n_extant_populations + (1|country_assessment), family = "ordbeta", data = data_for_model)
-
-summary(m2.1)
-```
-
-
-
-### (c) Proportion of populations with Ne>500 (indicator1) 
-
-Plot
-
-```{r}
-# Prepare data for plot with nice labels:
-# sample size of TOTAL populations
-sample_size <- indicators_full %>%
-                    filter(!is.na(indicator1)) %>% 
-                    filter(n_extant_populations<500) %>% 
-                    group_by(defined_populations_nicenames) %>% summarize(num=n())
-
-# custom axis
-## new dataframe
-df<-indicators_full %>% 
-  filter(n_extant_populations<500) %>%
-  filter(!is.na(indicator1)) %>% 
-    # add sampling size 
-  left_join(sample_size) %>%
-  mutate(myaxis = paste0(defined_populations_nicenames, " (n= ", num, ")")) %>%
-#myaxis needs levels in the same order than defined_populations_nicenames
-  mutate(myaxis = factor(myaxis, 
-                  levels=levels(as.factor(myaxis))[c(1,12,2:11,13)])) # reorders levels
-
-
-
-## plot 
-p3<- df %>%
-  ggplot(aes(x=myaxis, y=indicator1, color=defined_populations_nicenames,    
-                                     fill=defined_populations_nicenames)) +
-          geom_boxplot() + xlab("") + ylab("Proportion of populations with Ne>500") +
-          geom_jitter(size=.4, width = 0.1, color="black") +
-  coord_flip() +
-  theme_light() +
-  theme(panel.border = element_blank(), legend.position="none",
-        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) 
-  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_x_discrete(limits=rev) +
-  theme(text = element_text(size = 13))
-p3
-
-```
-
-Prepare data for model (remove outliers and NA in desired variable) and check n:
-```{r}
-# remove missing data 
-data_for_model<-indicators_full %>% 
-                      filter(!is.na(indicator1)) %>%
-                      filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
-
-# check n per method
-table(data_for_model$defined_populations_simplified)
-
-# total n
-nrow(data_for_model)
-
-# re-level to use geographic boundaries as reference category for the analysis
-data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$defined_populations_simplified),
-                                                       ref="geographic_boundaries")
-
-```
-
-Run model asking: Does indicator 1 vary with method used? Controlling for variation in indicator1 among countries:  
-
-```{r}
-m3<-glmmTMB(indicator1 ~ defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = data_for_model)
-```
-
-See results:
-```{r}
-summary(m3)
-```
-Method influences the number of populations, and method influences indicator1. Is the relationship between method and indicator1 an indirect result of the effect of number of populations on indicator1? I.e. does method still influence indicator1 if we control for number of populations?
-
-```{r}
-m3.1 <- glmmTMB(indicator1 ~ defined_populations_simplified + n_extant_populations + (1|country_assessment), family = "ordbeta", data = data_for_model)
-
-summary(m3.1)
-```
-
-
-### (A) Is there a relationship between number of maintained populations and Indicator2, overall, and/or with some methods?
-
-Scatter plot of indicator2 vs extant pops
-```{r}
-p4<- indicators_full %>%
-  # filter outliers with too many pops and missing data
-  filter(n_extant_populations<500) %>%
-  filter(!is.na(indicator2)) %>%
-  filter(!is.na(n_extant_populations)) %>%
-  filter(species_range !="unknown") %>%
-  
-  # plot
-    ggplot(aes(x=n_extant_populations, y=indicator2, color=defined_populations_nicenames)) +
-    geom_point() +
-    theme_light() +
-    scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-    theme(legend.position = "none") +
-    ylab("Proportion of maintained populations") +
-    xlab("Number of maintained populations") +
-    theme(text = element_text(size = 13))
-p4
-
-p4.1<- indicators_full %>%
-  # filter outliers with too many pops and missing data
-  filter(n_extant_populations<500) %>%
-  filter(!is.na(indicator2)) %>%
-  filter(!is.na(n_extant_populations)) %>%
-  filter(species_range !="unknown") %>%
-  
-  # plot
-    ggplot(aes(x=n_extant_populations, y=indicator2, color=species_range)) +
-    geom_point() +
-    theme_light() +
-    theme(legend.position = "none") +
-    ylab("Proportion of maintained populations") +
-    xlab("Number of maintained populations") +
-    theme(text = element_text(size = 13))
-p4.1
-
-```
-
-Prepare data for model (remove outliers and NA in desired variable) and check n:
-```{r}
-# remove missing data 
-data_for_model<-indicators_full %>% 
-                      filter(!is.na(indicator2)) %>%
-                      filter(!is.na(n_extant_populations)) %>%
-                      filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
-
-# check number of methods
-length(unique(data_for_model$defined_populations_simplified))
-
-# check n per method
-table(data_for_model$defined_populations_simplified)
-
-# total n
-nrow(data_for_model)
-
-# re-level to use geographic boundaries as reference category for the analysis
-data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$defined_populations_simplified),
-                                                       ref="geographic_boundaries")
-
-```
-
-Run model:
-
-```{r}
-# run model
-m4 <- glmmTMB(indicator2 ~ defined_populations_simplified + n_extant_populations + defined_populations_simplified*n_extant_populations + (1|country_assessment), family = "ordbeta", data = data_for_model)
-
-```
-
-Summary:
-
-```{r}
-summary(m4)
-```
-
-
-We run a similar model than above, but limited to relationship of interest. Does number of populations alone affect indicator2 (i.e. not controlling for method)?:
-
-```{r}
-m4.1 <- glmmTMB(indicator2 ~ n_extant_populations + (1|country_assessment), family = "ordbeta", data= data_for_model)
-
-```
-
-Summary:
-```{r}
-summary(m4.1)
-```
-
-Because “what’s a population and how do you define them?” is such an important question, we can also test the effect of methods alone. First, subset the data to only those taxa where a single method was used: 
-
-```{r}
-ind2_single_methods<-indicators_full %>% 
-                      filter(!is.na(indicator2)) %>% 
-                      filter(n_extant_populations<500) %>%  # doesn't make a difference in the test below, but useful for 
-                      filter(defined_populations_simplified=="genetic_clusters" | 
-                             defined_populations_simplified=="geographic_boundaries" |
-                             defined_populations_simplified=="eco_biogeo_proxies" | 
-                             defined_populations_simplified=="management_units" |
-                             defined_populations_simplified=="dispersal_buffer")
-
-
-# check number of methods
-length(unique(ind2_single_methods$defined_populations_simplified))
-
-# check n by method
-table(ind2_single_methods$defined_populations_simplified)
-
-# check n total
-nrow(ind2_single_methods)
-
-# re-level to use geographic boundaries as reference category for the analysis
-ind2_single_methods$defined_populations_simplified<-relevel(as.factor(ind2_single_methods$defined_populations_simplified),
-                                                       ref="geographic_boundaries")
-
- 
-```
-
-Run model:
-
-```{r}
-# run model
-m4.2glm <- glm(ind2_single_methods$indicator2 ~ ind2_single_methods$n_extant_populations + 
-            ind2_single_methods$defined_populations_simplified + 
-            ind2_single_methods$n_extant_populations*ind2_single_methods$defined_populations_simplified, family = "quasibinomial")
-```
-
-Summary:
-
-```{r}
-summary(m4.2glm)
-```
-
-```{r}
-m4.2<-glmmTMB(indicator2 ~ n_extant_populations + defined_populations_simplified +        n_extant_populations*defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = ind2_single_methods)
-
-# summary
-summary(m4.2)
-```
-
-
-
-### (B) Is there a relationship between number of maintained populations and indicator1, overall, and/or with some methods?
-
-Scatter plot of indicator1 vs extant pops
-```{r}
-p5<- indicators_full %>%
-  # filter outliers with too many pops and missing data
-  filter(n_extant_populations<500) %>%
-  filter(!is.na(indicator1)) %>%
-  filter(!is.na(n_extant_populations)) %>%
-  filter(species_range !="unknown") %>%
-  
-  
-  # plot
-    ggplot(aes(x=n_extant_populations, y=indicator1, color=defined_populations_nicenames)) +
-    geom_point() +
-    theme_light() +
-    scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-    theme(legend.position = "none") +
-    ylab("Proportion of populations with Ne>500") +
-    xlab("Number of maintained populations") +
-    theme(text = element_text(size = 13))
-p5
-
-
-## Coloring by range 
-p5.1<- indicators_full %>%
-  # filter outliers with too many pops and missing data
-  filter(n_extant_populations<500) %>%
-  filter(!is.na(indicator1)) %>%
-  filter(!is.na(n_extant_populations)) %>%
-  filter(species_range !="unknown") %>%
-  
-  
-  # plot
-    ggplot(aes(x=n_extant_populations, y=indicator1, color=species_range)) +
-    geom_point() +
-    theme_light() +
-    theme(legend.position = "none") +
-    ylab("Proportion of populations with Ne>500") +
-    xlab("Number of maintained populations") +
-    theme(text = element_text(size = 13))
-p5.1
-
-```
-
-Prepare data for model (remove outliers and NA in desired variable) and check n:
-```{r}
-# remove missing data 
-data_for_model<-indicators_full %>% 
-                      filter(!is.na(indicator1)) %>%
-                      filter(!is.na(n_extant_populations)) %>%
-                      filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
-
-# check number of methods
-length(unique(data_for_model$defined_populations_simplified))
-
-# check n per method
-table(data_for_model$defined_populations_simplified)
-
-# total n
-nrow(data_for_model)
-
-# re-level to use geographic boundaries as reference category for the analysis
-data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$defined_populations_simplified),
-                                                       ref="geographic_boundaries")
-
-```
-Does the effect of method depend on the number of populations? Or put another way, does the importance of number of populations also depend on method? 
-
-```{r}
-# run model
-m5 <- glmmTMB(indicator1 ~ defined_populations_simplified + n_extant_populations + defined_populations_simplified*n_extant_populations + (1|country_assessment), family = "ordbeta", data = data_for_model)
-```
-
-Summary:
-
-```{r}
-summary(m5)
-```
-
-
-We run a similar model than above, but limited to relationship of interest. We are asking: Does number of populations alone influence indicator 1 (i.e. not controlling for method)? 
-
-```{r}
-m5.1<-glmmTMB(indicator1 ~ n_extant_populations + (1|country_assessment), family = "ordbeta", data= data_for_model)
-```
-
-Summary:
-```{r}
-summary(m5.1)
-```
-
-Because “what’s a population and how do you define them?” is such an important question, we can also test the effect of methods alone. First, subset the data to only those taxa where a single method was used: 
-
-```{r}
-ind1_single_methods<-indicators_full %>% 
-                      filter(!is.na(indicator1)) %>% 
-                      filter(n_extant_populations<500) %>%  # doesn't make a difference in the test below, but useful for 
-                      filter(defined_populations_simplified=="genetic_clusters" | 
-                             defined_populations_simplified=="geographic_boundaries" |
-                             defined_populations_simplified=="eco_biogeo_proxies" | 
-                             defined_populations_simplified=="management_units" |
-                             defined_populations_simplified=="dispersal_buffer")
-
-
-# check number of methods
-length(unique(ind1_single_methods$defined_populations_simplified))
-
-# check n by method
-table(ind1_single_methods$defined_populations_simplified)
-
-# check n total
-nrow(ind1_single_methods)
-
-# re-level to use geographic boundaries as reference category for the analysis
-ind1_single_methods$defined_populations_simplified<-relevel(as.factor(ind1_single_methods$defined_populations_simplified),
-                                                       ref="geographic_boundaries")
-
- 
-```
-
-Run model:
-
-```{r, }
-# run model
-m5.2 <- glmmTMB(indicator1 ~ n_extant_populations + defined_populations_simplified +        n_extant_populations*defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = ind2_single_methods)
-```
-
-Summary:
-
-```{r}
-summary(m5.2)
-```
-
-
-
-### Main Figure: Single plot 3 panels box plots for the effect of method on: number of populations, proportion of maintained populations (indicator 2) and Proportion of populations with Ne>500 (indicator 1).
-
-Plot in three panels. 
-```{r, out.height="400px", out.width="1600px"}
-##### plot for Proportion of maintained populations (indicator 2) only with n in axis labels
-
-# sample size 
-sample_size <- indicators_full %>%
-                    filter(!is.na(indicator2)) %>% 
-                    filter(n_extant_populations<500) %>% 
-                    group_by(defined_populations_nicenames) %>% summarize(num=n())
-
-# custom axis
-## new dataframe
-df<-indicators_full %>% 
-  filter(n_extant_populations<500) %>%
-  filter(!is.na(indicator2)) %>% 
-    # add sampling size 
-  left_join(sample_size) %>%
-  mutate(myaxis = as.factor(paste0(defined_populations_nicenames, " (n= ", num, ")")))
-
-
-p2.1<- df %>%
-  filter(n_extant_populations<500) %>%
-  ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_nicenames,    
-                                     fill=defined_populations_nicenames)) +
-          geom_boxplot() + xlab("") + ylab("Proportion of maintained populations") +
-          geom_jitter(size=.4, width = 0.1, color="black") +
-  coord_flip() +
-  theme_light() +
-  theme(panel.border = element_blank(), legend.position="none",
-        plot.margin = unit(c(0.2, 0.2, 0.2, 0.2), "cm")) + # this is used to decrease the space between plots) 
-  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_color_manual(values=simplifiedmethods_colors,
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  
-  scale_x_discrete(limits=rev, 
-                   labels= rev(sub(".*(\\(n= \\d+\\))", "\\1", levels(df$myaxis)))) + # extract "(n = number)") and show them in reverse order
-  theme(text = element_text(size = 13))
-
-
-##### plot for Proportion populations Ne>500 (indicator 1) only with n in axis labels
-# Prepare data for plot with nice labels:
-# sample size of TOTAL populations
-sample_size <- indicators_full %>%
-  filter(!is.na(indicator1)) %>% 
-  filter(n_extant_populations<500) %>% 
-  group_by(defined_populations_nicenames) %>% summarize(num=n())
-
-# custom axis
-## new dataframe
-df<-indicators_full %>% 
-  filter(n_extant_populations<500) %>%
-  filter(!is.na(indicator1)) %>% 
-  # add sampling size 
-  left_join(sample_size) %>%
-  mutate(myaxis = as.factor(paste0(defined_populations_nicenames, " (n= ", num, ")")))
-
-
-## plot 
-p3.1<- df %>%
-  ggplot(aes(x=myaxis, y=indicator1, color=defined_populations_nicenames,    
-             fill=defined_populations_nicenames)) +
-  geom_boxplot() + xlab("") + ylab("Proportion of populations with Ne>500") +
-  geom_jitter(size=.4, width = 0.1, color="black") +
-  coord_flip() +
-  theme_light() +
-  theme(panel.border = element_blank(), legend.position="none",
-        plot.margin = unit(c(0.2, 0.2, 0.2, 0.2), "cm")) + # this is used to decrease the space between plots) 
-  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
-                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_color_manual(values=simplifiedmethods_colors,
-                     breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
-  scale_x_discrete(limits=rev, 
-                   labels= rev(sub(".*(\\(n= \\d+\\))", "\\1", levels(df$myaxis)))) + # extract "(n = number)") and show them in reverse order
-  theme(text = element_text(size = 13))
-
-
-## Plot 3 panels
-plot_grid(p1, p2.1, p3.1, ncol=3, rel_widths = c(1.9,1,1), align = "h", labels=c("a)", "b)", "c)"))  
-
-
-
-```
-
-### Supplementary Figure: Single figure 2 panels scatter plots number of populations vs indicators
-
-```{r, out.height= "800px", out.width="500px"}
-# plot
-plot_grid(p4 + xlim(0,400) + xlab(""), # remove xlab from top plot and match x axis size
-          p5+ xlim(0,400), 
-          ncol=1, align = "v", labels=c("a)", "b)"))  
-
-```
-
-
-## Effect of distribution range (restricted vs wide) on the indicators
+## Exploratory plots for the association of distribution range (restricted vs wide) on the indicators
 
 All the following plots and analyses consider the average of multiassessed species (variable `_mean`), so that they are shown only once.
 
@@ -1657,35 +873,6 @@ ggplot(aes(x=species_range, y=indicator1_mean , fill=species_range)) +
   
 ```
 
-Test the effect of range type on Ne>500 indicator. Does the indicator vary between wide randing vs restricted distribution species? (keep only those categories and remove unknwon due to small sampling size)
-
-```{r stats indicator1 and range}
-
-## Remove unknown
-data<- indicators_averaged_one  %>%
-                    filter(!is.na(indicator1_mean)) %>% 
-                    filter(species_range !="unknown")
-
-# summary of indicator
-summary(data$indicator1_mean)
-  
-## run model 
-m1 <- glmmTMB(indicator1_mean ~ defined_populations_simplified + species_range + defined_populations_simplified*species_range + (1|country_assessment), family = "ordbeta", data = data)
-
-
-# summary results
-summary(m1)
-
-
-## + country
-m1.1 <- glmmTMB(indicator1_mean ~ defined_populations_simplified + species_range + (1|country_assessment), family = "ordbeta", data = data)
-
-
-# summary results
-summary(m1.1)
-
-
-```
 
 
 ### Indicator 2 (mantained populations)
@@ -1748,7 +935,482 @@ ggplot(aes(x=species_range, y=indicator2_mean , fill=species_range)) +
   
 ```
 
-Test the effect of range type on the proportion of maitained populations. Does the indicator vary between wide randing vs restricted distribution species? Consider only wide randing and restricted categores (ie remove unknown due to small sampling size)
+
+
+### Single plot PM and Ne indicators by range type
+```{r,  out.height="900px", out.width="800px"}
+plot_grid(p1, p2,  ncol=1, align = "v", labels=c("a)", "b)"))  
+```
+
+
+## Sampling size of different variables useful to interpret the statistical models run below
+
+The plots and tables below are meant to visualize the sampling size and data distribution of some of the variables used in the models below. Data is a subset  filtering outliers (>500 populations) and using the simplified methods (see above). Multiassessed species are considered independently (each assessment is a data point).
+
+### Supplementary Figure: Number of maintained populations by country and method
+
+Number of maintained populations by country and method is useful to interpret the models that would be run below.
+```{r}
+indicators_full %>% 
+  filter(n_extant_populations<500) %>% # filter outliers
+  # order countries vertically by similar number of pops
+  mutate(country_assessment = factor(country_assessment, 
+                                     levels=c("Colombia", "Australia", "Belgium",
+                                               "Mexico", "France", "US", 
+                                               "S. Africa", "Japan", "Sweden"))) %>%
+  ggplot(aes(x=defined_populations_nicenames, y=n_extant_populations, 
+             fill=defined_populations_nicenames, color=defined_populations_nicenames)) +
+          geom_boxplot() +
+          geom_jitter(size=.3, width = 0.1, color="black") +
+  coord_flip() +
+  facet_wrap(country_assessment ~ ., nrow=3, scales="free_x") +
+  xlab("")  +
+  ylab("Number of maintained populations") +
+  scale_fill_manual(values=alpha(simplifiedmethods_colors, .3),
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_x_discrete(limits=rev) +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none",
+        text = element_text(size = 15)) 
+
+
+```
+
+### Ne values 
+
+```{r}
+ind1_data %>% 
+  filter(Ne_combined < 100000) %>% # filter outliers
+
+  ggplot(aes(x=defined_populations_simplified, y=Ne_combined, 
+             color=Ne_calculated_from)) +
+          geom_boxplot(position = "dodge") +
+          geom_jitter(position = position_dodge(width = 0.75)) +  
+          facet_wrap(country_assessment ~ ., nrow=3) +
+          coord_flip() +
+          theme_light()
+
+```
+
+Zoom to Ne 500
+```{r}
+ind1_data %>% 
+  filter(Ne_combined < 100000) %>% # filter outliers
+
+  ggplot(aes(x=defined_populations_simplified, y=Ne_combined, 
+             color=Ne_calculated_from)) +
+          ylim(0,2000)+
+          geom_boxplot(position = "dodge") +
+          geom_jitter(position = position_dodge(width = 0.75)) +  
+          facet_wrap(country_assessment ~ ., nrow=3) +
+          coord_flip() +
+          theme_light()
+
+```
+
+
+Summary table for sampling size by method and source of Ne:
+```{r}
+x<- ind1_data %>% 
+  filter(!is.na(Ne_calculated_from)) %>% 
+  group_by(defined_populations_simplified, Ne_calculated_from) %>%
+                summarise(n=n())
+kable(x)
+```
+
+Same as above but adding country:
+```{r}
+x<- ind1_data %>% 
+  filter(!is.na(Ne_calculated_from)) %>% 
+  group_by(country_assessment, defined_populations_simplified, Ne_calculated_from) %>%
+                summarise(n=n())
+kable(x)
+```
+
+
+### Distribution type (wide / restricted)
+
+```{r}
+x<-indicators_full %>% filter(species_range !="unknown") %>%
+                    group_by(defined_populations_nicenames, species_range) %>% 
+                    summarise(n=n())
+
+kable(x)
+```
+
+
+
+### Supplementary Figure: number of mantained populations by method to define populations and range type
+
+Facet by range type:
+```{r}
+p<-indicators_full %>% 
+  filter(!is.na(n_extant_populations)) %>% 
+  filter(n_extant_populations<500) %>%
+  filter(species_range !="unknown") %>%
+  filter(!is.na(species_range)) %>%
+  
+  ggplot(aes(x=defined_populations_nicenames, y=n_extant_populations)) +
+          geom_boxplot(aes(color=defined_populations_nicenames,
+                           fill=defined_populations_nicenames)) + 
+    xlab("") + ylab("Number of maintained populations") +
+  coord_flip() +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none",
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots
+  scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  facet_wrap("species_range", ncol=1) + 
+  geom_jitter(size=.4, width = 0.1, color="black") +
+  scale_x_discrete(limits=rev)
+
+p
+```
+
+
+
+## Statistical models: test for associations between method used to define populations / range type on the number of populations and the indicator values
+
+The analyses and plots below us a subset of data filtering outliers (>500 populations) and using the simplified methods (see above). Multiassessed species are considered independently (each assessment is a data point).
+
+### (a) Does the number of maintained pops vary with method used? 
+
+First we tested whether the different methods reported in this study were associated with varying numbers of populations obtained. For this analysis, we also controlled for range type, as we expect species with wider ranges to plausibly have more populations than species with narrower ranges.
+
+Plot number of populations by method.
+```{r, out.height="500px", out.width="1064px"}
+# Prepare data for plot with nice labels:
+# sample size of TOTAL populations
+sample_size <- indicators_full %>%
+                    filter(!is.na(n_extant_populations)) %>% 
+                    filter(n_extant_populations<500) %>%
+                    group_by(defined_populations_nicenames) %>% summarize(num=n())
+
+# custom axis
+## new dataframe
+df<-indicators_full %>% 
+  filter(!is.na(n_extant_populations)) %>% 
+  filter(n_extant_populations<500) %>%
+    # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(defined_populations_nicenames, " (n= ", num, ")")) %>%
+#myaxis needs levels in the same order than defined_populations_nicenames
+  mutate(myaxis = factor(myaxis, 
+                  levels=levels(as.factor(myaxis))[c(1,12,2:11,13)])) # reorders levels
+
+
+# plot for number of pops
+  pa<- df %>%
+  ggplot(aes(x=myaxis, y=n_extant_populations, color=defined_populations_nicenames,
+                                               fill=defined_populations_nicenames)) +
+          geom_boxplot() + xlab("") + ylab("Number of maintained populations") +
+          geom_jitter(size=.4, width = 0.1, color="black") +
+  coord_flip() +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none",
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots
+  scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_x_discrete(limits=rev) +  
+  theme(text = element_text(size = 13))
+pa
+
+```
+
+Prepare data for model (remove outliers, "unknown" category and NA in desired variable) and check n:
+```{r}
+# remove missing data 
+data_for_model<-indicators_full %>% 
+                      filter(!is.na(n_extant_populations)) %>%
+                      filter(species_range !="unknown") %>% # we remove "unknonw" because its n is too low, thus unbalancing the model
+                      filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
+
+# check n per method
+table(data_for_model$defined_populations_simplified)
+
+# total n
+nrow(data_for_model)
+
+# re-level to use geographic boundaries as reference category for the analysis
+data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$defined_populations_simplified),
+                                                       ref="geographic_boundaries")
+
+# make sure specis range is a factor
+data_for_model$species_range<-as.factor(data_for_model$species_range)
+
+```
+
+Run model asking: Does the number of maintained pops vary with method and range?
+
+```{r}
+m.a1<-glmer(data_for_model$n_extant_populations ~ data_for_model$defined_populations_simplified + data_for_model$species_range + (1|data_for_model$country_assessment), family ="poisson")
+
+summary(m.a1)
+```
+
+Considering the role of method was so important for determining the number of populations, we also tested whether this effect remained after removing “wide-ranging” from the model. The objective here was to test whether method alone would also produce varying numbers of populations, for example if species rangedness were unknown.
+
+Does the number of maintained pops vary with method used? (does method still influence number of populations if we exclude range type from the model):
+
+```{r}
+m.a2<-glmer(data_for_model$n_extant_populations ~ data_for_model$defined_populations_simplified + 
+            (1|data_for_model$country_assessment), family ="poisson")
+```
+
+See results:
+```{r}
+summary(m.a2)
+```
+
+Extending from this result, we also tested whether species range alone is an important predictor of the number of extant populations, as species range is determined by the geographic spread of the species, but not necessarily fragmentation
+
+Does the number of maintained pops vary with range?
+```{r}
+m.a3<-glmer(n_extant_populations ~ species_range + (1|country_assessment), family = "poisson", data = data_for_model)
+
+summary(m.a3)
+```
+
+
+
+### (b) Does the proportion of maintained populations (indicator2) vary with method used to define populations?
+
+Our next goal was to determine whether study design (i.e. clustering method to define populations) and/or species-level variables (number of populations, range type) appropriately were associated with the measurement of the genetic indicators. 
+
+
+Plot PM indicator by method to define populations:
+
+```{r}
+# Prepare data for plot with nice labels:
+# sample size of TOTAL populations
+sample_size <- indicators_full %>%
+                    filter(!is.na(indicator2)) %>% 
+                    filter(n_extant_populations<500) %>% 
+                    group_by(defined_populations_nicenames) %>% summarize(num=n())
+
+# custom axis
+## new dataframe
+df<-indicators_full %>% 
+  filter(n_extant_populations<500) %>%
+  filter(!is.na(indicator2)) %>% 
+    # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(defined_populations_nicenames, " (n= ", num, ")")) %>%
+#myaxis needs levels in the same order than defined_populations_nicenames
+  mutate(myaxis = factor(myaxis, 
+                  levels=levels(as.factor(myaxis))[c(1,12,2:11,13)])) # reorders levels
+
+
+
+## plot for Proportion of maintained populations (indicator)
+pb<- df %>%
+  filter(n_extant_populations<500) %>%
+  ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_nicenames,    
+                                     fill=defined_populations_nicenames)) +
+          geom_boxplot() + xlab("") + ylab("Proportion of maintained populations") +
+          geom_jitter(size=.4, width = 0.1, color="black") +
+  coord_flip() +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none",
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) 
+  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_x_discrete(limits=rev) +
+  theme(text = element_text(size = 13))
+pb
+
+```
+
+Plot Scatter plot of indicator2 vs extant pops
+```{r}
+psupA<- indicators_full %>%
+  # filter outliers with too many pops and missing data
+  filter(n_extant_populations<500) %>%
+  filter(!is.na(indicator2)) %>%
+  filter(!is.na(n_extant_populations)) %>%
+  filter(species_range !="unknown") %>%
+  
+  # plot
+    ggplot(aes(x=n_extant_populations, y=indicator2, color=defined_populations_nicenames)) +
+    geom_point() +
+    theme_light() +
+    scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+    theme(legend.position = "none") +
+    ylab("Proportion of maintained populations") +
+    xlab("Number of maintained populations") +
+    theme(text = element_text(size = 13))
+psupA
+
+psupA.1<- indicators_full %>%
+  # filter outliers with too many pops and missing data
+  filter(n_extant_populations<500) %>%
+  filter(!is.na(indicator2)) %>%
+  filter(!is.na(n_extant_populations)) %>%
+  filter(species_range !="unknown") %>%
+  
+  # plot
+    ggplot(aes(x=n_extant_populations, y=indicator2, color=species_range)) +
+    geom_point() +
+    theme_light() +
+    theme(legend.position = "none") +
+    ylab("Proportion of maintained populations") +
+    xlab("Number of maintained populations") +
+    theme(text = element_text(size = 13))
+psupA.1
+
+```
+
+First we want to test if the Proportion of maintained populations (indicator 2) vary with method used.
+
+Prepare data for model (remove outliers and NA in desired variable) and check n:
+```{r}
+# remove missing data 
+data_for_model<-indicators_full %>% 
+                      filter(!is.na(indicator2)) %>%
+                      filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
+
+# check n per method
+table(data_for_model$defined_populations_simplified)
+
+# total n
+nrow(data_for_model)
+
+# re-level to use geographic boundaries as reference category for the analysis
+data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$defined_populations_simplified),
+                                                       ref="geographic_boundaries")
+
+```
+
+Run model asking: Does Proportion of maintained populations (indicator 2) vary with method used? Controlling for variation in indicator2 among countries:
+
+
+```{r}
+m.b1<-glmmTMB(indicator2 ~ defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = data_for_model)
+```
+
+See results:
+```{r}
+summary(m.b1)
+```
+
+Given the preceding relationships detected between method, number of populations, and species’ range, we investigated associations between these variables and our indicator values in more detail, to aid in understanding the underlying mechanisms that were driving the association between method (especially genetic clusters) and indicator 2. That is, we hypothesised that the relationship between method and indicator 2 may be an indirect result of the association between method and number of populations and species range. 
+
+First we added number of populations to our model testing the relationship between method and indicator 2
+
+```{r}
+m.b2<-glmmTMB(indicator2 ~ defined_populations_simplified + n_extant_populations + (1|country_assessment), family = "ordbeta", data = data_for_model)
+
+summary(m.b2)
+```
+
+Then we tested (see plot psupA) if there is a relationship between number of maintained populations and the PM indicator, overall, and/or with some methods?
+
+Prepare data for model (remove outliers and NA in desired variable) and check n:
+```{r}
+# remove missing data 
+data_for_model<-indicators_full %>% 
+                      filter(!is.na(indicator2)) %>%
+                      filter(!is.na(n_extant_populations)) %>%
+                      filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
+
+# check number of methods
+length(unique(data_for_model$defined_populations_simplified))
+
+# check n per method
+table(data_for_model$defined_populations_simplified)
+
+# total n
+nrow(data_for_model)
+
+# re-level to use geographic boundaries as reference category for the analysis
+data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$defined_populations_simplified),
+                                                       ref="geographic_boundaries")
+
+```
+
+We tested for a relationship between number of populations alone with indicator 2 in our dataset (i.e. when not controlling for method). 
+
+Does number of populations alone affect indicator2 (i.e. not controlling for method)?:
+
+```{r}
+msupA1 <- glmmTMB(indicator2 ~ n_extant_populations + (1|country_assessment), family = "ordbeta", data= data_for_model)
+
+```
+
+Summary:
+```{r}
+summary(msupA1)
+```
+
+But, there were statistically significant interactions between number of populations and some of the methods used, on indicator 2. 
+
+Does the effect of method on indicator2 depend on number of maintained pops?
+
+```{r}
+# run model
+msupA2 <- glmmTMB(indicator2 ~ defined_populations_simplified + n_extant_populations + defined_populations_simplified*n_extant_populations + (1|country_assessment), family = "ordbeta", data = data_for_model)
+
+```
+
+Summary:
+
+```{r}
+summary(msupA2)
+```
+
+Because the method used to define a population appears to be important for these relationships, we conducted an additional analysis to simplify our analysis to only those species for which a single method was used to determine population clusters, and repeated the model presented above (evaluating a possible interaction between method and number of populations on indicator 2).
+
+First, subset the data to only those taxa where a single method was used: 
+
+```{r}
+ind2_single_methods<-indicators_full %>% 
+                      filter(!is.na(indicator2)) %>% 
+                      filter(n_extant_populations<500) %>%  # doesn't make a difference in the test below, but useful for 
+                      filter(defined_populations_simplified=="genetic_clusters" | 
+                             defined_populations_simplified=="geographic_boundaries" |
+                             defined_populations_simplified=="eco_biogeo_proxies" | 
+                             defined_populations_simplified=="management_units" |
+                             defined_populations_simplified=="dispersal_buffer")
+
+
+# check number of methods
+length(unique(ind2_single_methods$defined_populations_simplified))
+
+# check n by method
+table(ind2_single_methods$defined_populations_simplified)
+
+# check n total
+nrow(ind2_single_methods)
+
+# re-level to use geographic boundaries as reference category for the analysis
+ind2_single_methods$defined_populations_simplified<-relevel(as.factor(ind2_single_methods$defined_populations_simplified),
+                                                       ref="geographic_boundaries")
+
+ 
+```
+
+Does the effect of "single" method on indicator2 depend on number of maintained pops?
+
+```{r}
+msupA3<-glmmTMB(indicator2 ~ n_extant_populations + defined_populations_simplified +        n_extant_populations*defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = ind2_single_methods)
+
+# summary
+summary(msupA3)
+```
+
+Because we found a relationship between method and number of populations on indicator PM, and a relationship between species range and number of populations, we further tested whether the effect of method on indicator PM is moderated by species range. 
+
+
+First filter data to consider only wide ranging and restricted categories (ie remove unknown due to small sampling size)
 
 ```{r stats indicator2 and range}
 
@@ -1759,72 +1421,407 @@ data<- indicators_averaged_one  %>%
 
 # summary of indicator
 summary(data$indicator2_mean)
-  
-  
-## run model 
-m2 <- glmmTMB(indicator2_mean ~ defined_populations_simplified + species_range + defined_populations_simplified*species_range + (1|country_assessment), family = "ordbeta", data = data)
 
+# re-level to use geographic boundaries as reference category for the analysis
+data$defined_populations_simplified<-relevel(as.factor(data$defined_populations_simplified),
+                                                       ref="geographic_boundaries")
 
-# summary results
-summary(m2)
-
-
-## + country
-m2.1 <- glmmTMB(indicator2_mean ~ defined_populations_simplified + species_range + (1|country_assessment), family = "ordbeta", data = data)
-
-
-# summary results
-summary(m2.1)
-
+# make sure species range is a factor
+data$species_range<-as.factor(data$species_range)  
 
 ```
 
+Run model: Does method still impact indicator2 if we control for species range?
 
-
-### Single plot PM and Ne indicators by range type
-```{r,  out.height="900px", out.width="800px"}
-plot_grid(p1, p2,  ncol=1, align = "v", labels=c("a)", "b)"))  
-```
-
-### Main Figure: Violin plots indicatrors by of range type coloring points to show genetic clusters
-
-
-For Ne indicator: 
 ```{r}
 
-# add variable stating if genetic methods are used
-indicators_averaged_one<- indicators_averaged_one  %>%
-mutate(genetic_to_define_pops = ifelse(grepl("genetic", defined_populations_simplified), 'genetic method', 'non genetic'))
+## + country
+m.b3 <- glmmTMB(indicator2_mean ~ defined_populations_simplified + species_range + (1|country_assessment), family = "ordbeta", data = data)
 
 
-# get sample size by desired category
-sample_size <- indicators_averaged_one  %>%
-                    filter(!is.na(indicator1_mean)) %>% 
-                    filter(!is.na(species_range)) %>% 
-                    group_by(species_range) %>% summarize(num=n())
+# summary results
+summary(m.b3)
 
-# plot
-p1 <- indicators_averaged_one %>% 
-    filter(!is.na(indicator1_mean)) %>% 
-    filter(!is.na(species_range)) %>% 
-  
-  # add sampling size 
-  left_join(sample_size) %>% 
-  mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
-
-  # plot
-  ggplot(aes(x=myaxis, y=indicator1_mean)) +
-      geom_violin(width=1, linewidth = 0, fill="grey70")  +
-      xlab("") + ylab("Proportion of populations with Ne>500") +
-      coord_flip() +
-    new_scale_color() + # to color the points without confusing ggplot
-    geom_jitter(size=1.2, width = 0.1, aes(color = genetic_to_define_pops)) +
-    scale_color_manual(values=c("red", "black")) +
-    theme_light() +
-    labs(color=NULL) + # hide legend title
-    theme(panel.border = element_blank(), legend.position="bottom", text= element_text(size=20))
-p1
 ```
+
+Similarly to the effect of number of populations on indicator 2, we further tested whether there was an interaction between method and species range, i.e. to determine whether species range was only associated with indicator 2 for some methods.
+
+```{r}
+## run model 
+m.b4 <- glmmTMB(indicator2_mean ~ defined_populations_simplified + species_range + defined_populations_simplified*species_range + (1|country_assessment), family = "ordbeta", data = data)
+
+
+# summary results
+summary(m.b4)
+```
+
+
+
+### (c) Proportion of populations with Ne>500 (indicator1) 
+
+Our analysis of Ne indicator followed a parallel structure to our analysis of PM indicator. 
+
+Plot Ne indicator by method to define pops.
+
+```{r}
+# Prepare data for plot with nice labels:
+# sample size of TOTAL populations
+sample_size <- indicators_full %>%
+                    filter(!is.na(indicator1)) %>% 
+                    filter(n_extant_populations<500) %>% 
+                    group_by(defined_populations_nicenames) %>% summarize(num=n())
+
+# custom axis
+## new dataframe
+df<-indicators_full %>% 
+  filter(n_extant_populations<500) %>%
+  filter(!is.na(indicator1)) %>% 
+    # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = paste0(defined_populations_nicenames, " (n= ", num, ")")) %>%
+#myaxis needs levels in the same order than defined_populations_nicenames
+  mutate(myaxis = factor(myaxis, 
+                  levels=levels(as.factor(myaxis))[c(1,12,2:11,13)])) # reorders levels
+
+
+
+## plot 
+pc<- df %>%
+  ggplot(aes(x=myaxis, y=indicator1, color=defined_populations_nicenames,    
+                                     fill=defined_populations_nicenames)) +
+          geom_boxplot() + xlab("") + ylab("Proportion of populations with Ne>500") +
+          geom_jitter(size=.4, width = 0.1, color="black") +
+  coord_flip() +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none",
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) + # this is used to decrease the space between plots) 
+  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_x_discrete(limits=rev) +
+  theme(text = element_text(size = 13))
+pc
+
+```
+
+Scatter plot of indicator1 vs extant pops
+```{r}
+psupB<- indicators_full %>%
+  # filter outliers with too many pops and missing data
+  filter(n_extant_populations<500) %>%
+  filter(!is.na(indicator1)) %>%
+  filter(!is.na(n_extant_populations)) %>%
+  filter(species_range !="unknown") %>%
+  
+  
+  # plot
+    ggplot(aes(x=n_extant_populations, y=indicator1, color=defined_populations_nicenames)) +
+    geom_point() +
+    theme_light() +
+    scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+    theme(legend.position = "none") +
+    ylab("Proportion of populations with Ne>500") +
+    xlab("Number of maintained populations") +
+    theme(text = element_text(size = 13))
+psupB
+
+
+## Coloring by range 
+psupB.1<- indicators_full %>%
+  # filter outliers with too many pops and missing data
+  filter(n_extant_populations<500) %>%
+  filter(!is.na(indicator1)) %>%
+  filter(!is.na(n_extant_populations)) %>%
+  filter(species_range !="unknown") %>%
+  
+  
+  # plot
+    ggplot(aes(x=n_extant_populations, y=indicator1, color=species_range)) +
+    geom_point() +
+    theme_light() +
+    theme(legend.position = "none") +
+    ylab("Proportion of populations with Ne>500") +
+    xlab("Number of maintained populations") +
+    theme(text = element_text(size = 13))
+psupB.1
+
+```
+
+First we tested whether method used was associated with variation in indicator (figure c)
+
+Prepare data for model (remove outliers and NA in desired variable) and check n:
+```{r}
+# remove missing data 
+data_for_model<-indicators_full %>% 
+                      filter(!is.na(indicator1)) %>%
+                      filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
+
+# check n per method
+table(data_for_model$defined_populations_simplified)
+
+# total n
+nrow(data_for_model)
+
+# re-level to use geographic boundaries as reference category for the analysis
+data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$defined_populations_simplified),
+                                                       ref="geographic_boundaries")
+
+```
+
+Run model asking: Does Ne indicator vary with method used? Controlling for variation in indicator among countries:  
+
+```{r}
+m.c1<-glmmTMB(indicator1 ~ defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = data_for_model)
+```
+
+See results:
+```{r}
+summary(m.c1)
+```
+we next investigated whether the relationships between methods and the indicator were moderated by the role of number of populations and species range. Ie:
+
+Does method still influence indicator1 if we control for number of populations?
+
+```{r}
+m.c2 <- glmmTMB(indicator1 ~ defined_populations_simplified + n_extant_populations + (1|country_assessment), family = "ordbeta", data = data_for_model)
+
+summary(m.c2)
+```
+
+We then tested if there a relationship between number of maintained populations and indicator1, overall, and/or with some methods? (model associated to plot psupB)
+
+Prepare data for model (remove outliers and NA in desired variable) and check n:
+```{r}
+# remove missing data 
+data_for_model<-indicators_full %>% 
+                      filter(!is.na(indicator1)) %>%
+                      filter(!is.na(n_extant_populations)) %>%
+                      filter(n_extant_populations<500) # doesn't make a difference in the test below, but useful for plots
+
+# check number of methods
+length(unique(data_for_model$defined_populations_simplified))
+
+# check n per method
+table(data_for_model$defined_populations_simplified)
+
+# total n
+nrow(data_for_model)
+
+# re-level to use geographic boundaries as reference category for the analysis
+data_for_model$defined_populations_simplified<-relevel(as.factor(data_for_model$defined_populations_simplified),
+                                                       ref="geographic_boundaries")
+
+```
+
+Does the number of maintained pops alone affect the Ne indicator? (i.e. not controlling for method)
+```{r}
+msupB1<-glmmTMB(indicator1 ~ n_extant_populations + (1|country_assessment), family = "ordbeta", data= data_for_model)
+```
+
+Summary:
+```{r}
+summary(msupB1)
+```
+
+
+Does the effect of method depend on the number of populations? Or put another way, does the importance of number of populations also depend on method? 
+
+```{r}
+# run model
+msupB2 <- glmmTMB(indicator1 ~ defined_populations_simplified + n_extant_populations + defined_populations_simplified*n_extant_populations + (1|country_assessment), family = "ordbeta", data = data_for_model)
+```
+
+Summary:
+
+```{r}
+summary(msupB2)
+```
+
+
+Because “what’s a population and how do you define them?” is such an important question, we can also test the effect of methods alone. First, subset the data to only those taxa where a single method was used: 
+
+```{r}
+ind1_single_methods<-indicators_full %>% 
+                      filter(!is.na(indicator1)) %>% 
+                      filter(n_extant_populations<500) %>%  # doesn't make a difference in the test below, but useful for 
+                      filter(defined_populations_simplified=="genetic_clusters" | 
+                             defined_populations_simplified=="geographic_boundaries" |
+                             defined_populations_simplified=="eco_biogeo_proxies" | 
+                             defined_populations_simplified=="management_units" |
+                             defined_populations_simplified=="dispersal_buffer")
+
+
+# check number of methods
+length(unique(ind1_single_methods$defined_populations_simplified))
+
+# check n by method
+table(ind1_single_methods$defined_populations_simplified)
+
+# check n total
+nrow(ind1_single_methods)
+
+# re-level to use geographic boundaries as reference category for the analysis
+ind1_single_methods$defined_populations_simplified<-relevel(as.factor(ind1_single_methods$defined_populations_simplified),
+                                                       ref="geographic_boundaries")
+
+ 
+```
+
+Run model:
+
+```{r, }
+# run model
+msupB3 <- glmmTMB(indicator1 ~ n_extant_populations + defined_populations_simplified +        n_extant_populations*defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = ind2_single_methods)
+```
+
+Summary:
+
+```{r}
+summary(msupB3)
+```
+
+Finally, we tested for associations between range type on Ne>500 indicator. 
+
+First filter data to consider only wide ranging and restricted categories (ie remove unknown due to small sampling size)
+
+
+```{r stats indicator1 and range}
+
+## Remove unknown
+data<- indicators_averaged_one  %>%
+                    filter(!is.na(indicator1_mean)) %>% 
+                    filter(species_range !="unknown")
+
+# summary of indicator
+summary(data$indicator1_mean)
+
+
+# re-level to use geographic boundaries as reference category for the analysis
+data$defined_populations_simplified<-relevel(as.factor(data$defined_populations_simplified),
+                                                       ref="geographic_boundaries")
+
+# make sure specis range is a factor
+data$species_range<-as.factor(data$species_range)
+
+```
+  
+  
+Is there still an effect of method on indicator1 if we control for species range?
+
+```{r}
+## run model  + country
+m.c3 <- glmmTMB(indicator1_mean ~ defined_populations_simplified + species_range + (1|country_assessment), family = "ordbeta", data = data)
+
+
+# summary results
+summary(m.c3)
+
+```
+  
+Finally, we tested interactions between method and species range, to determine whether the effect of species range only applies when some methods are used.
+
+
+Is the effect of method on Ne indicator moderated by species range?
+
+```{r}
+## run model 
+m.c4 <- glmmTMB(indicator1_mean ~ defined_populations_simplified + species_range + defined_populations_simplified*species_range + (1|country_assessment), family = "ordbeta", data = data)
+
+
+# summary results
+summary(m.c4)
+```
+
+  
+
+### Main Figure (representing the models above): Single plot 5 panels. Boxplots plots for the effect of method on: number of populations, proportion of maintained populations (indicator 2) and Proportion of populations with Ne>500 (indicator 1), AND Violin plots for the distribution of the indicator values by range type.
+
+Top a,b,c panel boxplots:
+
+```{r, out.height="400px", out.width="1600px"}
+##### plot for Proportion of maintained populations (indicator 2) only with n in axis labels
+
+# sample size 
+sample_size <- indicators_full %>%
+                    filter(!is.na(indicator2)) %>% 
+                    filter(n_extant_populations<500) %>% 
+                    group_by(defined_populations_nicenames) %>% summarize(num=n())
+
+# custom axis
+## new dataframe
+df<-indicators_full %>% 
+  filter(n_extant_populations<500) %>%
+  filter(!is.na(indicator2)) %>% 
+    # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = as.factor(paste0(defined_populations_nicenames, " (n= ", num, ")")))
+
+
+pb.1<- df %>%
+  filter(n_extant_populations<500) %>%
+  ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_nicenames,    
+                                     fill=defined_populations_nicenames)) +
+          geom_boxplot() + xlab("") + ylab("Proportion of maintained populations") +
+          geom_jitter(size=.4, width = 0.1, color="black") +
+  coord_flip() +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none",
+        plot.margin = unit(c(0.2, 0.2, 0.2, 0.2), "cm")) + # this is used to decrease the space between plots) 
+  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_color_manual(values=simplifiedmethods_colors,
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  
+  scale_x_discrete(limits=rev, 
+                   labels= rev(sub(".*(\\(n= \\d+\\))", "\\1", levels(df$myaxis)))) + # extract "(n = number)") and show them in reverse order
+  theme(text = element_text(size = 13))
+
+
+##### plot for Proportion populations Ne>500 (indicator 1) only with n in axis labels
+# Prepare data for plot with nice labels:
+# sample size of TOTAL populations
+sample_size <- indicators_full %>%
+  filter(!is.na(indicator1)) %>% 
+  filter(n_extant_populations<500) %>% 
+  group_by(defined_populations_nicenames) %>% summarize(num=n())
+
+# custom axis
+## new dataframe
+df<-indicators_full %>% 
+  filter(n_extant_populations<500) %>%
+  filter(!is.na(indicator1)) %>% 
+  # add sampling size 
+  left_join(sample_size) %>%
+  mutate(myaxis = as.factor(paste0(defined_populations_nicenames, " (n= ", num, ")")))
+
+
+## plot 
+pc.1<- df %>%
+  ggplot(aes(x=myaxis, y=indicator1, color=defined_populations_nicenames,    
+             fill=defined_populations_nicenames)) +
+  geom_boxplot() + xlab("") + ylab("Proportion of populations with Ne>500") +
+  geom_jitter(size=.4, width = 0.1, color="black") +
+  coord_flip() +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none",
+        plot.margin = unit(c(0.2, 0.2, 0.2, 0.2), "cm")) + # this is used to decrease the space between plots) 
+  scale_fill_manual(values=alpha(simplifiedmethods_colors, 0.3),
+                    breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_color_manual(values=simplifiedmethods_colors,
+                     breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
+  scale_x_discrete(limits=rev, 
+                   labels= rev(sub(".*(\\(n= \\d+\\))", "\\1", levels(df$myaxis)))) + # extract "(n = number)") and show them in reverse order
+  theme(text = element_text(size = 13))
+
+
+## Plot 3 panels
+plot_grid(pa, pb.1, pc.1, ncol=3, rel_widths = c(1.9,1,1), align = "h", labels=c("a)", "b)", "c)"))  
+
+```
+
+Bottom  d, e violin plots. Indicators by of range type coloring points to show genetic clusters
 
 For PM indicator: 
 ```{r}
@@ -1840,7 +1837,7 @@ sample_size <- indicators_averaged_one  %>%
                     group_by(species_range) %>% summarize(num=n())
 
 # plot
-p2<-indicators_averaged_one %>% 
+pd<-indicators_averaged_one %>% 
     filter(!is.na(indicator2_mean)) %>% 
     filter(!is.na(species_range)) %>% 
   
@@ -1858,17 +1855,66 @@ p2<-indicators_averaged_one %>%
     scale_color_manual(values=c("red", "black")) +
     labs(color=NULL) + # hide legend title
       theme_light() +
-      theme(panel.border = element_blank(), legend.position="bottom", text= element_text(size=20))
-p2
+      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20))
 ```
+
+For Ne indicator: 
+```{r}
+
+# add variable stating if genetic methods are used
+indicators_averaged_one<- indicators_averaged_one  %>%
+mutate(genetic_to_define_pops = ifelse(grepl("genetic", defined_populations_simplified), 'genetic method', 'non genetic'))
+
+
+# get sample size by desired category
+sample_size <- indicators_averaged_one  %>%
+                    filter(!is.na(indicator1_mean)) %>% 
+                    filter(!is.na(species_range)) %>% 
+                    group_by(species_range) %>% summarize(num=n())
+
+# plot
+pe <- indicators_averaged_one %>% 
+    filter(!is.na(indicator1_mean)) %>% 
+    filter(!is.na(species_range)) %>% 
+  
+  # add sampling size 
+  left_join(sample_size) %>% 
+  mutate(myaxis = paste0(species_range, " (n= ", num, ")")) %>%
+
+  # plot
+  ggplot(aes(x=myaxis, y=indicator1_mean)) +
+      geom_violin(width=1, linewidth = 0, fill="grey70")  +
+      xlab("") + ylab("Proportion of populations with Ne>500") +
+      coord_flip() +
+    new_scale_color() + # to color the points without confusing ggplot
+    geom_jitter(size=1.2, width = 0.1, aes(color = genetic_to_define_pops)) +
+    scale_color_manual(values=c("red", "black")) + 
+    theme_light() +
+    labs(color="Method to \ndefine populations") + # nicer legend title
+    theme(panel.border = element_blank(), legend.position="right", text= element_text(size=20))
+```
+
 Two panel figure:
 
 ```{r}
-plot_grid(p1 + theme(legend.position = "non2"), # legend can be shown only below both plots 
-          p2,
-          ncol = 1,
-          align = "v")
+plot_grid(pd + theme(legend.position = "non2"), # legend can be shown only below both plots 
+          pe,
+          ncol = 2,
+          rel_widths = c(1,1.4), align = "h", labels=c("d)", "e)"))
 ```
+
+
+### Supplementary Figure: Single figure 2 panels scatter plots number of populations vs indicators
+
+```{r, out.height= "800px", out.width="500px"}
+# plot
+plot_grid(psupA + xlim(0,400) + xlab(""), # remove xlab from top plot and match x axis size
+          psupB+ xlim(0,400), 
+          ncol=1, align = "v", labels=c("a)", "b)"))  
+
+```
+
+
 
 
 ## Indicatros by threat status (IUCN Red List)
