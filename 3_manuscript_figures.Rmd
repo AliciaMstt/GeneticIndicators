@@ -2328,8 +2328,33 @@ indicators_averaged_one <- indicators_averaged_one %>%
 table(indicators_averaged_one$taxonomic_group_simplified)
 ```
 
+We also create a group of only 3 categories for animals, plants and others:
 
-### Violin plots and summary tables for each indicator by taxonomic group
+```{r}
+# Define the grouping map
+grouping_map <- c(
+  "amphibian", "bird", "fish", "invertebrate", "mammal",
+  "angiosperm", "gymnosperm", "reptile", "pteridophytes", "others"
+)
+
+# Create a new variable taxonomic_group_3
+indicators_averaged_one <- indicators_averaged_one %>%
+                            mutate(
+                              taxonomic_group_3 = case_when(
+                                taxonomic_group_simplified %in% grouping_map[1:5] ~ "animals",
+                                taxonomic_group_simplified %in% grouping_map[6:9] ~ "plants",
+                                taxonomic_group_simplified %in% grouping_map[10] ~ "others",
+                                TRUE ~ NA_character_
+                              )
+                            )
+
+# reorder levels
+indicators_averaged_one$taxonomic_group_3<- factor(indicators_averaged_one$taxonomic_group_3, 
+                                                  levels=c("animals", "plants", "others"))
+```
+
+
+### Violin plots, histograms and summary tables for each indicator by taxonomic group
 
 **Indicator Ne > 500**
 
@@ -2435,7 +2460,7 @@ kable(summary_table, digits=2)
 
 
 
-**Indicator Proportion of mantained populations:**
+**Indicator Proportion of maintained populations:**
 
 ```{r}
 ## prepare data
@@ -2539,10 +2564,142 @@ kable(summary_table, digits=2)
 
 ```
 
+### Histograms and summary tables by 3 taxonomic groups (animals, plants, others)
 
-### Single figure 2 panels violin plots for both indicators by taxonomic group
+By animals, plants, others:
+
 ```{r}
-plot_grid(p1, p2, ncol=1, align = "v", labels=c("a)", "b)"))
+# Create a histogram 
+hist_p1 <- indicators_averaged_one %>%
+                  ggplot(aes(x = indicator1_mean, fill = taxonomic_group_3)) +
+                  geom_histogram( bins = 25, color="white") + # Adjust the number of bins as needed
+                  labs(x = "Proportion of populations with Ne>500", y = "Frequency") +
+                  scale_fill_manual(
+                    values = grouped_taxon_colors, # Custom colors for animals, plants, and others
+                    breaks = c("animals", "plants", "others"),
+                    name = "Taxonomic Group")+
+                  theme_light() +
+                  theme(panel.border = element_blank(), text = element_text(size = 15), 
+                        legend.position = "right") +
+                  guides(fill = guide_legend(title = NULL))
+
+# plot
+hist_p1
+```
+Summary table for Ne indicator 3 taxonomic groups:
+
+```{r}
+x  <- indicators_averaged_one %>%
+               filter(!is.na(indicator1_mean)) %>% 
+               filter(!is.na(taxonomic_group_3)) %>% 
+               group_by(taxonomic_group_3) %>% 
+               summarize(n=n(),
+                         mean=mean(indicator1_mean),
+                         median=median(indicator1_mean),
+                         per.0=sum(indicator1_mean==0) / n *100,
+                         per.below.25=sum(indicator1_mean<0.25) / n *100,
+                         per.below.90=sum(indicator1_mean<0.90) / n *100,
+                         per.above.75=sum(indicator1_mean>0.75)/ n *100,
+                         per1=sum(indicator1_mean==1) / n *100)
+
+
+
+# Calculate total counts and means
+total_counts <- indicators_averaged_one %>%
+               filter(!is.na(indicator1_mean)) %>% 
+               filter(!is.na(taxonomic_group_3)) %>% 
+               ungroup() %>% 
+               summarize(taxonomic_group_3 = "ALL",
+                          n= n(),
+                          mean = mean(indicator1_mean),
+                          median = median(indicator1_mean),
+                          per.0=sum(indicator1_mean==0) / n *100,
+                          per.below.25=sum(indicator1_mean<0.25) / n *100,
+                          per.below.90=sum(indicator1_mean<0.90) / n *100,
+                          per.above.75=sum(indicator1_mean>0.75)/ n *100,
+                          per1=sum(indicator1_mean==1) / n *100)
+
+# Bind the total row to the summary_table
+summary_table <- bind_rows(x, total_counts)
+
+# keep taxonomic groups as level in desired order:
+summary_table$taxonomic_group_3<-factor(summary_table$taxonomic_group_3,
+                                                 levels = c("animals", "plants", "others", "ALL"))
+summary_table<- summary_table %>% arrange(taxonomic_group_3)
+
+kable(summary_table, digits=2)
+```
+
+
+PM  Histogram for animal, plants, others:
+
+```{r}
+# Create a histogram 
+hist_p2 <- indicators_averaged_one %>%
+                  ggplot(aes(x = indicator2_mean, fill = taxonomic_group_3)) +
+                  geom_histogram(bins = 25, color="white") + # Adjust the number of bins as needed
+                  labs(x = "Proportion of maintained populations", y = "Frequency") +
+                  scale_fill_manual(
+                    values = grouped_taxon_colors, # Custom colors for animals, plants, and others
+                    breaks = c("animals", "plants", "others"),
+                    name = "Taxonomic Group")+
+                  theme_light() +
+                  theme(panel.border = element_blank(), text = element_text(size = 15)) +
+                  guides(fill = guide_legend(title = NULL))
+
+# plot
+hist_p2
+```
+
+Summary table for PM indicator 3 taxonomic groups
+
+```{r}
+x  <- indicators_averaged_one %>%
+               filter(!is.na(indicator2_mean)) %>% 
+               filter(!is.na(taxonomic_group_3)) %>% 
+               group_by(taxonomic_group_3) %>% 
+               summarize(n=n(),
+                         mean=mean(indicator2_mean),
+                         median=median(indicator2_mean),
+                         per0=sum(indicator2_mean==0) / n *100,
+                         per.below.25=sum(indicator2_mean<0.25) / n *100,
+                         per.below.90=sum(indicator2_mean<0.90) / n *100,
+                         per.above.75=sum(indicator2_mean>0.75) / n *100,
+                         per1=sum(indicator2_mean==1) / n *100)
+
+# Calculate total counts and means
+total_counts <- indicators_averaged_one %>%
+               filter(!is.na(indicator2_mean)) %>% 
+               filter(!is.na(taxonomic_group_3)) %>% 
+               ungroup() %>% 
+               summarize(taxonomic_group_3 = "ALL",
+                          n= n(),
+                          mean = mean(indicator2_mean),
+                          median = median(indicator2_mean),
+                          per0=sum(indicator2_mean==0) / n *100,
+                          per.below.25=sum(indicator2_mean<0.25) / n *100,
+                          per.below.90=sum(indicator2_mean<0.90) / n *100,
+                          per.above.75=sum(indicator2_mean>0.75) / n *100,
+                          per1=sum(indicator2_mean==1) / n *100)
+
+# Bind the total row to the summary_table
+summary_table <- bind_rows(x, total_counts)
+
+# keep taxonomic groups as level in desired order:
+summary_table$taxonomic_group_3<-factor(summary_table$taxonomic_group_3,
+                                                 levels = c("animals", "plants", "others", "ALL"))
+summary_table<- summary_table %>% arrange(taxonomic_group_3)
+
+kable(summary_table, digits=2)
+```
+
+
+### Main Figure: Single figure 4 panels for violin plots and histograms for both indicators by taxonomic group
+
+```{r}
+plot_grid(p2, hist_p2, 
+          p1, hist_p1,
+          ncol=2, align = "v", labels=c("a)", "b)", "c)", "d)"))
 ```
 
 ## Values of indicator 1 and indicator 2 for multiassessed species
@@ -2878,58 +3035,7 @@ nrow(x)
 ```
 
 
-### Create new variables with simplified taxonomic groups
-
-Animals, plants, others
-```{r}
-
-# Define the grouping map
-grouping_map <- c(
-  "amphibian", "bird", "fish", "invertebrate", "mammal",
-  "angiosperm", "gymnosperm", "reptile", "pteridophytes", "others"
-)
-
-# Create a new variable taxonomic_group_3
-indicators_averaged_one <- indicators_averaged_one %>%
-                            mutate(
-                              taxonomic_group_3 = case_when(
-                                taxonomic_group_simplified %in% grouping_map[1:5] ~ "animals",
-                                taxonomic_group_simplified %in% grouping_map[6:9] ~ "plants",
-                                taxonomic_group_simplified %in% grouping_map[10] ~ "others",
-                                TRUE ~ NA_character_
-                              )
-                            )
-
-# reorder levels
-indicators_averaged_one$taxonomic_group_3<- factor(indicators_averaged_one$taxonomic_group_3, 
-                                                  levels=c("animals", "plants", "others"))
-
-```
-
-
-
-### Histogram for Ne > 500 indicator 
-
-By animals, plants, others:
-
-```{r}
-# Create a histogram 
-hist_p <- indicators_averaged_one %>%
-                  ggplot(aes(x = indicator1_mean, fill = taxonomic_group_3)) +
-                  geom_histogram( bins = 25, color="white") + # Adjust the number of bins as needed
-                  labs(x = "Proportion of populations with Ne>500", y = "Frequency") +
-                  scale_fill_manual(
-                    values = grouped_taxon_colors, # Custom colors for animals, plants, and others
-                    breaks = c("animals", "plants", "others"),
-                    name = "Taxonomic Group")+
-                  theme_light() +
-                  theme(panel.border = element_blank(), text = element_text(size = 15), 
-                        legend.position = "bottom") +
-                  guides(fill = guide_legend(title = NULL))
-
-# plot
-hist_p
-```
+### Plain Histogram for Ne > 500 indicator 
 
 Plain histogram:
 
@@ -2949,74 +3055,7 @@ hist_p
 
 
 
-Summary table:
-
-### Summary table for Ne > 500 indicator 
-
-```{r}
-x  <- indicators_averaged_one %>%
-               filter(!is.na(indicator1_mean)) %>% 
-               filter(!is.na(taxonomic_group_3)) %>% 
-               group_by(taxonomic_group_3) %>% 
-               summarize(n=n(),
-                         mean=mean(indicator1_mean),
-                         median=median(indicator1_mean),
-                         per.0=sum(indicator1_mean==0) / n *100,
-                         per.below.25=sum(indicator1_mean<0.25) / n *100,
-                         per.below.90=sum(indicator1_mean<0.90) / n *100,
-                         per.above.75=sum(indicator1_mean>0.75)/ n *100,
-                         per1=sum(indicator1_mean==1) / n *100)
-
-
-
-# Calculate total counts and means
-total_counts <- indicators_averaged_one %>%
-               filter(!is.na(indicator1_mean)) %>% 
-               filter(!is.na(taxonomic_group_3)) %>% 
-               ungroup() %>% 
-               summarize(taxonomic_group_3 = "ALL",
-                          n= n(),
-                          mean = mean(indicator1_mean),
-                          median = median(indicator1_mean),
-                          per.0=sum(indicator1_mean==0) / n *100,
-                          per.below.25=sum(indicator1_mean<0.25) / n *100,
-                          per.below.90=sum(indicator1_mean<0.90) / n *100,
-                          per.above.75=sum(indicator1_mean>0.75)/ n *100,
-                          per1=sum(indicator1_mean==1) / n *100)
-
-# Bind the total row to the summary_table
-summary_table <- bind_rows(x, total_counts)
-
-# keep taxonomic groups as level in desired order:
-summary_table$taxonomic_group_3<-factor(summary_table$taxonomic_group_3,
-                                                 levels = c("animals", "plants", "others", "ALL"))
-summary_table<- summary_table %>% arrange(taxonomic_group_3)
-
-kable(summary_table, digits=2)
-```
-
-
-### Histogram for Proportion Mantained populations
-
-Histogram for animal, plants, others:
-
-```{r}
-# Create a histogram 
-hist_p <- indicators_averaged_one %>%
-                  ggplot(aes(x = indicator2_mean, fill = taxonomic_group_3)) +
-                  geom_histogram(bins = 25, color="white") + # Adjust the number of bins as needed
-                  labs(x = "Proportion of maintained populations", y = "Frequency") +
-                  scale_fill_manual(
-                    values = grouped_taxon_colors, # Custom colors for animals, plants, and others
-                    breaks = c("animals", "plants", "others"),
-                    name = "Taxonomic Group")+
-                  theme_light() +
-                  theme(panel.border = element_blank(), text = element_text(size = 15)) +
-                  guides(fill = guide_legend(title = NULL))
-
-# plot
-hist_p
-```
+### Plain Histogram for Proportion Mantained populations
 
 Plain histogram
 
@@ -3033,52 +3072,6 @@ hist_p <- indicators_averaged_one %>%
 # plot
 hist_p
 ```
-
-Summary table:
-
-### Summary table for Proportion Mantaiend populations
-
-```{r}
-x  <- indicators_averaged_one %>%
-               filter(!is.na(indicator2_mean)) %>% 
-               filter(!is.na(taxonomic_group_3)) %>% 
-               group_by(taxonomic_group_3) %>% 
-               summarize(n=n(),
-                         mean=mean(indicator2_mean),
-                         median=median(indicator2_mean),
-                         per0=sum(indicator2_mean==0) / n *100,
-                         per.below.25=sum(indicator2_mean<0.25) / n *100,
-                         per.below.90=sum(indicator2_mean<0.90) / n *100,
-                         per.above.75=sum(indicator2_mean>0.75) / n *100,
-                         per1=sum(indicator2_mean==1) / n *100)
-
-# Calculate total counts and means
-total_counts <- indicators_averaged_one %>%
-               filter(!is.na(indicator2_mean)) %>% 
-               filter(!is.na(taxonomic_group_3)) %>% 
-               ungroup() %>% 
-               summarize(taxonomic_group_3 = "ALL",
-                          n= n(),
-                          mean = mean(indicator2_mean),
-                          median = median(indicator2_mean),
-                          per0=sum(indicator2_mean==0) / n *100,
-                          per.below.25=sum(indicator2_mean<0.25) / n *100,
-                          per.below.90=sum(indicator2_mean<0.90) / n *100,
-                          per.above.75=sum(indicator2_mean>0.75) / n *100,
-                          per1=sum(indicator2_mean==1) / n *100)
-
-# Bind the total row to the summary_table
-summary_table <- bind_rows(x, total_counts)
-
-# keep taxonomic groups as level in desired order:
-summary_table$taxonomic_group_3<-factor(summary_table$taxonomic_group_3,
-                                                 levels = c("animals", "plants", "others", "ALL"))
-summary_table<- summary_table %>% arrange(taxonomic_group_3)
-
-kable(summary_table, digits=2)
-```
-
-
 
 
 ### Data availability donuts and plot bars
