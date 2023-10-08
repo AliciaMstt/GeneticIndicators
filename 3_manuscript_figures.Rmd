@@ -2363,9 +2363,10 @@ They are grouped along with "other" in a new category "others" in the new variab
 
 ```{r}
 indicators_averaged_one <- indicators_averaged_one %>% 
-                                mutate(taxonomic_group_simplified = case_when(
+                           ungroup() %>% 
+  mutate(taxonomic_group_simplified = case_when(
                                        # if the taxon group is in the list of groups with small n change to "others"
-                                       taxonomic_group %!in% c("bryophyte", "fungus", "other") ~ taxonomic_group,
+                                       as.character(taxonomic_group) %!in% c("bryophyte", "fungus", "other") ~  as.character(taxonomic_group),
                                        TRUE ~ "others"))
 
 # check:
@@ -3051,13 +3052,18 @@ kable(x, digits=3)
 ```
 
 
-## Simplified figures and basic stats for graphical summary and policy brief
+## Simplified figures and basic stats for text summary and policy brief
 
 ### How many species and pops:
 
 How many species:
 ```{r}
 nrow(indicators_averaged_one)
+```
+
+How many assessments (including species assessed more than once):
+```{r}
+nrow(indicators_full)
 ```
 
 How many populations, including all pops from species that were assessed more than once:
@@ -3079,7 +3085,7 @@ nrow(x)
 ```
 
 
-### Plain Histogram for Ne > 500 indicator 
+### Plain Histogram and stats for Ne > 500 indicator 
 
 Plain histogram:
 
@@ -3097,9 +3103,50 @@ hist_p <- indicators_averaged_one %>%
 hist_p
 ```
 
+Summary stats for the Ne 500 indicator:
+```{r}
+x  <- indicators_averaged_one %>%
+               filter(!is.na(indicator1_mean)) %>% 
+               ungroup() %>% 
+               summarize(n=n(),
+                         mean=mean(indicator1_mean),
+                         median=median(indicator1_mean),
+                         per.0=sum(indicator1_mean==0) / n *100,
+                         per.below.25=sum(indicator1_mean<0.25) / n *100,
+                         per.below.90=sum(indicator1_mean<0.90) / n *100,
+                         per.above.75=sum(indicator1_mean>0.75)/ n *100,
+                         per1=sum(indicator1_mean==1) / n *100)
+x
+kable(x, digits = 2)
+```
+
+Data availability for the Ne indicator. At the species level:
+```{r}
+sum(!is.na(indicators_averaged_one$indicator1_mean)) / nrow(indicators_averaged_one)
+```
+
+At the population level:
+
+```{r}
+sum(!is.na(ind1_data$Ne_combined)) / nrow(ind1_data)
+```
 
 
-### Plain Histogram for Proportion Mantained populations
+Populations below the Ne 500 threshold
+
+```{r}
+x<- ind1_data %>% 
+  ungroup() %>% 
+  summarise(n_pops = n(), 
+            n_pops_Ne_data = sum(!is.na(Ne_combined)), 
+            n_pops_more_500 = sum(Ne_combined >= 500, na.rm = TRUE),
+            n_pops_less_500 =sum(Ne_combined < 500, na.rm = TRUE),
+            per_less_500 = n_pops_less_500/n_pops_Ne_data)
+kable(x, digits=2)
+```
+
+
+### Plain Histogram and stats for Proportion Mantained populations
 
 Plain histogram
 
@@ -3115,6 +3162,24 @@ hist_p <- indicators_averaged_one %>%
 
 # plot
 hist_p
+```
+
+Summary stats for the PM indicator:
+
+```{r}
+x  <- indicators_averaged_one %>%
+               filter(!is.na(indicator2_mean)) %>% 
+               ungroup() %>% 
+               summarize(n=n(),
+                         mean=mean(indicator2_mean),
+                         median=median(indicator2_mean),
+                         per0=sum(indicator2_mean==0) / n *100,
+                         per.below.25=sum(indicator2_mean<0.25) / n *100,
+                         per.below.90=sum(indicator2_mean<0.90) / n *100,
+                         per.above.75=sum(indicator2_mean>0.75) / n *100,
+                         per1=sum(indicator2_mean==1) / n *100)
+
+kable(x, digits = 2)
 ```
 
 
