@@ -541,6 +541,16 @@ ggplot(metadata, aes(x=taxonomic_group, fill=popsize_data)) +
   theme(legend.position="right")
 ```
 
+Species level yes/no table with percentages
+```{r}
+df<- metadata %>%
+     group_by(popsize_data) %>%
+   summarise(n=n(),
+             percentage = (n / nrow(metadata)) * 100)
+   
+kable(df, digits = 0)
+
+```
 
 ### Ne data yes or not? & Type of Nc data 
 
@@ -2322,7 +2332,7 @@ p2
 ```
 
 
-Summnary table
+Summnary table by Red List category
 
 ```{r}
 x  <- indicators_averaged_one %>%
@@ -2339,6 +2349,25 @@ x  <- indicators_averaged_one %>%
 
 kable(x, digits = 2)
 ```
+
+Summary table by Ne_mock_category
+```{r}
+x  <- indicators_averaged_one %>%
+               filter(!is.na(indicator1_mean)) %>% 
+               group_by(Ne_mock_category) %>% 
+               summarize(n=n(),
+                         mean=mean(indicator1_mean),
+                         median=median(indicator1_mean),
+                         per.0=sum(indicator1_mean==0) / n *100,
+                         per.below.25=sum(indicator1_mean<0.25) / n *100,
+                         per.below.90=sum(indicator1_mean<0.90) / n *100,
+                         per.above.75=sum(indicator1_mean>0.75)/ n *100,
+                         per1=sum(indicator1_mean==1) / n *100)
+
+kable(x, digits = 2)
+```
+How many Above 500 have an Ne value below 1?
+
 
 ### Supplementary figure: 2 panels IUCN violin plots + mock Ne, and bar plot
 ```{r}
@@ -3084,6 +3113,24 @@ nrow(x)
 
 ```
 
+How many multiassesments:
+```{r}
+sum(indicators_full$multiassessment=="multiassessment")
+
+```
+
+Which taxa had multiassesments and how many:
+```{r}
+x<- indicators_full %>% filter(multiassessment=="multiassessment") %>%
+                    group_by(taxon) %>%
+                    summarise(n=n())
+kable(x)
+```
+How many taxa with multiassesments?
+```{r}
+nrow(x)
+```
+
 
 ### Plain Histogram and stats for Ne > 500 indicator 
 
@@ -3183,17 +3230,28 @@ kable(x, digits = 2)
 ```
 
 
-### Data availability donuts and plot bars
+### Data availability, donuts and plot bars for Ne 500
 
-Species level yes/no. Donut.
+
+Species level yes/no table with percentages for Ne 500 indicator
 ```{r}
-df<- metadata %>%
-     filter(popsize_data != "data_for_species") %>% # we want to show only data for pops or insufficient
+df<- indicators_full %>%
      group_by(popsize_data) %>%
    summarise(n=n(),
              percentage = (n / nrow(metadata)) * 100)
    
 kable(df, digits = 0)
+
+```
+
+Donut only available data
+
+```{r}
+df<- indicators_full %>%
+     filter(popsize_data != "data_for_species") %>% # we want to show only data for pops or insufficient
+     group_by(popsize_data) %>%
+   summarise(n=n(),
+             percentage = (n / nrow(metadata)) * 100)
 
 # variable to make change the size of the hole
 hsize <- 2 # to change the size of the hole. larger=bigger 
@@ -3211,12 +3269,14 @@ p <- ggplot(df, aes(x = hsize, y = n, fill = popsize_data)) +
   xlim(c(0.2, hsize + 0.5)) + theme_void()
 p
 
-
 ```
 
-Species level yes/no. Bar plot
+
+
+
+Species level yes/no. Bar plot for Ne 500
 ```{r}
-metadata %>%
+indicators_full %>%
      filter(popsize_data != "data_for_species") %>% # we want to show only data for pops or insufficient
       ggplot(aes(x=country_assessment, fill = popsize_data)) +
       geom_bar(position = "fill", color="white") +
@@ -3231,8 +3291,7 @@ metadata %>%
 ```
 
 
-
-Population level, what kind?
+Population level, what kind? Table
 ```{r}
 # we first need the column numbers
 df<-ind1_data %>%
@@ -3243,6 +3302,9 @@ df<-ind1_data %>%
    
 kable(df, digits = 0)
 
+```
+Donut
+```{r}
 # variable to make change the size of the hole
 hsize <- 3 # to change the size of the hole. larger=bigger 
 df <- df %>% 
@@ -3258,6 +3320,57 @@ p <- ggplot(df, aes(x = hsize, y = n, fill = Ne_calculated_from)) +
   xlim(c(0.2, hsize + 0.5)) + theme_void()
 p
 
+```
+
+
+
+
+
+### Data availability for PM indicator
+
+Total taxa with NA in extinct populations:
+```{r}
+sum(is.na(indicators_full$n_extint_populations))
+```
+
+Percentage of missing data
+```{r}
+sum(is.na(indicators_full$n_extint_populations))/nrow(indicators_full)
+```
+
+Total taxa with data availability on extinct pops
+```{r}
+sum(!is.na(indicators_full$n_extint_populations))
+```
+
+Percentage of taxa with data availability on extinct pops (which also includes NA for extant, see above)
+```{r}
+sum(!is.na(indicators_full$n_extint_populations))/nrow(indicators_full)
+```
+
+
+### Data availability for at least one indicator
+
+Data availability for at least one indicator. Including multiassesments
+```{r}
+# number
+x<- indicators_full %>%
+     filter(popsize_data=="yes" | !is.na(n_extint_populations))
+nrow(x)
+
+# percentage
+nrow(x) / nrow(indicators_full)
+```
+
+Data availability for at least one indicator. Keeping only one of the multiassesments
+```{r}
+# number
+x<- indicators_averaged_one %>%
+     filter(popsize_data=="yes" | !is.na(n_extint_populations))
+nrow(x)
+
+# percentage
+nrow(x) / nrow(indicators_averaged_one)
 ```
 
 
