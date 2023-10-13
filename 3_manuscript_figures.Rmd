@@ -1727,7 +1727,7 @@ Run model:
 
 ```{r, }
 # run model
-msupB3 <- glmmTMB(indicator1 ~ n_extant_populations + defined_populations_simplified +        n_extant_populations*defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = ind2_single_methods)
+msupB3 <- glmmTMB(indicator1 ~ n_extant_populations + defined_populations_simplified +        n_extant_populations*defined_populations_simplified + (1|country_assessment), family = "ordbeta", data = ind1_single_methods)
 ```
 
 Summary:
