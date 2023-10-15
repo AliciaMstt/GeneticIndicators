@@ -228,11 +228,11 @@ indicator1$country_assessment<-as.factor(indicator1$country_assessment)
 levels(metadata$country_assessment)
 
 # change
-levels(metadata$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US")
-levels(indicators_full$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US")
-levels(ind1_data$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US")
-levels(ind2_data$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US")
-levels(indicator1$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US")
+levels(metadata$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US")
+levels(indicators_full$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US")
+levels(ind1_data$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US")
+levels(ind2_data$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US")
+levels(indicator1$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US")
 
 
 ```
@@ -509,7 +509,7 @@ Countries have population size data (Nc or Ne) regardless of the taxonomic group
 df<-CreateAllFacet(metadata, "country_assessment")
 
 # order with "all" as last
-df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US", "all"))
+df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US", "all"))
 
 # Plot
 ggplot(df, aes(x=taxonomic_group, fill=popsize_data)) + 
@@ -543,7 +543,11 @@ ggplot(metadata, aes(x=taxonomic_group, fill=popsize_data)) +
 
 Species level yes/no table with percentages
 ```{r}
-df<- metadata %>%
+#total n
+nrow(indicators_full)
+
+# table
+df<- indicators_full %>%
      group_by(popsize_data) %>%
    summarise(n=n(),
              percentage = (n / nrow(metadata)) * 100)
@@ -634,7 +638,7 @@ p4<-ind1_data %>%
   mutate(Ne_calculated_from = replace_na(Ne_calculated_from, "NA")) %>%
   ggplot(aes(x=country_assessment, fill=Ne_calculated_from))+
   geom_bar(position = "fill", color="white") +
-  scale_fill_manual(labels=c("genetic data", "NcPoint ratio", "NcRange ratio", "NA"),
+  scale_fill_manual(labels=c("genetic data", "Nc ratio (point)", "Nc ratio (range)", "missing data"),
                       breaks=c("genetic data", "NcPoint ratio", "NcRange ratio", "NA"),
                       values=c("darkgreen", "#0072B2", "#E69F00", "grey80")) +
   xlab("") +
@@ -780,12 +784,12 @@ p5
 ```
 
 
-### Supplementary Figure: Missing data in extinct populations by country
+### Supplementary Figure: Missing data in extinct populations by country and method and by taxonomic group
 
 Missing data in number of extinct populations by method to define populations:
 
 ```{r}
-indicators_full %>%
+pa<-indicators_full %>%
   ggplot(aes(x=defined_populations_nicenames, fill=is.na(n_extint_populations)))+
   geom_bar() +
   coord_flip()+ 
@@ -795,9 +799,28 @@ indicators_full %>%
   xlab("") + ylab("Number of taxa") +
   facet_wrap(country_assessment ~., nrow = 3, scales="free_x") +
   theme_light() +
-  theme(panel.border = element_blank(), legend.position="top")
-  
+  theme(panel.border = element_blank(), legend.position="top") + ggtitle("a)")
+ pa 
 ```
+
+Missing data in number of extinct populations by method to define populations:
+
+```{r}
+pb<-indicators_full %>%
+  ggplot(aes(x=taxonomic_group, fill=is.na(n_extint_populations)))+
+  geom_bar() +
+  coord_flip()+ 
+  scale_fill_manual(labels=c("number of populations known", "missing data"),
+                    values=c("#2ca02c", "#ff7f0e")) + 
+  labs(fill="Extinct populations") +
+  xlab("") + ylab("Number of taxa") +
+  facet_wrap(country_assessment ~., nrow = 3, scales="free_x") +
+  theme_light() +
+  theme(panel.border = element_blank(), legend.position="none") + ggtitle("b)")
+pb  
+```
+
+
 
 ## Main Figure: Taxa by country and data availability to estimate Ne indciator (origion of data to estimate Ne) and PM indicator (missing data on pop extinction):
 
@@ -905,7 +928,7 @@ p1
 df<-CreateAllFacet(indicators_averaged_one, "country_assessment")
 
 # order with "all" as last
-df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US", "all"))
+df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US", "all"))
 
 ## plot
 df  %>% 
@@ -969,7 +992,7 @@ Plot Indicator 2 by country and type of range. We remove NA and unknown for bett
 df<-CreateAllFacet(indicators_averaged_one, "country_assessment")
 
 # order with "all" as last
-df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "S. Africa", "Sweden", "US", "all"))
+df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US", "all"))
 
 ## plot
 df  %>% 
@@ -1011,7 +1034,7 @@ indicators_full %>%
   mutate(country_assessment = factor(country_assessment, 
                                      levels=c("Colombia", "Australia", "Belgium",
                                                "Mexico", "France", "US", 
-                                               "S. Africa", "Japan", "Sweden"))) %>%
+                                               "South Africa", "Japan", "Sweden"))) %>%
   ggplot(aes(x=defined_populations_nicenames, y=n_extant_populations, 
              fill=defined_populations_nicenames, color=defined_populations_nicenames)) +
           geom_boxplot() +
@@ -2221,8 +2244,8 @@ indicators_averaged_one %>%
 ### Main Figure: Single plot 2 pannels IUCN redlist and indicator range values
 
 ```{r}
-plot_grid(p1,
-          p2,
+plot_grid(p2,
+          p1,
           ncol=1, align = "v", labels=c("a)", "b)"))  
 ```
 
@@ -3346,6 +3369,8 @@ sum(!is.na(indicators_full$n_extint_populations))
 Percentage of taxa with data availability on extinct pops (which also includes NA for extant, see above)
 ```{r}
 sum(!is.na(indicators_full$n_extint_populations))/nrow(indicators_full)
+
+nrow(indicators_full)
 ```
 
 
