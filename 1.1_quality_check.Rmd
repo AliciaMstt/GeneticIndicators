@@ -1,9 +1,9 @@
 ---
 title: "Data exploration and cleaning"
 output:
-  word_document: default
   html_document:
     df_print: paged
+  word_document: default
   pdf_document: default
 ---
 
@@ -26,7 +26,7 @@ library(ggplot2)
 
 Get Kobo raw output data:
 ```{r}
-kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-04-30-07-43-42.csv", sep=";", header=TRUE) %>%
+kobo_output<-read.csv(file="International_Genetic_Indicator_testing_V_4.0_-_latest_version_-_False_-_2023-11-02-08-23-26.csv", sep=";", header=TRUE) %>%
 
 ## add  taxon column
 mutate(taxon=(utile.tools::paste(genus, species, subspecies_variety, na.rm=TRUE))) %>%
