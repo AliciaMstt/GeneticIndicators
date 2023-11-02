@@ -499,6 +499,30 @@ plot_grid(p1 + ggtitle(""),
 
 ## Population size data (Has Nc or Ne? what type of Nc?)
 
+Transform NAs to insuff_data_species, since effectively they are the same:
+
+```{r}
+# check NAs
+summary(as.factor(metadata$popsize_data))
+
+
+# Replace NA to insuff_data_species
+metadata <-metadata %>% 
+           mutate(popsize_data=replace_na(popsize_data, "insuff_data_species"))
+
+# check
+summary(as.factor(metadata$popsize_data))
+```
+
+Re-order  popsize_data to have inssuficient data at the end in the plots
+```{r}
+metadata$popsize_data<-factor(metadata$popsize_data, 
+                              levels= c("insuff_data_species", "data_for_species","yes"))
+
+```
+
+
+
 ### Supplementary Figure: Population size data availability by country
 
 Countries have population size data (Nc or Ne) regardless of the taxonomic group. The last panel includes the entire dataset:
@@ -513,12 +537,13 @@ df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "Franc
 
 # Plot
 ggplot(df, aes(x=taxonomic_group, fill=popsize_data)) + 
-  geom_bar(stat = "count") +
+  geom_bar(stat = "count", color="white") +
   coord_flip() +
   facet_wrap(~facet, ncol = 5, scales="free_x") +
   scale_fill_manual(values=c("#2ca02c", "#1f77b4", "grey80"),
                     breaks=c("yes", "data_for_species", "insuff_data_species"),
-                    labels=c("Population level", "Species or subspecies level", "Insufficient data")) +  labs(fill="Population size data availability",
+                    labels=c("Population level", "Species or subspecies level", "Insufficient data")) +  
+  labs(fill="Population size data availability",
        x="",
        y="Number of taxa (including records of taxa assessed more than once)") +
   theme_light() +
@@ -526,19 +551,36 @@ ggplot(df, aes(x=taxonomic_group, fill=popsize_data)) +
 
 ```
 
-Population size data availability in the entire dataset:
+Population size data availability in the entire dataset, by taxon group:
 ```{r}
 ggplot(metadata, aes(x=taxonomic_group, fill=popsize_data)) + 
-  geom_bar(stat = "count") +
-  coord_flip() +
-  scale_fill_manual(values=c("#1f77b4", "grey80", "#2ca02c"),
-                    breaks=c(levels(as.factor(metadata$popsize_data))),
-                                        labels=c("Species level or subspecies level", "Insufficient data", "Population level")) +
-  labs(fill="Population size data availability",
-       x="",
-       y="Number of taxa (including records of taxa assessed more than once)") +
-  theme_light() +
-  theme(legend.position="right")
+                geom_bar(stat = "count", color="white") +
+                coord_flip() +
+  scale_fill_manual(values=c("#2ca02c", "#1f77b4", "grey80"),
+                    breaks=c("yes", "data_for_species", "insuff_data_species"),
+                    labels=c("Population level", "Species or subspecies level", "Insufficient data")) +  
+                labs(fill="Population size data availability",
+                     x="",
+                     y="Number of taxa") +
+                theme_light() +
+                theme(legend.position="right")
+
+```
+
+Population size data availability in the entire dataset, by taxon country:
+```{r}
+p.popsize<-ggplot(metadata, aes(x=country_assessment, fill=popsize_data)) + 
+                geom_bar(stat = "count", color="white") +
+                coord_flip() +
+   scale_fill_manual(values=c("#2ca02c", "#1f77b4", "grey80"),
+                    breaks=c("yes", "data_for_species", "insuff_data_species"),
+                    labels=c("Population level", "Species or subspecies level", "Insufficient data")) +  
+   labs(fill="Population size data availability",
+                     x="",
+                     y="Number of taxa") +
+                theme_light() +
+                theme(legend.position="right")
+p.popsize
 ```
 
 Species level yes/no table with percentages
@@ -564,7 +606,7 @@ p1<- metadata %>%
   filter(!is.na(ne_pops_exists)) %>% 
   filter(ne_pops_exists!="other_genetic_info") %>%
     ggplot(aes(x=country_assessment, fill=ne_pops_exists)) + 
-  geom_bar() +
+  geom_bar(color="white") +
 scale_fill_manual(labels=c("no", "yes"),
                       breaks=c("no_genetic_data", "ne_available"),
                       values=c("#ff7f0e", "#2ca02c")) +
@@ -583,7 +625,7 @@ Nc data available by taxa? (species level)
 p2<-metadata %>%
   filter(!is.na(nc_pops_exists)) %>%
     ggplot(aes(x=country_assessment, fill=nc_pops_exists)) +
-    geom_bar() +
+    geom_bar(color="white") +
     scale_fill_manual(values=c("#ff7f0e", "#2ca02c")) + 
     labs(fill="Nc available") +
     xlab("") +
@@ -599,7 +641,7 @@ What kind of Nc data? (dodge bars) This is at population level.
 ind1_data %>%
   filter(!is.na(NcType)) %>%
   ggplot(aes(x=country_assessment, fill=NcType))+
-  geom_bar(position = "dodge") +
+  geom_bar(position = "dodge", color="white") +
   scale_fill_manual(labels=c("Point", "Range \nor qualitative", "Unknown"),
                       breaks=c("Nc_point", "Nc_range", "unknown"),
                       values=c("#0072B2", "#E69F00", "grey80")) +
@@ -634,6 +676,9 @@ p3
 Data availability at the population level cosidering Ne and Nc combined. This plot shows where data came from for the Ne value used for estimating the indicator.
 
 ```{r}
+
+
+
 p4<-ind1_data %>%
   mutate(Ne_calculated_from = replace_na(Ne_calculated_from, "NA")) %>%
   ggplot(aes(x=country_assessment, fill=Ne_calculated_from))+
@@ -831,11 +876,16 @@ Distribution of Nc, Ne and types of Ne in a single figure with 3 panels, using c
 # plot
 
 plot_grid(p_heat + theme(legend.position = "right", legend.justification = c(0,.5)), # legend.justification aligns legends
-          p5 + coord_flip() + 
+         
+           p5 + coord_flip() + 
             scale_x_discrete(limits=rev) +
-            theme(legend.position = "right", legend.justification = c(0,.5)), 
+            theme(legend.position = "right", legend.justification = c(0,.5)),
+          
+          p.popsize + theme(legend.position = "right", legend.justification = c(0,.5)),
+          
           p4  + theme(legend.position = "right", legend.justification = c(0,.5)), 
-          ncol = 1, labels = c("a)", "b)", "c)"), align = "v",
+          
+          ncol = 1, labels = c("a)", "b)", "c)", "d)"), align = "v",
           rel_heights = c(1.3, 1, 1))
 
 
