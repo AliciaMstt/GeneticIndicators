@@ -1,10 +1,10 @@
 transform_to_Ne<-function(ind1_data, ratio=0.1){
 ## This functions gets the Nc data from point or range estimates and transforms it to Ne 
-## multiplying for a ratio Nc:Ne (defaults to 0.1 if none provided)
+## multiplying for a ratio Ne:Ne (defaults to 0.1 if none provided)
  
 ## Argumetns
 ## ind1_data as produced by get_indicator1_data()
-## desired Nc:Ne ratio. Should range 0-1. Defaults to 0.1
+## desired Ne:Nc ratio. Should range 0-1. Defaults to 0.1
   
 ## output
 ## Original ind1_data df with two more columns:
