@@ -1,4 +1,6 @@
 estimate_indicator1<- function(ind1_data){
+### This functions estimates the Ne 500 indicator, ie for each assessment of a taxon it calculates the proportion of populations within it which are above Ne 500
+  
 ## Arguments
 ## ind1_data: raw data as produced by get_indicator1_data() and after running transform_to_Ne()
   
