@@ -648,7 +648,7 @@ p1<- metadata %>%
   filter(ne_pops_exists!="other_genetic_info") %>%
     ggplot(aes(x=country_assessment, fill=ne_pops_exists)) + 
   geom_bar(color="white") +
-scale_fill_manual(labels=c("no", "yes"),
+scale_fill_manual(labels=c("No", "Yes"),
                       breaks=c("no_genetic_data", "ne_available"),
                       values=c("#ff7f0e", "#2ca02c")) +
 xlab("") +
@@ -667,7 +667,9 @@ p2<-metadata %>%
   filter(!is.na(nc_pops_exists)) %>%
     ggplot(aes(x=country_assessment, fill=nc_pops_exists)) +
     geom_bar(color="white") +
-    scale_fill_manual(values=c("#ff7f0e", "#2ca02c")) + 
+scale_fill_manual(labels=c("No", "Yes"),
+                      breaks=c("no", "yes"),
+                      values=c("#ff7f0e", "#2ca02c")) +
     labs(fill="Nc available") +
     xlab("") +
     ylab("Number of taxa") +
