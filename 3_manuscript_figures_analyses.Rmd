@@ -268,11 +268,11 @@ indicator1$country_assessment<-as.factor(indicator1$country_assessment)
 levels(metadata$country_assessment)
 
 # change
-levels(metadata$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US")
-levels(indicators_full$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US")
-levels(ind1_data$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US")
-levels(ind2_data$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US")
-levels(indicator1$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US")
+levels(metadata$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "USA")
+levels(indicators_full$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "USA")
+levels(ind1_data$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "USA")
+levels(ind2_data$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "USA")
+levels(indicator1$country_assessment)<-c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "USA")
 
 
 ```
@@ -573,7 +573,7 @@ Countries have population size data (Nc or Ne) regardless of the taxonomic group
 df<-CreateAllFacet(metadata, "country_assessment")
 
 # order with "all" as last
-df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US", "all"))
+df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "USA", "all"))
 
 # Plot
 ggplot(df, aes(x=taxonomic_group, fill=popsize_data)) + 
@@ -729,7 +729,7 @@ p4<-ind1_data %>%
   geom_bar(position = "fill", color="white") +
   scale_fill_manual(labels=c("Genetic data", "Nc ratio (point)", "Nc ratio (range or qualitative)", "Missing data"),
                       breaks=c("genetic data", "NcPoint ratio", "NcRange ratio", "NA"),
-                      values=c("darkgreen", "#0072B2", "#E69F00", "grey80")) +
+                      values=c("darkgreen", "#3388CC", "#E69F00", "grey80")) +
   xlab("") +
   scale_x_discrete(limits=rev) + 
   ylab("Percentage of populations") +
@@ -863,11 +863,12 @@ So out of the `r nrow(indicators_full)`, we have **`r sum(is.na(indicators_full$
 ```{r}
 
 p5<-indicators_full %>%
-  ggplot(aes(x=country_assessment, fill=is.na(n_extint_populations))) + 
+  ggplot(aes(x=country_assessment, fill=!is.na(n_extint_populations))) + # Notice this shows which taxa DO NOT have NA, ie exctint pops are KNOWN
   geom_bar(color="white") +
-  scale_fill_manual(labels=c("Unknown", "Known"),
-                    values=c("#ff7f0e", "#2ca02c")) + 
-  labs(fill="Number of extinct populations") +
+  scale_fill_manual(labels=c("Number of populations known", "Number of populations unknown"),
+                     breaks =c("TRUE", "FALSE"),
+                     values=c("#2ca02c", "#ff7f0e")) + 
+  labs(fill="Data availability on extinct \npopulations") +
   xlab("") + ylab("Number of taxa") +
   theme_light() +
   theme(text = element_text(size = 13), legend.position = "right", panel.border = element_blank())
@@ -881,12 +882,13 @@ Missing data in number of extinct populations by method to define populations:
 
 ```{r, out.width="850px", out.height="650px"}
 pa<-indicators_full %>%
-  ggplot(aes(x=defined_populations_nicenames, fill=is.na(n_extint_populations))) +
+  ggplot(aes(x=defined_populations_nicenames, fill=!is.na(n_extint_populations))) +
   geom_bar(color="white") +
   coord_flip()+ 
-  scale_fill_manual(labels=c("Unknown", "Known"),
-                    values=c("#ff7f0e", "#2ca02c")) + 
-  labs(fill="Number of extinct populations") +
+  scale_fill_manual(labels=c("Number of populations \nknown", "Number of populations \nunknown"),
+                     breaks =c("TRUE", "FALSE"),
+                     values=c("#2ca02c", "#ff7f0e")) + 
+  labs(fill="Data availability on \nextinct populations") +
   xlab("") + ylab("Number of taxa") +
   facet_wrap(country_assessment ~., nrow = 3, scales="free_x") +
   theme_light() +
@@ -901,9 +903,10 @@ pb<-indicators_full %>%
   ggplot(aes(x=taxonomic_group, fill=!is.na(n_extint_populations)))+
   geom_bar(color="white") +
   coord_flip()+ 
-  scale_fill_manual(labels=c("Unknown", "Known"),
-                    values=c("#ff7f0e", "#2ca02c")) + 
-  labs(fill="Number of extinct populations") +
+  scale_fill_manual(labels=c("Number of populations \nknown", "Number of populations \nunknown"),
+                     breaks =c("TRUE", "FALSE"),
+                     values=c("#2ca02c", "#ff7f0e")) + 
+  labs(fill="Data availability on \nextinct populations") +
   xlab("") + ylab("Number of taxa") +
   facet_wrap(country_assessment ~., nrow = 3, scales="free_x") +
   theme_light() +
@@ -1024,7 +1027,7 @@ p1
 df<-CreateAllFacet(indicators_averaged_one, "country_assessment")
 
 # order with "all" as last
-df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US", "all"))
+df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "USA", "all"))
 
 ## plot
 df  %>% 
@@ -1088,7 +1091,7 @@ Plot Indicator 2 by country and type of range. We remove NA and unknown for bett
 df<-CreateAllFacet(indicators_averaged_one, "country_assessment")
 
 # order with "all" as last
-df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "US", "all"))
+df$facet <- factor(df$facet, levels=c("Australia", "Belgium", "Colombia", "France", "Japan", "Mexico", "South Africa", "Sweden", "USA", "all"))
 
 ## plot
 df  %>% 
@@ -1129,7 +1132,7 @@ indicators_full %>%
   # order countries vertically by similar number of pops
   mutate(country_assessment = factor(country_assessment, 
                                      levels=c("Colombia", "Australia", "Belgium",
-                                               "Mexico", "France", "US", 
+                                               "Mexico", "France", "USA", 
                                                "South Africa", "Japan", "Sweden"))) %>%
   ggplot(aes(x=defined_populations_nicenames, y=n_extant_populations, 
              fill=defined_populations_nicenames, color=defined_populations_nicenames)) +
@@ -2210,7 +2213,7 @@ indicators_averaged_one$regional_redlist<-factor(indicators_averaged_one$regiona
 # plot
 indicators_averaged_one %>% 
   # filter US and Mx
-  filter(country_assessment %!in% c("Mexico", "US", "Australia")) %>%
+  filter(country_assessment %!in% c("Mexico", "USA", "Australia")) %>%
   filter(!is.na(regional_redlist)) %>%
   
   # plot
@@ -2344,149 +2347,6 @@ plot_grid(p2,
           p1,
           ncol=1, align = "v", labels=c("a)", "b)"))  
 ```
-
-### Comparing the Ne indicator against a mock IUCN assessment adding up all populations
-
-Generate mock Ne data for the entire species, by adding up the Ne of each population within each species.
-
-```{r}
-# Sum the Ne of each population within spp
-x <- ind1_data %>% group_by(X_uuid, taxon, country_assessment, multiassessment) %>% # this groups by individual species, considering mutliassessed species
-              # sum Ne by individual species, keeping multiassesments separate
-              summarise(Ne_mock_species = sum(Ne_combined, na.rm = TRUE))   %>%
-
-              # average for multiassessed records in a single species
-              group_by(country_assessment, multiassessment, taxon) %>% 
-              summarise(Ne_mock_species=mean(Ne_mock_species, na.rm=TRUE))  
-
-# Add mto indicator data
-indicators_averaged_one<- left_join(indicators_averaged_one, x) %>%
-
-  # add a below above category
-  mutate(Ne_mock_category = ifelse(Ne_mock_species > 500, 'Above 500', 'Below 500'))
-
-
-
-indicators_averaged_one %>% select(taxon, country_assessment, Ne_mock_species, Ne_mock_category) %>% head()
-              
-```
-
-Plot the Ne indicator as in the violion plots above, but coloring the points showing which species would be below or above Ne 500 if considering Ne at the species level.
-
-```{r}
-# add sampling size
-sample_size <- indicators_averaged_one %>%
-               filter(!is.na(Ne_mock_species)) %>% 
-               filter(!is.na(global_IUCN)) %>% 
-               filter(Ne_mock_species<1000000) %>% 
-               group_by(global_IUCN) %>% summarize(num=n())
-
-# new df 
-df<- indicators_averaged_one %>% 
-     filter(!is.na(Ne_mock_species)) %>% 
-     filter(!is.na(global_IUCN)) %>% 
-     filter(Ne_mock_species<1000000) %>% 
-        # add sampling size 
-        left_join(sample_size) %>%
-        mutate(myaxis = paste0(global_IUCN, " (n= ", num, ")"))
-
-
-# change order of levels so that they are in the desired order
-df$myaxis<-factor(df$myaxis, 
-                  #grep is used below to get the sample size, which may change depending on the data
-                  levels=c(grep("cr", unique(df$myaxis), value = TRUE),
-                          grep("en", unique(df$myaxis), value = TRUE),
-                          grep("vu", unique(df$myaxis), value = TRUE),
-                          grep("nt", unique(df$myaxis), value = TRUE),
-                          grep("lc", unique(df$myaxis), value = TRUE),
-                          grep("dd", unique(df$myaxis), value = TRUE),
-                          grep("not_assessed", unique(df$myaxis), value = TRUE),
-                          grep("unknown", unique(df$myaxis), value = TRUE)))
-
-df$global_IUCN<-factor(df$global_IUCN, levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
-
-      
-# Plot the Ne indicator as above, but with points colored by Ne_mock above or below 500
-
-p1<- df %>%
-    ggplot(aes(x=myaxis, y=indicator1_mean , fill=global_IUCN)) +
-      geom_violin(width=1, linewidth = 0)  +
-      xlab("") + ylab("Proportion of populations within species with Ne>500") +
-      coord_flip() +
-      scale_fill_manual(values= IUCNcolors, # iucn color codes
-                        breaks=c(levels(df$global_IUCN)), 
-                        guide = "none") + # hide legend
-      scale_x_discrete(limits=rev) +
-   
-     # add new scale color for points
-     new_scale_color() +
-     geom_jitter(size=1, width = 0.1, aes(color = Ne_mock_category)) +
-     scale_color_manual(values=c("black", "#F0A6CA")) +
-     labs(color= "Species total Ne") +
-  
-  # theme stuff
-      theme_light() +
-      theme(panel.border = element_blank(), legend.position = "bottom",
-            plot.title = element_text(hjust = 0.5), # center title
-            text= element_text(size=15))
-
-p1
-
-
-```
-Plot bar with numbers
-
-```{r}
-p2<-indicators_averaged_one %>%
-  filter(!is.na(Ne_mock_category)) %>% 
-  ggplot(aes(x=global_IUCN, fill=Ne_mock_category))+
-  geom_bar(position = "dodge") +
-  scale_fill_manual(values=c("black", "#F0A6CA")) +
-                  labs(fill= "Species total Ne") +
-  coord_flip() + xlab("") +
-  theme_light() +
-  scale_x_discrete(limits=rev) +
-  theme(text = element_text(size = 13), legend.position = "right", panel.border = element_blank())
-p2
-```
-
-
-Summnary table by Red List category
-
-```{r}
-x  <- indicators_averaged_one %>%
-               filter(!is.na(indicator1_mean)) %>% 
-               group_by(global_IUCN, Ne_mock_category) %>% 
-               summarize(n=n(),
-                         mean=mean(indicator1_mean),
-                         median=median(indicator1_mean),
-                         per.0=sum(indicator1_mean==0) / n *100,
-                         per.below.25=sum(indicator1_mean<0.25) / n *100,
-                         per.below.90=sum(indicator1_mean<0.90) / n *100,
-                         per.above.75=sum(indicator1_mean>0.75)/ n *100,
-                         per1=sum(indicator1_mean==1) / n *100)
-
-kable(x, digits = 2)
-```
-
-Summary table by Ne_mock_category
-```{r}
-x  <- indicators_averaged_one %>%
-               filter(!is.na(indicator1_mean)) %>% 
-               group_by(Ne_mock_category) %>% 
-               summarize(n=n(),
-                         mean=mean(indicator1_mean),
-                         median=median(indicator1_mean),
-                         per.0=sum(indicator1_mean==0) / n *100,
-                         per.below.25=sum(indicator1_mean<0.25) / n *100,
-                         per.below.90=sum(indicator1_mean<0.90) / n *100,
-                         per.above.75=sum(indicator1_mean>0.75)/ n *100,
-                         per1=sum(indicator1_mean==1) / n *100)
-
-kable(x, digits = 2)
-```
-How many Above 500 have an Ne value below 1?
-
 
 ### Supplementary figure: 2 panels IUCN violin plots + mock Ne, and bar plot
 ```{r}
