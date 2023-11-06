@@ -97,19 +97,20 @@ The following R functions take as input a data frame with the data downloaded fr
 
 Functions:
  
-* [`get_indicator1_data()`](get_indicator1_data.R): extracts and formats the  data needed to estimate the Ne 500 indicator (the proportion of populations within species with an effective population size Ne greater than 500) . **In the kobo output, population data is in different columns, this function transforms it so that population data is in rows.** This is needed for downstream analyses. Notice that if the [Population information template](https://github.com/AliciaMstt/GeneticIndicators#population-information-template) was used (species with more than 25 populations) you will need to run an additional step before analysing the data, see below (Getting the population data if the template was used).
+* [`get_indicator1_data()`](get_indicator1_data.R): extracts and formats the  data needed to estimate the Ne 500 indicator (the proportion of populations within species with an effective population size Ne greater than 500) . **In the kobo output, population data is in different columns, this function transforms it so that population data is in rows.** This is needed for downstream analyses. Notice that if the [Population information template](https://github.com/AliciaMstt/GeneticIndicators#population-information-template) was used (species with more than 25 populations) you will need to run an additional step before analysing the data, see below (Getting the population data if the template was used). In the output, each population is a row, and there are as many rows per taxon as there are populations within it.
 
-* [`get_indicator2_data()`](get_indicator2_data.R): outputs a data frame with the data needed to estimate the PM indicator (the proportion of maintaiened populations within species), so that each population is a row.
+* [`get_indicator2_data()`](get_indicator2_data.R): outputs a data frame with the data needed to estimate the PM indicator (the proportion of maintaiened populations within species). Each row is a taxon.
 
-* [`get_indicator3_data()`](get_indicator3_data.R): outputs a data frame with the data needed to estimate the genetic monitoring indicator (number of species in which genetic diversity has been or is being monitored using DNA-based methods).
+* [`get_indicator3_data()`](get_indicator3_data.R): outputs a data frame with the data needed to estimate the genetic monitoring indicator (number of species in which genetic diversity has been or is being monitored using DNA-based methods). Each row is a taxon.
 
-* [`get_metadata()`](get_metadata.R): extracts the metadata for taxa and indicators, in some cases creating new useful variables, like taxon name (joining Genus, species, etc) and if the taxon was assessed only a single time or multiple times.
+* [`get_metadata()`](get_metadata.R): extracts the metadata for taxa and indicators, in some cases creating new useful variables, like taxon name (joining Genus, species, etc) and if the taxon was assessed only a single time or multiple times. Each row is a taxon.
 
 Arguments:
 
 `kobo_output` = a data frame object read into R from the `.csv` file 
 resulting from exporting the Kobotoolbox data as explained above.
 
+See examples of the output data frames in the "Estimating indicator" sections below. And see the notebook of the notebook on [quality check](https://aliciamstt.github.io/GeneticIndicators/1_quality_check.html) and [cleaning for the multinational assessment](https://aliciamstt.github.io/GeneticIndicators/2_cleaning.html), and [section 4](https://aliciamstt.github.io/GeneticIndicators/#4-pipeline-used-in-the-multinational-assessment) of this README for detailed examples of how these functions were used as part of a pipeline.
 
 
 ### 3.2. Getting the population data if the template was used
@@ -140,7 +141,7 @@ The output from `process\_attached\_files()` is a data frame that can be joined 
 
 ### 3.3. Estimate the Ne 500 indicator
 
-To estimate the Ne 500 indicator you need the data in the format provided by `get_indicator2_data()`, i.e. **each population is a row** and the population size data (either **Ne** or **Nc**) is in different columns. Example selecting the most relevant columns:
+To estimate the Ne 500 indicator you need the data in the format provided by `get_indicator1_data()`, i.e. **each population is a row** and the population size data (either **Ne** or **Nc**) is provided in different columns. Example selecting the most relevant columns:
 
 |taxon          |population |Name            |    Ne| NeLower| NeUpper|NeYear |GeneticMarkers             |NcType   |NcMethod        |NcRange          |
 |:--------------|:----------|:---------------|-----:|-------:|-------:|:------|:--------------------------|:--------|:---------------|:----------------|
@@ -156,7 +157,6 @@ To estimate the Ne 500 indicator you need the data in the format provided by `ge
 
 If **Nc** was provided, it is necessary to **transform it to Ne** by multiplying it for a ratio. This is done with the function:
 
- 
  
  * [`transform_to_Ne()`](transform_to_Ne.R): This functions gets the Nc data from point or range estimates and transforms it to Ne 
  multiplying for a ratio Ne:Nc (defaults to 0.1 if none provided)
@@ -211,16 +211,100 @@ Output selecting the most relevant columns:
 |065a53ba-051b-440c-a189-9a3c47d02571 |Caracal caracal         |South Africa       |      1|              1|               0|          0|
    
 
+See the notebook of the [analyses and figures for the multinational assessment](https://aliciamstt.github.io/GeneticIndicators/3_manuscript_figures_analyses.html#estimate-indicators) and [section 4](https://aliciamstt.github.io/GeneticIndicators/#4-pipeline-used-in-the-multinational-assessment) of this README for detailed examples of how these functions were used as part of a pipeline.
+
+
 ### 3.4. Estimate the PM indicator
 
-UNDER CONSTRUCTION
+To estimate the PM indicator you need the data in the format provided by `get_indicator2_data()`, i.e. **each row is a taxon** of a single assessment, and the number of extant and extinct populations are provided. Example selecting the most relevant columns:
 
-estimate_indicator2() 
+
+|country\_assessment |taxon                    | n\_extant\_populations| n\_extint\_populations|
+|:------------------|:------------------------|--------------------:|--------------------:|
+|Sweden             |Alces alces              |                    3|                    0|
+|Sweden             |Siluris glanis           |                    6|                    6|
+|Sweden             |Dendrocopos leucotos     |                    5|                   12|
+|South Africa       |Encephalartos latrifrons |                    1|                    0|
+|South Africa       |Capensibufo rosei        |                    2|                    4|
+|France             |Galemys pyrenaicus       |                    3|                    0|
+|France             |Luscinia svecica         |                    2|                   NA|
+|France             |Taxus baccata            |                    1|                   NA|
+|France             |Angelica heterocarpa     |                    4|                   NA|
+
+
+
+To estimate the PM indicator (proportion of populations maintained within species) you only need to divide the number of currently existing populations (`n_extant_populations`) over the total number of populations, which sums the number of extant and extinct populations (`n_extint_populations`). Notice that the PM indicator can only be estimated if there is no missing data in the number of populations.
+
+Example:
+
+```
+ind2_data$indicator2<- ind2_data$n_extant_populations / (ind2_data$n_extant_populations + ind2_data$n_extint_populations)
+```
+
+Output selecting the most relevant columns:
+
+|country\_assessment |taxon                    | n\_extant\_populations| n\_extint\_populations| indicator2|
+|:------------------|:------------------------|--------------------:|--------------------:|----------:|
+|Sweden             |Alces alces              |                    3|                    0|       1.00|
+|Sweden             |Siluris glanis           |                    6|                    6|       0.50|
+|Sweden             |Dendrocopos leucotos     |                    5|                   12|       0.29|
+|South Africa       |Encephalartos latrifrons |                    1|                    0|       1.00|
+|South Africa       |Capensibufo rosei        |                    2|                    4|       0.33|
+|France             |Galemys pyrenaicus       |                    3|                    0|       1.00|
+|France             |Luscinia svecica         |                    2|                   NA|         NA|
+|France             |Taxus baccata            |                    1|                   NA|         NA|
+|France             |Angelica heterocarpa     |                    4|                   NA|         NA|
+
+See the notebook of the [analyses and figures for the multinational assessment](https://aliciamstt.github.io/GeneticIndicators/3_manuscript_figures_analyses.html#estimate-indicators) and [section 4](https://aliciamstt.github.io/GeneticIndicators/#4-pipeline-used-in-the-multinational-assessment) of this README for detailed examples of how these functions were used as part of a pipeline.
 
 ### 3.5. Estimate the genetic monitoring indicator 
 
-UNDER CONSTRUCTION
+The genetic monitoring indicator refers to the number (count) of taxa by country in which genetic monitoring is occurring. This is stored in the variable `temp_gen_monitoring` as a “yes/no” answer for each taxon.
 
+To estimate the genetic monitoring indicator you need the data in the format provided by `get_indicator3_data()`, i.e. **each row is a taxon** and the column `temp_gen_monitoring` is provided along with other variables that provide metadata.
+
+Example selecting the most relevant variables:
+
+|country\_assessment |taxon                    |multiassessment   |temp\_gen\_monitoring |gen\_studies |gen\_monitoring\_years |
+|:------------------|:------------------------|:-----------------|:-------------------|:-----------|:--------------------|
+|sweden             |Alces alces              |single\_assessment |yes                 |pop         |1839-2020            |
+|sweden             |Siluris glanis           |single\_assessment |yes                 |phylo\_pop   |1980-2018            |
+|sweden             |Dendrocopos leucotos     |single\_assessment |no                  |phylo\_pop   |NA                   |
+|south\_africa       |Encephalartos latrifrons |single\_assessment |no                  |pop         |NA                   |
+|south\_africa       |Capensibufo rosei        |single\_assessment |yes                 |phylo\_pop   |2008;2015            |
+|france             |Galemys pyrenaicus       |single\_assessment |yes                 |phylo\_pop   |2011-2013            |
+|france             |Luscinia svecica         |single\_assessment |no                  |phylo\_pop   |NA                   |
+|france             |Taxus baccata            |single\_assessment |no                  |phylo\_pop   |NA                   |
+|france             |Angelica heterocarpa     |single\_assessment |no                  |pop         |NA                   |
+
+To estimate the indicator, we only need to count how many "yes" are in `temp_gen_monitoring`, keeping only one of the records if the taxon was multiassessed. For example with `dplyr`:
+
+```
+ind3_data %>%
+                 # keep only one record if the taxon was assessed more than once within the country
+                 select(country_assessment, taxon, temp_gen_monitoring) %>%
+                 filter(!duplicated(.)) %>%
+
+                 # count "yes" in tem_gen_monitoring by country
+                 filter(temp_gen_monitoring=="yes") %>%
+                 group_by(country_assessment) %>%
+                 summarise(n_taxon_gen_monitoring= n()) 
+```
+
+The output is the number of taxa with genetic monitoring per country (or per any other variable used in `group_by`):
+
+|country\_assessment | n\_taxon\_gen\_monitoring|
+|:------------------|----------------------:|
+|australia          |                     10|
+|belgium            |                     10|
+|france             |                      7|
+|mexico             |                      7|
+|south\_africa       |                      5|
+|sweden             |                     20|
+|united\_states      |                      6|
+
+
+See the notebook of the [analyses and figures for the multinational assessment](https://aliciamstt.github.io/GeneticIndicators/3_manuscript_figures_analyses.html#estimate-indicators) and [section 4](https://aliciamstt.github.io/GeneticIndicators/#4-pipeline-used-in-the-multinational-assessment) of this README for detailed examples of how these functions were used as part of a pipeline.
 
 ### 3.6. Dependencies
 
@@ -233,9 +317,16 @@ Functions were developed and tested using:
 
 
 ## 4. Pipeline used in the multinational assessment 
-In the multinational evaluation of genetic diversity indicators (Mastretta-Yanes, da Silva et al. 2023) the raw kobo output form the form "International Genetic Indicator testing" was downloaded from R as described above.
+In the multinational evaluation of genetic diversity indicators (Mastretta-Yanes, da Silva et al. 2023) the raw kobo output form the form "International Genetic Indicator testing" was downloaded from R as described in section [2.3. Downloading kobo data](https://aliciamstt.github.io/GeneticIndicators/#23-downloading-kobo-data). 
 
-UNDER CONSTRUCTION
+Then, the functions described above were used as part of a pipeline with the following R Markdown notebooks:
+
+* [1\_quality_check](https://aliciamstt.github.io/GeneticIndicators/1_quality_check.html): looks for common sources of error and flags those records manual revision by the assessors who capture data from each country. The output is a file showing the records that need manual review or corrections, if any. Raw [.Rmd file here](./1_quality_check.Rmd).
+
+* [2\_cleaning](https://aliciamstt.github.io/GeneticIndicators/2_cleaning.html): corrects the errors detected by `1_quality_check.Rmd, based on the feed back from the people who collected the data. Corrections are done within this script to ensure reproducibility. The output is a clean kobo file that can be used for analyses. [.Rmd file here](./2_cleaning.Rmd).
+
+
+* [3\_manuscript\_figures\_analyses](https://aliciamstt.github.io/GeneticIndicators/3_manuscript_figures_analyses.html): This notebook estimates the indicators based on the raw clean data and perfomrs the main analyses and figures used in the manuscript of the multicountry paper. The input is the "clean kobo output" that was first cleaned by `2_cleaning.Rmd`. Besides the plots and statistics , the output is are the indicators data ready to be used to estimate the indicators (`ind[1-3]_data.csv`), a single file with the indicators already calculated (`indicators_full.csv`) and metadata.[.Rmd file here](./3_manuscript_figures_analyses.Rmd).
 
 ## References
 
