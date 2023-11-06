@@ -378,7 +378,7 @@ levels(indicators_full$defined_populations_nicenames)
 
 
 
-## Averaging multiassessments
+## Averaging multiassessments (alternative assessments)
 Some taxa were assessed twice or more times, for example to account for uncertainty on how to divide populations. This information is stored in variable `multiassessment` of the metadata (created by `get_metadata()`). An example of taxa with multiple assessments:
 
 ```{r}
@@ -390,7 +390,7 @@ filter(multiassessment=="multiassessment")  %>%
   
 ```
 
-Multiassessments allow to account for uncertainty in the number of populations or the size of them. We can examine how the indicators value species by species as done elsewhere in these analyses (see below "Values for indicator 1 and 2 for multiassessed species), but to examine global trends, some of the figures below use the average. **The averages are stored in a different column, labeled `indicator[1 or 2]_mean`.**
+Alternative assessments allow to account for uncertainty in the number of populations or the size of them. We can examine how the indicators value species by species as done elsewhere in these analyses (see below "Values for indicator 1 and 2 for multiassessed species), but to examine global trends, some of the figures below use the average. **The averages are stored in a different column, labeled `indicator[1 or 2]_mean`.**
 
 ```{r}
 indicators_averaged<-indicators_full %>%
@@ -742,7 +742,7 @@ p4
 
 ```
 
-### Supplementary Figure: Ne and Nc data availabiltiy by species
+### Supplementary Figure: Ne and Nc data availabiltiy by taxa
 ```{r}
 plot_grid(p1 + theme(legend.justification = c(0,.5)),  # legend.justification is used to aling legends
           p2 + theme(legend.justification = c(0,.5)),
@@ -2755,7 +2755,7 @@ plot_grid(p2, hist_p2,
           ncol=2, align = "v", labels=c("a)", "b)", "c)", "d)"))
 ```
 
-## Values of indicator 1 and indicator 2 for multiassessed species
+## Supplementary Figure: Values of indicator 1 and indicator 2 for multiassessed taxa (alternative assessments)
 
 ```{r}
 #subset only with taxa assessed multiple times:
@@ -2779,7 +2779,7 @@ p1<-only_multi %>%
   ylim(0, 1)+
   coord_flip() +
   theme_light() + 
-  theme(panel.border = element_blank(), legend.position="right", text= element_text(size=13))
+  theme(axis.text.y = element_text(face = "italic"),  panel.border = element_blank(), legend.position="right", text= element_text(size=13))
 p1
 
 ```
@@ -2800,14 +2800,14 @@ p2<-only_multi %>%
   labs(color="country") +
   coord_flip() +
   theme_light() + 
-  theme(panel.border = element_blank(), legend.position="right", text= element_text(size=13))
+  theme(axis.text.y = element_text(face = "italic"), panel.border = element_blank(), legend.position="right", text= element_text(size=13))
 p2
 ```
 
 Plot together:
 ```{r}
 plot_grid(p2, p1,  
-          rel_heights = c(1.3, 0.9),
+          rel_heights = c(1.4, 0.8),
           ncol=1, labels=c("a)", "b)")) 
 ```
 
