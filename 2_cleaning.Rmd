@@ -8,7 +8,7 @@ output:
   pdf_document: default
 ---
 
-This notebook corrects the errors detected by [1.1_quality_check.Rmd](1.1_quality_check.Rmd), based on the feed back from the people who collected the data. Corrections are done within this script to ensure reproducibility.
+This notebook corrects the errors detected by [1_quality_check.Rmd](1_quality_check.Rmd), based on the feed back from the people who collected the data. Corrections are done within this script to ensure reproducibility.
 
 The output is a clean kobo file that can be used for analyses.
 

@@ -6,7 +6,7 @@ output:
     toc: true
 ---
 
-This notebook estimates the indicators based on the raw data and perfomrs the main analyses and figures used in the manuscript of the multicountry paper. The input is the "clean kobo output" that was first cleaned by `1.2_cleaning`.
+This notebook estimates the indicators based on the raw clean data and perfomrs the main analyses and figures used in the manuscript of the multicountry paper. The input is the "clean kobo output" that was first cleaned by `2_cleaning.Rmd`. Besides the plots and statistics shown below, the output is are the indicators data ready to be used to estimate the indicators (`ind[1-3]_data.csv`), a single file with the indicators already calculated (`indicators_full.csv`) and metadata.
 
 ## Packages and functions
 
@@ -132,11 +132,11 @@ ind1_data<-rbind(ind1_data, ind1_data_from_templates)
 
 ## Estimate indicators
 
-### Indicator 1 (proportion of populations with Ne >500):
+### Indicator 1 or Ne 500 indicator (proportion of populations with Ne >500):
 
 Show most relevant columns of indicator 1 data
 ```{r}
-head(ind1_data[,c(1:3, 12:14)])
+ind1_data %>% select(country_assessment, taxon, population, Name, Ne, NeLower, NeUpper, NeYear, GeneticMarkers, NcType, NcMethod, NcRange)
 
 ```
 
@@ -152,6 +152,12 @@ Use function to get Ne data from NcRange or NcPoint data, and their combination 
 ind1_data<-transform_to_Ne(ind1_data = ind1_data, ratio = 0.1)
 ```
 
+Check transformation in example:
+```{r}
+ind1_data %>% select(country_assessment, taxon, population, Name, Ne, NeLower, NeUpper, NeYear, GeneticMarkers, NcType, NcMethod, NcRange, Nc_from_range, Ne_from_Nc, Ne_combined)
+```
+
+
 Remember what the function to estimate indicator 1 does:
 ```{r}
 # check what the custom function does
@@ -164,18 +170,44 @@ estimate_indicator1
 indicator1<-estimate_indicator1(ind1_data = ind1_data)
 ```
 
-### Proportion of maintained populations (indicator 2) = proportion of populations within species which are maintained.
+Check example data:
+```{r}
+indicator1 %>% select(X_uuid, taxon, country_assessment, n_pops, n_pops_Ne_data, n_pops_more_500, indicator1)
+```
+
+
+### Indicator 2 or PM indicator: proportion of populations within species which are maintained.
+
+Show most relevant columns of indicator 2 data:
+```{r}
+ind2_data %>% select(country_assessment, taxon, n_extant_populations, n_extint_populations)
+
+```
+
 
 Proportion of maintained populations (indicator) is the he proportion of populations within species which are maintained. This can be estimated based on the `n_extant_populations` and `n_extint_populations`, as follows:
 
 ```{r}
 ind2_data$indicator2<- ind2_data$n_extant_populations / (ind2_data$n_extant_populations + ind2_data$n_extint_populations)
-head(ind2_data$indicator2)
 ```
 
-### Number of taxa with genetic monitoring squemes (indicator3)
+Example output selecting the most relevant columns:
 
-Indicator 3 refers to the number (count) of taxa by country in which genetic monitoring is occurring. This is stored in the variable `temp_gen_monitoring` as a "yes/no" answer for each taxon, so to estimate the indicator, we only need to count how many said "yes", keeping only one of the records when the taxon was multiassessed:
+```{r}
+ind2_data %>% select(country_assessment, taxon, n_extant_populations, n_extint_populations, indicator2)
+```
+
+
+### Indicator 3 or genetic monitoring indicator: number of species with genetic diversity monitoring
+
+Example of indicator 3 data selecting the most relevant columns:
+```{r}
+ind3_data %>% select(country_assessment, taxon, multiassessment, temp_gen_monitoring, gen_studies, gen_monitoring_years, source_genetic_studies)
+```
+
+
+
+Indicator 3 refers to the number (count) of taxa by country in which genetic monitoring is occurring. This is stored in the variable `temp_gen_monitoring` as a "yes/no" answer for each taxon, so to estimate the indicator, we only need to count how many said "yes", keeping only one of the records when the taxon was multiassessed.
 
 ```{r}
 indicator3<-ind3_data %>%
@@ -188,6 +220,14 @@ indicator3<-ind3_data %>%
                  group_by(country_assessment) %>%
                  summarise(n_taxon_gen_monitoring= n())
 ```
+
+Example output:
+
+```{r}
+indicator3
+```
+
+
 
 ### Join indicators and metadata in a single table
 
@@ -480,7 +520,7 @@ p_heat<- ggplot(agg_data, aes(x = taxonomic_group, y = country_assessment, fill 
   ) + 
   scale_x_discrete(position = "top") +
   theme_light() + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 0),
+  theme(panel.border = element_blank(), axis.text.x = element_text(angle = 90, hjust = 0),
     legend.position = "right", text = element_text(size = 13),
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(), # remove background
   )
@@ -571,7 +611,8 @@ Population size data availability in the entire dataset, by taxon country:
 ```{r}
 p.popsize<-ggplot(metadata, aes(x=country_assessment, fill=popsize_data)) + 
                 geom_bar(stat = "count", color="white") +
-                coord_flip() +
+                coord_flip() + 
+                scale_x_discrete(limits=rev) +
    scale_fill_manual(values=c("#2ca02c", "#1f77b4", "grey80"),
                     breaks=c("yes", "data_for_species", "insuff_data_species"),
                     labels=c("Population level", "Species or subspecies level", "Insufficient data")) +  
@@ -579,7 +620,7 @@ p.popsize<-ggplot(metadata, aes(x=country_assessment, fill=popsize_data)) +
                      x="",
                      y="Number of taxa") +
                 theme_light() +
-                theme(legend.position="right")
+                theme(text = element_text(size = 13), panel.border = element_blank(), legend.position="right")
 p.popsize
 ```
 
@@ -680,15 +721,19 @@ Data availability at the population level cosidering Ne and Nc combined. This pl
 
 
 p4<-ind1_data %>%
+  # NA as a category
   mutate(Ne_calculated_from = replace_na(Ne_calculated_from, "NA")) %>%
+  # reorder to have NA at the end (here at the start because we will use coord_flip below)
+  mutate(Ne_calculated_from = factor(Ne_calculated_from, levels=c("NA", "NcRange ratio", "NcPoint ratio", "genetic data")))  %>%
   ggplot(aes(x=country_assessment, fill=Ne_calculated_from))+
   geom_bar(position = "fill", color="white") +
-  scale_fill_manual(labels=c("genetic data", "Nc ratio (point)", "Nc ratio (range)", "missing data"),
+  scale_fill_manual(labels=c("Genetic data", "Nc ratio (point)", "Nc ratio (range or qualitative)", "Missing data"),
                       breaks=c("genetic data", "NcPoint ratio", "NcRange ratio", "NA"),
                       values=c("darkgreen", "#0072B2", "#E69F00", "grey80")) +
   xlab("") +
   scale_x_discrete(limits=rev) + 
-  ylab("Proportion of populations") +
+  ylab("Percentage of populations") +
+  scale_y_continuous(labels = scales::percent) + # show axis in % instead of decimal
   labs(fill="Data used to estimate Ne") +
   theme_light() +
   coord_flip() +
@@ -816,12 +861,13 @@ So out of the `r nrow(indicators_full)`, we have **`r sum(is.na(indicators_full$
 
 ### Plot missing data extinct populations
 ```{r}
+
 p5<-indicators_full %>%
-  ggplot(aes(x=country_assessment, fill=is.na(n_extint_populations))) +
-  geom_bar() +
-  scale_fill_manual(labels=c("number of populations known", "missing data"),
-                    values=c("#2ca02c", "#ff7f0e")) + 
-  labs(fill="Extinct populations") +
+  ggplot(aes(x=country_assessment, fill=is.na(n_extint_populations))) + 
+  geom_bar(color="white") +
+  scale_fill_manual(labels=c("Unknown", "Known"),
+                    values=c("#ff7f0e", "#2ca02c")) + 
+  labs(fill="Number of extinct populations") +
   xlab("") + ylab("Number of taxa") +
   theme_light() +
   theme(text = element_text(size = 13), legend.position = "right", panel.border = element_blank())
@@ -833,14 +879,14 @@ p5
 
 Missing data in number of extinct populations by method to define populations:
 
-```{r}
+```{r, out.width="850px", out.height="650px"}
 pa<-indicators_full %>%
-  ggplot(aes(x=defined_populations_nicenames, fill=is.na(n_extint_populations)))+
-  geom_bar() +
+  ggplot(aes(x=defined_populations_nicenames, fill=is.na(n_extint_populations))) +
+  geom_bar(color="white") +
   coord_flip()+ 
-  scale_fill_manual(labels=c("number of populations known", "missing data"),
-                    values=c("#2ca02c", "#ff7f0e")) + 
-  labs(fill="Extinct populations") +
+  scale_fill_manual(labels=c("Unknown", "Known"),
+                    values=c("#ff7f0e", "#2ca02c")) + 
+  labs(fill="Number of extinct populations") +
   xlab("") + ylab("Number of taxa") +
   facet_wrap(country_assessment ~., nrow = 3, scales="free_x") +
   theme_light() +
@@ -850,14 +896,14 @@ pa<-indicators_full %>%
 
 Missing data in number of extinct populations by method to define populations:
 
-```{r}
+```{r, out.width="850px", out.height="650px"}
 pb<-indicators_full %>%
-  ggplot(aes(x=taxonomic_group, fill=is.na(n_extint_populations)))+
-  geom_bar() +
+  ggplot(aes(x=taxonomic_group, fill=!is.na(n_extint_populations)))+
+  geom_bar(color="white") +
   coord_flip()+ 
-  scale_fill_manual(labels=c("number of populations known", "missing data"),
-                    values=c("#2ca02c", "#ff7f0e")) + 
-  labs(fill="Extinct populations") +
+  scale_fill_manual(labels=c("Unknown", "Known"),
+                    values=c("#ff7f0e", "#2ca02c")) + 
+  labs(fill="Number of extinct populations") +
   xlab("") + ylab("Number of taxa") +
   facet_wrap(country_assessment ~., nrow = 3, scales="free_x") +
   theme_light() +
@@ -869,10 +915,10 @@ pb
 
 ## Main Figure: Taxa by country and data availability to estimate Ne indciator (origion of data to estimate Ne) and PM indicator (missing data on pop extinction):
 
-Distribution of Nc, Ne and types of Ne in a single figure with 3 panels, using count for a & b, and proportions for c:
+Distribution of Nc, Ne and types of Ne in a single figure with 4 panels, using count for a, b & c, and proportions for d:
 
 
-```{r, out.width="900px", out.height="1100px"}
+```{r, out.width="900px", out.height="1250px"}
 # plot
 
 plot_grid(p_heat + theme(legend.position = "right", legend.justification = c(0,.5)), # legend.justification aligns legends
