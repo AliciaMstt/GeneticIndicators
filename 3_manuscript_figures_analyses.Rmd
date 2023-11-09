@@ -66,9 +66,9 @@ CreateAllFacet <- function(df, col){
 Custom colors:
 ```{r custom colors}
 ## IUCN official colors
-# Assuming order of levels is: "re", "cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown" (for regional, and w/o "re" for global). Make sure to change the levels to that order before plotting.
-IUCNcolors<-c("brown2", "darkorange", "yellow", "green", "darkgreen", "darkgrey", "azure2", "bisque1")
-IUCNcolors_regional<-c("darkorchid2", "brown2", "darkorange", "yellow", "green", "darkgreen", "darkgrey", "azure2", "bisque1")
+# Assuming order of levels is: "re", "cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown" (for regional, and w/o "re" for global). Make sure to change the levels to that order before plotting. Note: NE should be "#FFFFFF" but since that means white I'm suing azure2
+IUCNcolors<-c("#FF0000", "#FFA500", "#FFFF00", "#ADFF2F", "#008000", "#808080", "azure2", "bisque1")
+IUCNcolors_regional<-c("darkorchid2", "#FF0000", "#FFA500", "#FFFF00", "#ADFF2F", "#008000", "#808080", "azure2", "bisque1")
 
 ## nice soft ramp for taxonomic groups
 taxoncolors<-cividis(12) # same than using cividis(length(levels(as.factor(metadata$taxonomic_group))))
@@ -947,8 +947,6 @@ plot_grid(p_heat + theme(legend.position = "right", legend.justification = c(0,.
 
 Reformat data
 ```{r}
-select(metadata, defined_populations_nicenames, defined_populations_simplified)
-
 
 # reformat data
 foralluvial<-metadata %>% group_by(country_assessment, defined_populations_nicenames, taxonomic_group) %>%
@@ -978,6 +976,18 @@ alluvial(foralluvial[,1:3], freq = foralluvial$n,
          alpha = .7)
 
 ```
+
+Get count to add numbers outside R:
+```{r}
+# n for country
+metadata %>% group_by(country_assessment) %>%
+             summarise(n=n()) 
+
+# n for taxonomic group
+metadata %>% group_by(taxonomic_group) %>%
+             summarise(n=n()) 
+```
+
 
 ## Exploratory plots for the association of distribution range (restricted vs wide) on the indicators
 
@@ -2106,6 +2116,14 @@ Plot indicator 1 by global IUCN in the entire dataset:
 ```{r indicator1 gobalIUCN}
 
 ## Global IUCN
+
+# Capitalize abbreviations 
+indicators_averaged_one$global_IUCN<-as.factor(indicators_averaged_one$global_IUCN)
+levels(indicators_averaged_one$global_IUCN)
+indicators_averaged_one$global_IUCN<-factor(indicators_averaged_one$global_IUCN, 
+                                            levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed","unknown"))
+levels(indicators_averaged_one$global_IUCN) <- c("CR", "EN", "VU", "NT", "LC", "DD", "NE", "unknown")
+
 ## prepare data
 # add sampling size
 sample_size <- indicators_averaged_one %>%
@@ -2125,18 +2143,14 @@ df<- indicators_averaged_one %>%
 # change order of levels so that they are in the desired order
 df$myaxis<-factor(df$myaxis, 
                   #grep is used below to get the sample size, which may change depending on the data
-                  levels=c(grep("cr", unique(df$myaxis), value = TRUE),
-                          grep("en", unique(df$myaxis), value = TRUE),
-                          grep("vu", unique(df$myaxis), value = TRUE),
-                          grep("nt", unique(df$myaxis), value = TRUE),
-                          grep("lc", unique(df$myaxis), value = TRUE),
-                          grep("dd", unique(df$myaxis), value = TRUE),
-                          grep("not_assessed", unique(df$myaxis), value = TRUE),
+                  levels=c(grep("CR", unique(df$myaxis), value = TRUE),
+                          grep("EN", unique(df$myaxis), value = TRUE),
+                          grep("VU", unique(df$myaxis), value = TRUE),
+                          grep("NT", unique(df$myaxis), value = TRUE),
+                          grep("LC", unique(df$myaxis), value = TRUE),
+                          grep("DD", unique(df$myaxis), value = TRUE),
+                          grep("NE", unique(df$myaxis), value = TRUE),
                           grep("unknown", unique(df$myaxis), value = TRUE)))
-
-df$global_IUCN<-factor(df$global_IUCN, levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
-
-
       
 # plot
 p1<-df %>%
@@ -2181,8 +2195,6 @@ kable(x, digits=2)
 Indicator 1 by country and global IUCN
 
 ```{r indicator1 country globalIUCN}
-## change order of levels so that categories match with the order of colors
-indicators_averaged_one$global_IUCN<-factor(indicators_averaged_one$global_IUCN, levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
 
 
 # plot
@@ -2202,36 +2214,6 @@ indicators_averaged_one %>%
       theme(panel.border = element_blank(), legend.position="none", 
             plot.title = element_text(hjust = 0.5), # center title
             text= element_text(size=13)) +
-      facet_wrap(~country_assessment, ncol = 3) +
-      theme(panel.spacing = unit(1.5, "lines"))
-```
-
-Indicator1 by regional IUCN Redlist, excluding US, Australia and Mexico becasue they don't have a regional IUCN redlist.
-
-```{r indicator1 country regionalIUCN}
-## change order of levels so that categories match with the order of colors
-indicators_averaged_one$regional_redlist<-factor(indicators_averaged_one$regional_redlist, levels=c("re","cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
-
-# plot
-indicators_averaged_one %>% 
-  # filter US and Mx
-  filter(country_assessment %!in% c("Mexico", "USA", "Australia")) %>%
-  filter(!is.na(regional_redlist)) %>%
-  
-  # plot
-  ggplot(aes(x=regional_redlist, y=indicator1_mean, fill=regional_redlist)) +
-      geom_violin(width=1, linewidth = 0)  +
-      geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of populations within species with Ne>500") +
-      coord_flip() +
-      scale_fill_manual(values= IUCNcolors_regional, # iucn color codes
-                    breaks=c(levels(indicators_averaged_one$regional_redlist))) +
-      scale_x_discrete(limits=rev) +
-      theme_light() +
-      ggtitle("regional IUCN Redlist") +
-      theme(panel.border = element_blank(), legend.position="none", 
-            plot.title = element_text(hjust = 0.5), # center title
-            text= element_text(size=15)) +
       facet_wrap(~country_assessment, ncol = 3) +
       theme(panel.spacing = unit(1.5, "lines"))
 ```
@@ -2263,16 +2245,14 @@ df<- indicators_averaged_one %>%
 # change order of levels so that they are in the desired order
 df$myaxis<-factor(df$myaxis, 
                   #grep is used below to get the sample size, which may change depending on the data
-                  levels=c(grep("cr", unique(df$myaxis), value = TRUE),
-                          grep("en", unique(df$myaxis), value = TRUE),
-                          grep("vu", unique(df$myaxis), value = TRUE),
-                          grep("nt", unique(df$myaxis), value = TRUE),
-                          grep("lc", unique(df$myaxis), value = TRUE),
-                          grep("dd", unique(df$myaxis), value = TRUE),
-                          grep("not_assessed", unique(df$myaxis), value = TRUE),
+                  levels=c(grep("CR", unique(df$myaxis), value = TRUE),
+                          grep("EN", unique(df$myaxis), value = TRUE),
+                          grep("VU", unique(df$myaxis), value = TRUE),
+                          grep("NT", unique(df$myaxis), value = TRUE),
+                          grep("LC", unique(df$myaxis), value = TRUE),
+                          grep("DD", unique(df$myaxis), value = TRUE),
+                          grep("NE", unique(df$myaxis), value = TRUE),
                           grep("unknown", unique(df$myaxis), value = TRUE)))
-
-df$global_IUCN<-factor(df$global_IUCN, levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
 
 
       
@@ -2317,9 +2297,6 @@ kable(x, digits=2)
 Indicator 2 by country and global IUCN
 
 ```{r indicator2 country globalIUCN}
-## change order of levels so that categories match with the order of colors
-indicators_averaged_one$global_IUCN<-factor(indicators_averaged_one$global_IUCN, levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
-
 
 # plot
 indicators_averaged_one %>% 
@@ -2349,14 +2326,6 @@ plot_grid(p2,
           p1,
           ncol=1, align = "v", labels=c("a)", "b)"))  
 ```
-
-### Supplementary figure: 2 panels IUCN violin plots + mock Ne, and bar plot
-```{r}
-plot_grid(p1 + theme(legend.position = ""), 
-          p2 ,
-          ncol = 1, labels=c("a)", "b)"))
-```
-
 
 
 ## Indicator values by taxonomic group
