@@ -3,7 +3,9 @@ title: "Main figures and analyses for the manuscript"
 output:
   html_document:
     df_print: paged
-    toc: true
+    toc: yes
+  word_document:
+    toc: yes
 ---
 
 This notebook estimates the indicators based on the raw clean data and perfomrs the main analyses and figures used in the manuscript of the multicountry paper. The input is the "clean kobo output" that was first cleaned by `2_cleaning.Rmd`. Besides the plots and statistics shown below, the output is are the indicators data ready to be used to estimate the indicators (`ind[1-3]_data.csv`), a single file with the indicators already calculated (`indicators_full.csv`) and metadata.
@@ -231,11 +233,24 @@ indicator3
 
 ### Join indicators and metadata in a single table
 
-It could be useful to have the estimated indicator and the metadata in a single large table.
+It could be useful to have the PM and Ne 500 indicators and the metadata in a single large table.
 ```{r}
 indicators_full<-left_join(metadata, indicator1) %>% 
-                     left_join(ind2_data) %>% 
-                     left_join(ind3_data)
+                     left_join(ind2_data)
+```
+
+### Check number of rows of each object, i.e. n including alternative assessments
+```{r}
+# Number of populations inc alternative assessments
+nrow(ind1_data)
+
+# Number of assessments including multiassessments (these 3 objects should have the same number of rows)
+nrow(indicators_full)
+nrow(ind2_data)
+nrow(ind3_data)
+nrow(metadata)
+
+
 ```
 
 ### Save indicators data
@@ -404,39 +419,76 @@ indicators_averaged<-indicators_full %>%
 ```
 
 Examples of how this looks to check it was done properly. For indicator 1:
+
+A species assessed in different countries (Sweden and Belgium), with alternative assessment within Sweden. The average is computed only for the Swedish assessments
 ```{r}
+
 indicators_averaged %>%
   filter(taxon == "Barbastella barbastellus") %>%
   select(taxon, country_assessment, multiassessment, indicator1, indicator1_mean)
 
-indicators_averaged %>%
-  filter(taxon == "Rana dalmatina") %>%
-  select(taxon, country_assessment, multiassessment, indicator1, indicator1_mean)
 
-
-indicators_averaged %>%
-  filter(taxon == "Ambystoma cingulatum") %>%
-  select(taxon, country_assessment, multiassessment, indicator1, indicator1_mean)
 ```
-
-For Proportion of maintained populations (indicator):
+Alternative assessments within a single country:
 ```{r}
 indicators_averaged %>%
-  filter(taxon == "Ambystoma cingulatum") %>%
-  select(taxon, country_assessment, multiassessment, indicator2, indicator2_mean)
+  filter(taxon == "Rana dalmatina") %>%
+  select(taxon, country_assessment, multiassessment, indicator1, indicator1_mean, indicator2, indicator2_mean)
+
+indicators_averaged %>%
+  filter(taxon == "Notophthalmus perstriatus") %>%
+  select(taxon, country_assessment, multiassessment,  indicator1, indicator1_mean, indicator2, indicator2_mean)
 
 ```
+
+If one of the alternative assessments has NA, it is removed from the mean calculation, so that the average equals the value of the assessment that has data:
+```{r}
+indicators_averaged %>%
+  filter(taxon == "Alouatta palliata mexicana") %>%
+  select(taxon, country_assessment, multiassessment,  indicator1, indicator1_mean, indicator2, indicator2_mean)
+```
+
+A species can have alternative assessments for both indicators:
+```{r}
+indicators_averaged %>%
+  filter(taxon == "Aphelocoma coerulescens") %>%
+  select(taxon, country_assessment, multiassessment, indicator1, indicator1_mean, indicator2, indicator2_mean)
+
+```
+
 
 Because we will use the averages to show a single value for multiasssessed taxa, we can keep only the first record for multiassessed taxa.
 ```{r}
 indicators_averaged_one<-indicators_averaged[!duplicated(cbind(indicators_averaged$taxon, indicators_averaged$country_assessment)), ]
+
 ```
 
 
+Example of how this looks:
+```{r}
+indicators_averaged_one %>%
+  filter(taxon == "Aphelocoma coerulescens") %>%
+  select(taxon, country_assessment, multiassessment, indicator2, indicator2_mean, indicator1, indicator1_mean)
+
+
+indicators_averaged_one %>%
+  filter(taxon == "Rana dalmatina") %>%
+  select(taxon, country_assessment, multiassessment, indicator2, indicator2_mean, indicator1, indicator1_mean)
+
+
+indicators_averaged_one %>%
+  filter(taxon == "Notophthalmus perstriatus") %>%
+  select(taxon, country_assessment, multiassessment, indicator2, indicator2_mean, indicator1, indicator1_mean)
+
+```
+
+Total number of taxa (ie assessments averaging alternative assessments):
+```{r}
+nrow(indicators_averaged_one)
+```
+
 
 ## General description of records and taxa assessed by country
-
-
 
 Records by country, including taxa assessed more than once (see below for details on this)
 
@@ -485,6 +537,43 @@ ggplot(aes(x=taxonomic_group, fill=country_assessment)) +
 p2
 ```
 
+
+Total number of taxon with alternative assessments:
+```{r}
+nrow(indicators_averaged_one %>% filter(multiassessment == "multiassessment"))
+```
+
+Number of alternative assessments:
+```{r}
+nrow(indicators_averaged%>% filter(multiassessment == "multiassessment"))
+```
+
+
+How many alternative assessments there are per multiassessed taxon?
+```{r}
+x<-indicators_averaged %>% select(country_assessment, multiassessment, taxon) %>%
+                         filter(multiassessment == "multiassessment") %>%
+                        group_by(taxon)  %>%
+                        summarise(n=n())
+
+kable(x)
+
+mean(x$n)
+sd(x$n)
+median(x$n)
+```
+
+### Supplementary Figure S1: Number of species and multiassessed species per country
+
+```{r}
+plot_grid(p1 + ggtitle(""),
+          p2 + ggtitle(""), ncol = 1, labels = c("A)", "B)"))
+
+ggsave("FigS1.pdf", width = 20, height = 24  , units = "cm")
+
+```
+
+
 ### Heatmap of the taxa assessed by country (counting multiassessments only once)
 
 We aimed to represent different taxonomic groups within animals (amphibians, birds, fishes, invertebrates, mammals and reptiles), plants (angiosperms, bryophytes, gymnosperms and pteridophytes), fungi and others (e.g. lichens). Order levels to represent those categories:
@@ -529,12 +618,6 @@ p_heat
 ```
 
 
-### Supplementary Figure: Number of species and multiassessed species per country
-
-```{r}
-plot_grid(p1 + ggtitle(""),
-          p2 + ggtitle(""), ncol = 1, labels = c("a)", "b)"))
-```
 
 
 ## Population size data (Has Nc or Ne? what type of Nc?)
@@ -563,7 +646,7 @@ metadata$popsize_data<-factor(metadata$popsize_data,
 
 
 
-### Supplementary Figure: Population size data availability by country
+### Supplementary Figure S5: Population size data availability by country
 
 Countries have population size data (Nc or Ne) regardless of the taxonomic group. The last panel includes the entire dataset:
 
@@ -588,6 +671,8 @@ ggplot(df, aes(x=taxonomic_group, fill=popsize_data)) +
        y="Number of taxa (including records of taxa assessed more than once)") +
   theme_light() +
   theme(panel.border = element_blank(), legend.position="top")
+
+ggsave("FigS5.pdf", width = 31, height = 25  , units = "cm")
 
 ```
 
@@ -744,11 +829,13 @@ p4
 
 ```
 
-### Supplementary Figure: Ne and Nc data availabiltiy by taxa
+### Supplementary Figure S3: Ne and Nc data availabiltiy by taxa
 ```{r}
 plot_grid(p1 + theme(legend.justification = c(0,.5)),  # legend.justification is used to aling legends
           p2 + theme(legend.justification = c(0,.5)),
-          ncol=1, rel_widths = c(1,1,1,1), align = "v", labels=c("a)", "b)"), vjust = .7)  
+          ncol=1, align = "v", labels=c("A)", "B)"), vjust = .7)  
+
+ggsave("FigS3.pdf", width = 23, height = 25  , units = "cm")
 
 ```
 
@@ -878,7 +965,7 @@ p5
 ```
 
 
-### Supplementary Figure: Missing data in extinct populations by country and method and by taxonomic group
+### Supplementary Figure S4: Missing data in extinct populations by country and method and by taxonomic group
 
 Missing data in number of extinct populations by method to define populations:
 
@@ -894,7 +981,7 @@ pa<-indicators_full %>%
   xlab("") + ylab("Number of taxa") +
   facet_wrap(country_assessment ~., nrow = 3, scales="free_x") +
   theme_light() +
-  theme(panel.border = element_blank(), legend.position="top") + ggtitle("a)")
+  theme(panel.border = element_blank(), legend.position="top")
  pa 
 ```
 
@@ -912,9 +999,20 @@ pb<-indicators_full %>%
   xlab("") + ylab("Number of taxa") +
   facet_wrap(country_assessment ~., nrow = 3, scales="free_x") +
   theme_light() +
-  theme(panel.border = element_blank(), legend.position="none") + ggtitle("b)")
+  theme(panel.border = element_blank(), legend.position="none")
 pb  
 ```
+
+Single figure:
+```{r}
+plot_grid(pa, pb, 
+          align = "v", ncol=1,
+          rel_heights = c(1.1, 1),
+          labels=c("A)", "B)"))
+
+ggsave("FigS4.pdf", width = 31, height = 50  , units = "cm")
+```
+
 
 
 
@@ -999,7 +1097,7 @@ indicators_averaged_one$species_range<-gsub("wide_ranging", "wide ranging", indi
 ```
 
 
-### Indicator 1 (Ne>5000)
+### Indicator 1 (Ne>500)
 
 Plot Indicator 1 by type of range in the entire dataset. Filtering NA in species range:
 
@@ -2794,11 +2892,11 @@ indicator3
 Plot by global IUCN redlist status
 ```{r}
 # desired order of levels
-indicators_full$global_IUCN<-factor(as.factor(indicators_full$global_IUCN), levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
+ind3_data$global_IUCN<-factor(as.factor(indicators_full$global_IUCN), levels=c("cr", "en", "vu", "nt", "lc", "dd", "not_assessed", "unknown"))
 
 
 ## plot
-indicators_full %>%
+ind3_data %>%
                  # keep only one record if the taxon was assessed more than once within the country
                  select(country_assessment, taxon, temp_gen_monitoring, global_IUCN) %>%
                  filter(!duplicated(.)) %>%
@@ -2869,7 +2967,7 @@ ind3_data %>%
 How many genetic studies ara available by country for species without temporal genetic diversity monitoring?
 ```{r}
 ## plot
-indicators_full %>%
+ind3_data %>%
                  # keep only one record if the taxon was assessed more than once within the country
                  select(country_assessment, taxon, temp_gen_monitoring, gen_studies) %>%
                  filter(!duplicated(.)) %>%
@@ -2908,8 +3006,7 @@ x<-indicators_averaged_one %>%
                           sd.PM.ind=sd(indicator2, na.rm=TRUE),
                           n.Ne.ind=sum(!is.na(indicator1)), 
                           mean.Ne.ind=mean(indicator1, na.rm=TRUE),
-                          sd.Ne.ind=sd(indicator1, na.rm=TRUE),
-                          Mon.ind=sum(temp_gen_monitoring=="yes"))
+                          sd.Ne.ind=sd(indicator1, na.rm=TRUE))
 
 # nice table
 kable(x, digits=3)
@@ -2929,8 +3026,7 @@ x<-indicators_averaged_one %>%
                           sd.PM.ind=sd(indicator2, na.rm=TRUE),
                           n.Ne.ind=sum(!is.na(indicator1)), 
                           mean.Ne.ind=mean(indicator1, na.rm=TRUE),
-                          sd.Ne.ind=sd(indicator1, na.rm=TRUE),
-                          Mon.ind=sum(temp_gen_monitoring=="yes"))
+                          sd.Ne.ind=sd(indicator1, na.rm=TRUE))
 
 # nice table
 kable(x, digits=3)
@@ -2947,8 +3043,7 @@ x<-indicators_averaged_one %>%
                           sd.PM.ind=sd(indicator2, na.rm=TRUE),
                           n.Ne.ind=sum(!is.na(indicator1)), 
                           mean.Ne.ind=mean(indicator1, na.rm=TRUE),
-                          sd.Ne.ind=sd(indicator1, na.rm=TRUE),
-                          Mon.ind=sum(temp_gen_monitoring=="yes"))
+                          sd.Ne.ind=sd(indicator1, na.rm=TRUE))
 
 # nice table
 kable(x, digits=3)
@@ -2967,8 +3062,7 @@ x<-indicators_averaged_one %>%
                           sd.PM.ind=sd(indicator2, na.rm=TRUE),
                           n.Ne.ind=sum(!is.na(indicator1)), 
                           mean.Ne.ind=mean(indicator1, na.rm=TRUE),
-                          sd.Ne.ind=sd(indicator1, na.rm=TRUE),
-                          Mon.ind=sum(temp_gen_monitoring=="yes"))
+                          sd.Ne.ind=sd(indicator1, na.rm=TRUE))
 
 # nice table
 kable(x, digits=3)
@@ -2985,8 +3079,7 @@ x<-indicators_averaged_one %>%
                           sd.PM.ind=sd(indicator2, na.rm=TRUE),
                           n.Ne.ind=sum(!is.na(indicator1)), 
                           mean.Ne.ind=mean(indicator1, na.rm=TRUE),
-                          sd.Ne.ind=sd(indicator1, na.rm=TRUE),
-                          Mon.ind=sum(temp_gen_monitoring=="yes"))
+                          sd.Ne.ind=sd(indicator1, na.rm=TRUE))
 
 # nice table
 kable(x, digits=3)
@@ -3005,8 +3098,7 @@ x<-indicators_averaged_one %>%
                           sd.PM.ind=sd(indicator2, na.rm=TRUE),
                           n.Ne.ind=sum(!is.na(indicator1)), 
                           mean.Ne.ind=mean(indicator1, na.rm=TRUE),
-                          sd.Ne.ind=sd(indicator1, na.rm=TRUE),
-                          Mon.ind=sum(temp_gen_monitoring=="yes"))
+                          sd.Ne.ind=sd(indicator1, na.rm=TRUE))
 
 # nice table
 kable(x, digits=3)
@@ -3023,8 +3115,7 @@ x<-indicators_averaged_one %>%
                           sd.PM.ind=sd(indicator2, na.rm=TRUE),
                           n.Ne.ind=sum(!is.na(indicator1)), 
                           mean.Ne.ind=mean(indicator1, na.rm=TRUE),
-                          sd.Ne.ind=sd(indicator1, na.rm=TRUE),
-                          Mon.ind=sum(temp_gen_monitoring=="yes"))
+                          sd.Ne.ind=sd(indicator1, na.rm=TRUE))
 
 # nice table
 kable(x, digits=3)
