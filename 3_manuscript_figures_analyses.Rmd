@@ -92,7 +92,7 @@ simplifiedmethods_colors<-c("#FFA07A", #"dispersal_buffer"
                             "#be72c9", # "other" 
                             "#be72c9")# "other_combinations" 
 
-grouped_taxon_colors<-c("#9f43c8", "#91c637", "#e5463c")
+grouped_taxon_colors<-c("#a46cb7", "#7aa457", "#cb6a49")
   
 ```
 
@@ -1016,7 +1016,7 @@ ggsave("FigS4.pdf", width = 31, height = 50  , units = "cm")
 
 
 
-## Main Figure: Taxa by country and data availability to estimate Ne indciator (origion of data to estimate Ne) and PM indicator (missing data on pop extinction):
+## Main Figure 1: Taxa by country and data availability to estimate Ne indciator (origion of data to estimate Ne) and PM indicator (missing data on pop extinction):
 
 Distribution of Nc, Ne and types of Ne in a single figure with 4 panels, using count for a, b & c, and proportions for d:
 
@@ -1034,14 +1034,16 @@ plot_grid(p_heat + theme(legend.position = "right", legend.justification = c(0,.
           
           p4  + theme(legend.position = "right", legend.justification = c(0,.5)), 
           
-          ncol = 1, labels = c("a)", "b)", "c)", "d)"), align = "v",
-          rel_heights = c(1.3, 1, 1))
+          ncol = 1, labels = c("A)", "B)", "C)", "D)"), align = "v",
+          rel_heights = c(1.3, 1, 1,1))
 
+
+ggsave("Fig1.pdf", width = 17, height = 33  , units = "cm")
 
 ```
 
 
-## Main Figure: Method to define populations used by country and taxa (alluvial)
+## Supplementary Figure: Method to define populations used by country and taxa (alluvial)
 
 Reformat data
 ```{r}
@@ -1062,6 +1064,18 @@ head(methodspop)
 
 Plot
 ```{r}
+alluvial(foralluvial[,1:3], freq = foralluvial$n,
+         col=methodspop, 
+         blocks=FALSE,
+         gap.width = 0.5,
+         cex=.8, 
+         xw = 0.1,
+         cw = 0.2,
+         border = NA,
+         alpha = .7)
+
+
+pdf("FigS6.pdf", width = 9, height = 7)
 # plot
 alluvial(foralluvial[,1:3], freq = foralluvial$n,
          col=methodspop, 
@@ -1072,6 +1086,7 @@ alluvial(foralluvial[,1:3], freq = foralluvial$n,
          cw = 0.2,
          border = NA,
          alpha = .7)
+dev.off()
 
 ```
 
@@ -1130,7 +1145,7 @@ p1<-indicators_averaged_one %>%
 p1
 ```
 
-### Supplementary Figure: Plot Ne Indicator by country and type of range. Remove "unknown" and NA for better visualization.
+###  Plot Ne Indicator by country and type of range. Remove "unknown" and NA for better visualization.
 
 ```{r indicator1 by country and range}
 ### Duplicate dataframe to have a column with "all data" for faceting
@@ -1233,7 +1248,7 @@ plot_grid(p1, p2,  ncol=1, align = "v", labels=c("a)", "b)"))
 
 The plots and tables below are meant to visualize the sampling size and data distribution of some of the variables used in the models below. Data is a subset  filtering outliers (>500 populations) and using the simplified methods (see above). Multiassessed species are considered independently (each assessment is a data point).
 
-### Supplementary Figure: Number of maintained populations by country and method
+### Number of maintained populations by country and method
 
 Number of maintained populations by country and method is useful to interpret the models that would be run below.
 ```{r}
@@ -1328,7 +1343,7 @@ kable(x)
 
 
 
-### Supplementary Figure: number of mantained populations by method to define populations and range type
+### Supplementary Figure S7: number of mantained populations by method to define populations and range type
 
 Facet by range type:
 ```{r}
@@ -1355,6 +1370,8 @@ p<-indicators_full %>%
   scale_x_discrete(limits=rev)
 
 p
+
+ggsave("FigS7.pdf", width = 18, height = 19  , units = "cm")
 ```
 
 
@@ -2103,7 +2120,8 @@ pc.1<- df %>%
 
 
 ## Plot 3 panels
-plot_grid(pa, pb.1, pc.1, ncol=3, rel_widths = c(1.9,1,1), align = "h", labels=c("a)", "b)", "c)"))  
+p_top<-plot_grid(pa, pb.1, pc.1, ncol=3, rel_widths = c(1.8,1,1), align = "h", labels=c("A)", "B)", "C)"))  
+p_top
 
 ```
 
@@ -2133,15 +2151,16 @@ pd<-indicators_averaged_one %>%
 
   # plot
   ggplot(aes(x=myaxis, y=indicator2_mean)) +
-      geom_violin(width=1, linewidth = 0, fill="grey70")  +
-      xlab("") + ylab("Proportion of maintained populations within species") +
-      coord_flip() +
-    new_scale_color() + # to color points without confuisng ggplot
-    geom_jitter(size=1.2, width = 0.1, aes(color = genetic_to_define_pops)) +
-    scale_color_manual(values=c("red", "black")) +
-    labs(color=NULL) + # hide legend title
-      theme_light() +
-      theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20))
+          geom_violin(width=1, linewidth = 0, fill="grey70")  +
+          xlab("") + ylab("Proportion of maintained populations within species") +
+          coord_flip() +
+        new_scale_color() + # to color points without confuisng ggplot
+        geom_jitter(size=1.2, width = 0.1, aes(color = genetic_to_define_pops)) +
+        scale_color_manual(values=c("red", "black")) +
+        labs(color=NULL) + # hide legend title
+          theme_light() +
+          theme(panel.border = element_blank(), legend.position="none", text= element_text(size=20))
+
 ```
 
 For Ne indicator: 
@@ -2183,20 +2202,31 @@ pe <- indicators_averaged_one %>%
 Two panel figure:
 
 ```{r}
-plot_grid(pd + theme(legend.position = "non2"), # legend can be shown only below both plots 
+p_bot<-plot_grid(pd + theme(legend.position = "non2"), # legend can be shown only below both plots 
           pe,
           ncol = 2,
-          rel_widths = c(1,1.4), align = "h", labels=c("d)", "e)"))
+          rel_widths = c(1,1.3), align = "h", labels=c("D)", "E)"))
+```
+
+Both top and bottom together:
+
+```{r}
+plot_grid(p_top, p_bot, ncol = 1)
+ggsave("Fig2.pdf", width = 50, height = 30  , units = "cm")
 ```
 
 
-### Supplementary Figure: Single figure 2 panels scatter plots number of populations vs indicators
+
+
+### Supplementary Figure S8: Single figure 2 panels scatter plots number of populations vs indicators
 
 ```{r, out.height= "800px", out.width="500px"}
 # plot
 plot_grid(psupA + xlim(0,400) + xlab(""), # remove xlab from top plot and match x axis size
           psupB+ xlim(0,400), 
-          ncol=1, align = "v", labels=c("a)", "b)"))  
+          ncol=1, align = "v", labels=c("A)", "B)"))  
+
+ggsave("FigS8.pdf", width = 18, height = 28  , units = "cm")
 
 ```
 
@@ -2417,12 +2447,14 @@ indicators_averaged_one %>%
       theme(panel.spacing = unit(1.5, "lines"))
 ```
 
-### Main Figure: Single plot 2 pannels IUCN redlist and indicator range values
+### Main Figure 4: Single plot 2 pannels IUCN redlist and indicator range values
 
 ```{r}
 plot_grid(p2,
           p1,
-          ncol=1, align = "v", labels=c("a)", "b)"))  
+          ncol=1, align = "v", labels=c("A)", "B)"))  
+
+ggsave("Fig4.pdf", width = 20, height = 25  , units = "cm")
 ```
 
 
@@ -2816,15 +2848,17 @@ kable(summary_table, digits=2)
 ```
 
 
-### Main Figure: Single figure 4 panels for violin plots and histograms for both indicators by taxonomic group
+### Main Figure 3: Single figure 4 panels for violin plots and histograms for both indicators by taxonomic group
 
 ```{r}
 plot_grid(p2, hist_p2, 
           p1, hist_p1,
-          ncol=2, align = "v", labels=c("a)", "b)", "c)", "d)"))
+          ncol=2, align = "v", labels=c("A)", "B)", "C)", "D)"))
+
+ggsave("Fig3.pdf", width = 37, height = 25  , units = "cm")
 ```
 
-## Supplementary Figure: Values of indicator 1 and indicator 2 for multiassessed taxa (alternative assessments)
+## Supplementary Figure S2: Values of indicator 1 and indicator 2 for multiassessed taxa (alternative assessments)
 
 ```{r}
 #subset only with taxa assessed multiple times:
@@ -2877,7 +2911,9 @@ Plot together:
 ```{r}
 plot_grid(p2, p1,  
           rel_heights = c(1.4, 0.8),
-          ncol=1, labels=c("a)", "b)")) 
+          ncol=1, labels=c("A)", "B)")) 
+
+ggsave("FigS2.pdf", width = 20, height = 25  , units = "cm")
 ```
 
 
@@ -2910,12 +2946,18 @@ ggplot(aes(x=country_assessment, fill=global_IUCN)) +
                     breaks=levels(as.factor(indicators_full$global_IUCN))) +
       theme_light()
 ```
-
+### Supplementary Figure S9: Sankey plot genetic data availability
 Relatively few taxa have genetic monitoring, but many have some sort of genetic study. Let’s check that with a Sankey Plot:
 
 ```{r}
+# check original n of assessments
+nrow(ind3_data)
+
 # first subset the ind3_data keeping only taxa assessed a single time, plust the first record of those assessed multiple times.
 ind3_data_firstmulti<-ind3_data[!duplicated(cbind(ind3_data$taxon, ind3_data$country_assessment)), ]
+
+# n taxa 
+nrow(ind3_data_firstmulti)
 
 # transform data to how ggsankey wants it
 df <- ind3_data_firstmulti %>%
@@ -2946,6 +2988,9 @@ ggplot(df, aes(x = x,
                              unique(ind3_data_firstmulti$gen_studies))) +
   
   xlab("")
+
+ggsave("FigS9.pdf", width = 20, height = 18  , units = "cm")
+
 ```
 
 ```{r}
