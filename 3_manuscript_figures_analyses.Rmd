@@ -917,6 +917,49 @@ ind1_data %>%
   theme(axis.text.x = element_text(angle = 45))
 ```
 
+## Number of populations with Ne < 50 from genetic or NcPoint data
+
+The more worrying threshold, where the effects of inbreeding become more pronounced in the short-term (more immediate risk of extinction), occurs at Ne < 50. We cannot estimate how many populations are below this threshold from all our data, since the NcRange variable includes qualitative range data (eg. "less 5000 by much") that we can translate into more/less than Ne 500, but not Ne 50. 
+
+Therefore to count how many populations are Ne < 50 we first selected the populations with Ne or NcPoint data:
+
+```{r}
+forNe50<- ind1_data %>%
+          # keep only rows without missing data in Ne or NcPoint
+          filter(!is.na(Ne) | !is.na(NcPoint)) %>%
+          # keep more relevant variables:
+          select(country_assessment, taxon, Ne, MethodNe, NcPoint, NcRange, Ne_from_Nc, Ne_calculated_from, Ne_combined)
+
+forNe50
+
+```
+
+Total number of populations with Ne or Nc_point data:
+```{r}
+nrow(forNe50)
+```
+
+
+We then can count how many of them are below Ne 50:
+```{r}
+# select pops Ne_combined (coming from either Ne genetic or NePoint converted with the ratio)
+Neless50<- forNe50  %>% filter(Ne_combined < 50)
+
+# how many?
+nrow(Neless50)
+
+# % of the the total number of pops with Ne or Nc_point data:
+round(nrow(Neless50) / nrow(forNe50) * 100)
+```
+
+Check by origin of the Nc data
+```{r}
+Neless50 %>% ggplot(aes(x=Ne_combined, fill=Ne_calculated_from)) +
+  geom_histogram(alpha=0.6, position = 'identity') + theme_light()
+  
+```
+
+
 ## Missing data on extant and extinct populations
 
 We have NA in Proportion of maintained populations (indicator) because in some cases the number of extinct populations is unknown, therefore the operation cannot be computed. 
@@ -3166,6 +3209,7 @@ x<-indicators_averaged_one %>%
 kable(x, digits=3)
 ```
 
+## 
 
 ## Simplified figures and basic stats for text summary and policy brief
 
