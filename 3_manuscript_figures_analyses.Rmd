@@ -2066,12 +2066,40 @@ summary(m.c3)
 
 ```
   
+#### Catherine look here: Same m.c3 model but using indicators_full:
+```{r}
+data_full<- indicators_full  %>% # notice this uses indicators_full instead of indicators_average_one
+                    filter(!is.na(indicator1)) %>% # notice this uses indicator1 instead of _mean
+                    filter(species_range !="unknown")
+
+# summary of indicator
+summary(data_full$indicator1)
+
+
+# re-level to use geographic boundaries as reference category for the analysis
+data$defined_populations_simplified<-relevel(as.factor(data$defined_populations_simplified),
+                                                       ref="geographic_boundaries")
+
+# make sure specis range is a factor
+data$species_range<-as.factor(data$species_range)
+
+# run model
+m.c3_full <- glmmTMB(indicator1 ~ defined_populations_simplified + species_range + (1|country_assessment), family = "ordbeta", data = data)
+
+
+# summary results
+summary(m.c3_full)
+```
+
+
+
 Finally, we tested interactions between method and species range, to determine whether the effect of species range only applies when some methods are used.
 
 
 Is the effect of method on Ne indicator moderated by species range?
 
 ```{r}
+
 ## run model 
 m.c4 <- glmmTMB(indicator1_mean ~ defined_populations_simplified + species_range + defined_populations_simplified*species_range + (1|country_assessment), family = "ordbeta", data = data)
 
