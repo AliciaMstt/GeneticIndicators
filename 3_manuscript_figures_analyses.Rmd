@@ -3187,6 +3187,16 @@ How many populations, including all pops from species that were assessed more th
 nrow(ind1_data)
 ```
 
+How many populations by country (including multiassesments):
+```{r}
+npops<-ind1_data %>%
+    group_by(country_assessment) %>%
+    summarise(n_pops=n())
+npops
+mean(npops$n_pops)
+sd(npops$n_pops)
+```
+
 
 How many populations, counting only once populations from taxa assessed more than once:
 
@@ -3198,6 +3208,7 @@ x<-ind1_data[ind1_data$X_uuid %in% indicators_averaged_one$X_uuid, ]
 nrow(x)
 
 ```
+
 
 How many multiassesments:
 ```{r}
