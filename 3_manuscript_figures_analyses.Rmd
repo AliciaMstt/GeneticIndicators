@@ -3551,7 +3551,7 @@ Because the Ne:Nc does not necessarely needs to be 0.1, wenterested to know if t
 To address this, we:
 
 1) Explore the NcPoint data converting it to Ne with a ratio of 0.2 and 0.3 and examine the indicator value
-2) Explore the differences in the indicator value of the 24 taxa for which we have a different Ne:Nc ratio.
+2) Explore the differences in the indicator value of the taxa for which we have a different Ne:Nc ratio.
 
 ### Ne 500 indicator using 0.2 and 03 on all taxa with NcPoint data
 
@@ -3624,7 +3624,16 @@ ind1_alt_ratios<-data_for_alternative_ratio %>%
 
 ind1_alt_ratios %>% select(taxonomic_group, taxon, ind1_Ne_0.1, ind1_Ne_0.2, ind1_Ne_0.3)
 ```
-Same data in tidy format for plots and summaries:
+Summary for each ratio:
+
+```{r}
+summary(ind1_alt_ratios$ind1_Ne_0.1)
+summary(ind1_alt_ratios$ind1_Ne_0.2)
+summary(ind1_alt_ratios$ind1_Ne_0.3)
+```
+
+
+Same data in tidy format for plots and other data summaries:
 ```{r}
 ind1_alt_ratios_long<-pivot_longer(ind1_alt_ratios, 
                                    cols = ind1_Ne_0.1:ind1_Ne_0.3,
@@ -3654,7 +3663,7 @@ ind1_alt_ratios_long %>% ggplot(aes(x=NeNc_ratio, y=ind1_value, fill=NeNc_ratio)
   
 ```
 
-Summary stats:
+Summary indicator values:
 ```{r}
 x<-ind1_alt_ratios_long %>% group_by(NeNc_ratio) %>%
                          summarize(n=n(),
@@ -3674,6 +3683,61 @@ m.ratios<-glmmTMB(ind1_value ~ NeNc_ratio, family = "ordbeta", data = ind1_alt_r
 summary(m.ratios)
 ```
 
+
+
+### Table for the taxa for which we have a different Ne:Nc ratio.
+
+Select taxa for which we have an alternative known NeNc ratio:
+
+```{r}
+sp_known_ratios<-metadata %>% filter(!is.na(ratio_species_related)) %>% select(taxon, common_name, taxonomic_group, country_assessment, ratio_species_related)
+select(sp_known_ratios, taxon, ratio_species_related, country_assessment)
+```
+
+Create a new variable with only numeric values for the ratio. For this, when ranges were provided we take the average.
+
+```{r}
+sp_known_ratios <-sp_known_ratios %>% mutate(
+                    new_ratio=case_when(
+                    # If ratio_species_related is a single value (with a decimal point), keep it as it is
+                    grepl("^\\d+\\.?\\d*$", ratio_species_related) ~ as.numeric(ratio_species_related),
+                    # manually change data that includes ranges or other formats. One by one:
+                    ratio_species_related == "0.26 (0.1-0.3)" ~ 0.26,
+                    ratio_species_related == "<0.1" ~ 0.05,
+                    ratio_species_related == "1:5" ~ 0.2,
+                    ratio_species_related == "0.09-0.604" ~ mean(c(0.09,0.604)),
+                    ratio_species_related == "0.36 (0.275-0.424)" ~ 0.36,
+                    ratio_species_related == "0.1275-0.237" ~ mean(c(0.1275,0.237)),
+                    ratio_species_related == "0.16-0.78" ~ mean(c(0.16,0.78))
+          ))
+
+select(sp_known_ratios, ratio_species_related, new_ratio)
+```
+
+Add English names:
+```{r}
+# keep only english names
+sp_known_ratios<-sp_known_ratios %>% 
+mutate(english_name = str_extract_all(common_name, "(?<=;|^)\\s*([^;(]+)\\s*\\(EN\\)") %>% 
+                         sapply(function(x) ifelse(length(x) > 0, x, NA_character_)))
+```
+
+Show nice table
+```{r}
+x<-select(sp_known_ratios, taxon, taxonomic_group, english_name, country_assessment, ratio_species_related, new_ratio)
+kable(x)
+```
+
+
+Quick summary of the new ranges:
+```{r}
+summary(sp_known_ratios$new_ratio)
+nrow(sp_known_ratios)
+table(sp_known_ratios$taxonomic_group)
+```
+
+##### Pending:
+Use NcPoint data from data_for_alternative_ratio witht he new_ratio for each species to transform the data and calculate the indicator.
 
 ## Session Info for reproducibility purposes:
 
