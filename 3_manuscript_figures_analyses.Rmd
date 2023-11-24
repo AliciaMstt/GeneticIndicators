@@ -3544,6 +3544,136 @@ nrow(x)
 nrow(x) / nrow(indicators_averaged_one)
 ```
 
+## Exploring Ne 500 values if using a different Ne:Nc ratio
+
+Because the Ne:Nc does not necessarely needs to be 0.1, wenterested to know if the distribution of values shifts to the right (better indicator status) if we used other ratio, like 0.2 or 0.3, which is a better ratio for some taxa. This would show uncertainty and emphasize more work to be done on the Ne/Nc ratio. Lastly it may help address concerns that Nc 5000 is just infeasible, because there are outlier species which never had Nc>5000, e.g. some endimic birds, but these are cases where Ne might be >500 (because Ne/Nc is >0.25).
+
+To address this, we:
+
+1) Explore the NcPoint data converting it to Ne with a ratio of 0.2 and 0.3 and examine the indicator value
+2) Explore the differences in the indicator value of the 24 taxa for which we have a different Ne:Nc ratio.
+
+### Ne 500 indicator using 0.2 and 03 on all taxa with NcPoint data
+
+First we get the indicator 1 data again from scratch (because the object ind1_data already has the transformed Ne etc)
+
+```{r}
+# ind1 data form kobo
+data_for_alternative_ratio<-get_indicator1_data(kobo_output=kobo_clean)
+# bind data form templates
+data_for_alternative_ratio<-rbind(data_for_alternative_ratio, ind1_data_from_templates)
+```
+Keep only populations for which we hav NcPoint data:
+```{r}
+# filter rows with missing data for NcPoint
+data_for_alternative_ratio<-data_for_alternative_ratio %>% 
+                            filter(!is.na(NcPoint))
+# show data to check
+data_for_alternative_ratio %>% select(taxon, Ne, NcRange, NcPoint)
+```
+How many pops and assessments this subset of data has?
+```{r}
+# How many pops?
+nrow(data_for_alternative_ratio)
+
+# how many assesments?
+length(unique(data_for_alternative_ratio$X_uuid))
+
+# how many taxa?
+length(unique(data_for_alternative_ratio$taxon))
+
+# how many assessments by taxonomic groups
+data_for_alternative_ratio %>% group_by(X_uuid, taxonomic_group) %>%
+                      summarise(n=n()) %>% group_by(taxonomic_group)  %>%
+                      summarise(n=n())
+
+# how many assessments by country
+data_for_alternative_ratio %>% group_by(X_uuid, country_assessment) %>%
+                      summarise(n=n()) %>% group_by(country_assessment)  %>%
+                      summarise(n=n())
+```
+
+
+Now we transform NcPoint data to Ne using 0.1, 0.2 and 0.3 ratios
+
+```{r}
+data_for_alternative_ratio <- data_for_alternative_ratio %>%
+                              mutate(
+                               Ne_0.1=NcPoint*0.1,
+                               Ne_0.2=NcPoint*0.2,
+                               Ne_0.3=NcPoint*0.3)
+# show data to check
+data_for_alternative_ratio %>% select(NcPoint, Ne_0.1, Ne_0.2, Ne_0.3)
+
+```
+Estimate the Ne 500 indciator for each of the 3 Ne values 
+
+```{r}
+ind1_alt_ratios<-data_for_alternative_ratio %>%
+                  group_by(X_uuid, taxonomic_group, taxon) %>%
+                  summarise(n_pops=n(),
+                            n_pops_Ne_data=sum(!is.na(NcPoint)),
+                            n_more_500_Ne_0.1=sum(Ne_0.1>500, na.rm=TRUE),
+                            n_more_500_Ne_0.2=sum(Ne_0.2>500, na.rm=TRUE),
+                            n_more_500_Ne_0.3=sum(Ne_0.3>500, na.rm=TRUE),
+                            ind1_Ne_0.1=n_more_500_Ne_0.1/n_pops_Ne_data,
+                            ind1_Ne_0.2=n_more_500_Ne_0.2/n_pops_Ne_data,
+                            ind1_Ne_0.3=n_more_500_Ne_0.3/n_pops_Ne_data) %>%
+                            ungroup()
+
+
+ind1_alt_ratios %>% select(taxonomic_group, taxon, ind1_Ne_0.1, ind1_Ne_0.2, ind1_Ne_0.3)
+```
+Same data in tidy format for plots and summaries:
+```{r}
+ind1_alt_ratios_long<-pivot_longer(ind1_alt_ratios, 
+                                   cols = ind1_Ne_0.1:ind1_Ne_0.3,
+                                   names_to="NeNc_ratio",
+                                   values_to="ind1_value")
+ind1_alt_ratios_long %>% select(taxonomic_group, taxon, NeNc_ratio, ind1_value)
+
+```
+Histogram:
+```{r}
+ind1_alt_ratios_long %>% ggplot(aes(x=ind1_value, fill=NeNc_ratio)) +
+  geom_histogram(alpha=0.5, position = 'identity') + theme_light()
+```
+Same histogram faceting:
+```{r}
+ind1_alt_ratios_long %>% ggplot(aes(x=ind1_value, fill=NeNc_ratio)) +
+  geom_histogram(position = 'identity') + 
+  facet_wrap("NeNc_ratio") +
+  theme_light() 
+```
+Boxplots:
+```{r}
+ind1_alt_ratios_long %>% ggplot(aes(x=NeNc_ratio, y=ind1_value, fill=NeNc_ratio)) +
+  geom_boxplot() + 
+  geom_jitter(size=.5, width = 0.1) +
+  theme_light()
+  
+```
+
+Summary stats:
+```{r}
+x<-ind1_alt_ratios_long %>% group_by(NeNc_ratio) %>%
+                         summarize(n=n(),
+                         mean=mean(ind1_value),
+                         median=median(ind1_value),
+                         per.0=sum(ind1_value==0) / n *100,
+                         per.below.25=sum(ind1_value<0.25) / n *100,
+                         per.below.90=sum(ind1_value<0.90) / n *100,
+                         per.above.75=sum(ind1_value>0.75)/ n *100,
+                         per1=sum(ind1_value==1) / n *100)
+kable(x, digits = 2)
+```
+
+Does the value of ind1 varies with the NeNc ratio used?
+```{r}
+m.ratios<-glmmTMB(ind1_value ~ NeNc_ratio, family = "ordbeta", data = ind1_alt_ratios_long)
+summary(m.ratios)
+```
+
 
 ## Session Info for reproducibility purposes:
 
