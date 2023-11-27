@@ -3693,17 +3693,20 @@ Select taxa for which we have an alternative known NeNc ratio:
 sp_known_ratios<-metadata %>% filter(!is.na(ratio_species_related)) %>% select(taxon, common_name, taxonomic_group, country_assessment, ratio_species_related)
 select(sp_known_ratios, taxon, ratio_species_related, country_assessment)
 ```
+Remove the elephant, because Jess confirmed <0.1 is 0.1, so no change:
+```{r}
+sp_known_ratios<-filter(sp_known_ratios, taxon != "Loxodonta africana")
+```
 
 Create a new variable with only numeric values for the ratio. For this, when ranges were provided we take the average.
 
 ```{r}
 sp_known_ratios <-sp_known_ratios %>% mutate(
-                    new_ratio=case_when(
+                    known_ratio=case_when(
                     # If ratio_species_related is a single value (with a decimal point), keep it as it is
                     grepl("^\\d+\\.?\\d*$", ratio_species_related) ~ as.numeric(ratio_species_related),
                     # manually change data that includes ranges or other formats. One by one:
                     ratio_species_related == "0.26 (0.1-0.3)" ~ 0.26,
-                    ratio_species_related == "<0.1" ~ 0.05,
                     ratio_species_related == "1:5" ~ 0.2,
                     ratio_species_related == "0.09-0.604" ~ mean(c(0.09,0.604)),
                     ratio_species_related == "0.36 (0.275-0.424)" ~ 0.36,
@@ -3711,7 +3714,7 @@ sp_known_ratios <-sp_known_ratios %>% mutate(
                     ratio_species_related == "0.16-0.78" ~ mean(c(0.16,0.78))
           ))
 
-select(sp_known_ratios, ratio_species_related, new_ratio)
+select(sp_known_ratios, ratio_species_related, known_ratio)
 ```
 
 Add English names:
@@ -3724,20 +3727,110 @@ mutate(english_name = str_extract_all(common_name, "(?<=;|^)\\s*([^;(]+)\\s*\\(E
 
 Show nice table
 ```{r}
-x<-select(sp_known_ratios, taxon, taxonomic_group, english_name, country_assessment, ratio_species_related, new_ratio)
+x<-select(sp_known_ratios, taxon, taxonomic_group, english_name, country_assessment, ratio_species_related, known_ratio)
 kable(x)
 ```
 
 
 Quick summary of the new ranges:
 ```{r}
-summary(sp_known_ratios$new_ratio)
+summary(sp_known_ratios$known_ratio)
 nrow(sp_known_ratios)
 table(sp_known_ratios$taxonomic_group)
 ```
 
-##### Pending:
-Use NcPoint data from data_for_alternative_ratio witht he new_ratio for each species to transform the data and calculate the indicator.
+Of the taxa for which we have a known Ne:Nc ratio, which have NcPoint data? (ie are present in `data_for_alternative_ratio`). Keep only those.
+
+```{r}
+#list taxa with known ratios
+unique(sp_known_ratios$taxon)
+
+# are they in data_for_alternative_ratio?
+unique(sp_known_ratios$taxon) %in% unique(data_for_alternative_ratio$taxon)
+
+```
+
+Keep only the taxa with known alternative ratios and NcPoint data:
+```{r}
+sp_known_ratios_NcPoint<-sp_known_ratios[sp_known_ratios$taxon %in% unique(data_for_alternative_ratio$taxon), ]
+
+x<-select(sp_known_ratios_NcPoint, taxon, taxonomic_group, english_name, country_assessment, ratio_species_related, known_ratio)
+kable(x)
+```
+
+Use NcPoint data from data_for_alternative_ratio witht he known_ratio for each species to transform the NcPoint data to Ne:
+
+```{r}
+# to store loop output
+data_for_table_altratio<-data.frame()
+
+## loop through taxa with Ne kwnon ratio and NcPoint data
+
+for(i in 1:length(unique(sp_known_ratios_NcPoint$taxon))){
+# get desired taxon
+desired_taxon <- unique(sp_known_ratios_NcPoint$taxon)[i]
+
+# get known ratio for desired taxon
+known_ratio <- sp_known_ratios_NcPoint[sp_known_ratios_NcPoint$taxon== desired_taxon, "known_ratio"]
+
+# for each pop of desired taxon, estimate Ne from the known ratio
+x<-filter(data_for_alternative_ratio, taxon == desired_taxon) %>%
+                              mutate(Ne_known_ratio = NcPoint*known_ratio,
+                                     known_ratio = known_ratio[1])
+
+data_for_table_altratio<-rbind(data_for_table_altratio, x)
+}
+
+# check
+data_for_table_altratio %>% select(taxon, NcPoint, Ne_0.1, Ne_0.2, Ne_0.3, known_ratio, Ne_known_ratio)
+
+```
+Estimate the indicator values for the 4 Ne options (0.1, 0.2, 0.3, known):
+```{r}
+ind1_tablesp_ratios<-data_for_table_altratio %>%
+                  group_by(X_uuid, taxonomic_group, taxon, known_ratio) %>%
+                  summarise(n_pops=n(),
+                            n_pops_Ne_data=sum(!is.na(NcPoint)),
+                            n_more_500_Ne_0.1=sum(Ne_0.1>500, na.rm=TRUE),
+                            n_more_500_Ne_0.2=sum(Ne_0.2>500, na.rm=TRUE),
+                            n_more_500_Ne_0.3=sum(Ne_0.3>500, na.rm=TRUE),
+                            n_more_500_Ne_known_ratio=sum(Ne_known_ratio>500, na.rm=TRUE),
+                            ind1_Ne_0.1=n_more_500_Ne_0.1/n_pops_Ne_data,
+                            ind1_Ne_0.2=n_more_500_Ne_0.2/n_pops_Ne_data,
+                            ind1_Ne_0.3=n_more_500_Ne_0.3/n_pops_Ne_data,
+                            ind1_Ne_known_ratio=n_more_500_Ne_known_ratio/n_pops_Ne_data) %>%
+                            ungroup()
+
+kable(select(ind1_tablesp_ratios, -starts_with("n_more"), 
+-X_uuid), digits = 2)
+```
+
+Long format for plots:
+```{r}
+ind1_tablesp_long<-pivot_longer(ind1_tablesp_ratios, 
+                                   cols = c(ind1_Ne_0.1:ind1_Ne_0.3,ind1_Ne_known_ratio),
+                                   names_to="NeNc_ratio",
+                                   values_to="ind1_value")
+```
+
+Plot
+```{r}
+ind1_tablesp_long %>% 
+  # Keep rows with different values in indicator1 within each taxon group
+  group_by(taxon) %>%
+  filter(n_distinct(indicator1) > 1) %>%
+  # plot
+  ggplot(aes(x=taxon, y=ind1_value)) +
+          geom_line(colour="darkgrey") + 
+          geom_point(aes(color=NeNc_ratio, shape=NeNc_ratio), alpha=0.6, size=2) +
+  xlab("") + ylab("Proportion of populations within species with Ne>500") +
+  ylim(0, 1)+
+  coord_flip() +
+  theme_light() + 
+  theme(axis.text.y = element_text(face = "italic"),  panel.border = element_blank(), legend.position="right", text= element_text(size=13))
+```
+
+
 
 ## Session Info for reproducibility purposes:
 
