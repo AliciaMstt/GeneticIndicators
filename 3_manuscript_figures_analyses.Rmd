@@ -2056,17 +2056,7 @@ data$species_range<-as.factor(data$species_range)
   
 Is there still an effect of method on indicator1 if we control for species range?
 
-```{r}
-## run model  + country
-m.c3 <- glmmTMB(indicator1_mean ~ defined_populations_simplified + species_range + (1|country_assessment), family = "ordbeta", data = data)
 
-
-# summary results
-summary(m.c3)
-
-```
-  
-#### Catherine look here: Same m.c3 model but using indicators_full:
 ```{r}
 data_full<- indicators_full  %>% # notice this uses indicators_full instead of indicators_average_one
                     filter(!is.na(indicator1)) %>% # notice this uses indicator1 instead of _mean
@@ -2099,16 +2089,19 @@ Finally, we tested interactions between method and species range, to determine w
 Is the effect of method on Ne indicator moderated by species range?
 
 ```{r}
+data_full<- indicators_full  %>% # notice this uses indicators_full instead of indicators_average_one
+                    filter(!is.na(indicator1)) %>% # notice this uses indicator1 instead of _mean
+                    filter(species_range !="unknown")
 
 ## run model 
-m.c4 <- glmmTMB(indicator1_mean ~ defined_populations_simplified + species_range + defined_populations_simplified*species_range + (1|country_assessment), family = "ordbeta", data = data)
+m.c4 <- glmmTMB(indicator1 ~ defined_populations_simplified + species_range + defined_populations_simplified*species_range + (1|country_assessment), family = "ordbeta", data = data_full)
 
 
 # summary results
 summary(m.c4)
 ```
 
-  
+Note the previous model has high Str.Errors, so this model does not converge.
 
 ### Main Figure (representing the models above): Single plot 5 panels. Boxplots plots for the effect of method on: number of populations, proportion of maintained populations (indicator 2) and Proportion of populations with Ne>500 (indicator 1), AND Violin plots for the distribution of the indicator values by range type.
 
