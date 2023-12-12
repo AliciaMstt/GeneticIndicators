@@ -41,7 +41,7 @@ If you have a question that is not answered in the guidance documents available 
 
 The following guides were used to provide detailed advice on how to undertake  the genetic monitoring at the country level for a set of species, as well as how to answer each question of the Kobo form.
 
-* **Overall Project Guidance document**  [available as pdf here](./Indicator_testing_project_proposed_detailed_guidance.pdfg). This document includes detailed definitions on key terms (e.g. what is a population), as well as information on how to select a species list and what types of data sources could be used.
+* **Overall Project Guidance document**  [available as pdf here](./Indicator_testing_project_proposed_detailed_guidance.pdf). This document includes detailed definitions on key terms (e.g. what is a population), as well as information on how to select a species list and what types of data sources could be used.
 
 * **Genetic Diversity Indicator Testing Kobo Manual**
  [available as pdf as pdf here](./Genetic Diversity Indicator Testing Kobo v4.0 Manual.pdf). This manual provides detailed advice on how to answer each question, with examples if necessary. 
