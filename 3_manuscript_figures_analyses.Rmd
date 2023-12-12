@@ -829,13 +829,13 @@ p4
 
 ```
 
-### Supplementary Figure S3: Ne and Nc data availabiltiy by taxa
+### Supplementary Figure S4X: Ne and Nc data availabiltiy by taxa
 ```{r}
 plot_grid(p1 + theme(legend.justification = c(0,.5)),  # legend.justification is used to aling legends
           p2 + theme(legend.justification = c(0,.5)),
           ncol=1, align = "v", labels=c("A)", "B)"), vjust = .7)  
 
-ggsave("FigS3.pdf", width = 23, height = 25  , units = "cm")
+ggsave("FigS4.pdf", width = 23, height = 25  , units = "cm")
 
 ```
 
@@ -1008,7 +1008,7 @@ p5
 ```
 
 
-### Supplementary Figure S4: Missing data in extinct populations by country and method and by taxonomic group
+### Supplementary Figure S3: Missing data in extinct populations by country and method and by taxonomic group
 
 Missing data in number of extinct populations by method to define populations:
 
@@ -1053,7 +1053,7 @@ plot_grid(pa, pb,
           rel_heights = c(1.1, 1),
           labels=c("A)", "B)"))
 
-ggsave("FigS4.pdf", width = 31, height = 50  , units = "cm")
+ggsave("FigS3.pdf", width = 31, height = 50  , units = "cm")
 ```
 
 
@@ -1086,7 +1086,7 @@ ggsave("Fig1.pdf", width = 17, height = 33  , units = "cm")
 ```
 
 
-## Supplementary Figure: Method to define populations used by country and taxa (alluvial)
+## Supplementary Figure S7: Method to define populations used by country and taxa (alluvial)
 
 Reformat data
 ```{r}
@@ -1118,7 +1118,7 @@ alluvial(foralluvial[,1:3], freq = foralluvial$n,
          alpha = .7)
 
 
-pdf("FigS6.pdf", width = 9, height = 7)
+pdf("FigS7.pdf", width = 9, height = 7)
 # plot
 alluvial(foralluvial[,1:3], freq = foralluvial$n,
          col=methodspop, 
@@ -1386,7 +1386,7 @@ kable(x)
 
 
 
-### Supplementary Figure S7: number of mantained populations by method to define populations and range type
+### Supplementary Figure S8: number of mantained populations by method to define populations and range type
 
 Facet by range type:
 ```{r}
@@ -1414,7 +1414,7 @@ p<-indicators_full %>%
 
 p
 
-ggsave("FigS7.pdf", width = 18, height = 19  , units = "cm")
+ggsave("FigS8.pdf", width = 18, height = 19  , units = "cm")
 ```
 
 
@@ -2282,7 +2282,7 @@ ggsave("Fig2.pdf", width = 50, height = 30  , units = "cm")
 
 
 
-### Supplementary Figure S8: Single figure 2 panels scatter plots number of populations vs indicators
+### Supplementary Figure S9: Single figure 2 panels scatter plots number of populations vs indicators
 
 ```{r, out.height= "800px", out.width="500px"}
 # plot
@@ -2290,7 +2290,7 @@ plot_grid(psupA + xlim(0,400) + xlab(""), # remove xlab from top plot and match 
           psupB+ xlim(0,400), 
           ncol=1, align = "v", labels=c("A)", "B)"))  
 
-ggsave("FigS8.pdf", width = 18, height = 28  , units = "cm")
+ggsave("FigS9.pdf", width = 18, height = 28  , units = "cm")
 
 ```
 
@@ -3010,7 +3010,7 @@ ggplot(aes(x=country_assessment, fill=global_IUCN)) +
                     breaks=levels(as.factor(indicators_full$global_IUCN))) +
       theme_light()
 ```
-### Supplementary Figure S9: Sankey plot genetic data availability
+### Supplementary Figure S10: Sankey plot genetic data availability
 Relatively few taxa have genetic monitoring, but many have some sort of genetic study. Let’s check that with a Sankey Plot:
 
 ```{r}
@@ -3053,7 +3053,7 @@ ggplot(df, aes(x = x,
   
   xlab("")
 
-ggsave("FigS9.pdf", width = 20, height = 18  , units = "cm")
+ggsave("FigS10.pdf", width = 20, height = 18  , units = "cm")
 
 ```
 
@@ -3635,26 +3635,42 @@ ind1_alt_ratios_long<-pivot_longer(ind1_alt_ratios,
 ind1_alt_ratios_long %>% select(taxonomic_group, taxon, NeNc_ratio, ind1_value)
 
 ```
-Histogram:
+Histogram faceting:
 ```{r}
-ind1_alt_ratios_long %>% ggplot(aes(x=ind1_value, fill=NeNc_ratio)) +
-  geom_histogram(alpha=0.5, position = 'identity') + theme_light()
+#nicer labels
+ind1_alt_ratios_long$NeNc_ratio<-as.factor(ind1_alt_ratios_long$NeNc_ratio)
+levels(ind1_alt_ratios_long$NeNc_ratio)<-c("0.1", "0.2", "0.3")
+
+hist_ratios <- ind1_alt_ratios_long %>% ggplot(aes(x=ind1_value, fill=NeNc_ratio)) +
+                        geom_histogram(position = 'identity') + 
+                        facet_wrap("NeNc_ratio") +
+                        theme_light() + xlab("Proportion of populations within species with Ne>500") +
+                       theme(panel.border = element_blank(), legend.position="none")
+hist_ratios
 ```
-Same histogram faceting:
-```{r}
-ind1_alt_ratios_long %>% ggplot(aes(x=ind1_value, fill=NeNc_ratio)) +
-  geom_histogram(position = 'identity') + 
-  facet_wrap("NeNc_ratio") +
-  theme_light() 
-```
+
 Boxplots:
 ```{r}
-ind1_alt_ratios_long %>% ggplot(aes(x=NeNc_ratio, y=ind1_value, fill=NeNc_ratio)) +
-  geom_boxplot() + 
-  geom_jitter(size=.5, width = 0.1) +
-  theme_light()
+boxplot_ratios<-ind1_alt_ratios_long %>% ggplot(aes(x=NeNc_ratio, y=ind1_value, fill=NeNc_ratio)) +
+                geom_boxplot() + 
+                geom_jitter(size=.5, width = 0.1) +
+                ylab("Proportion of populations within species with Ne>500") +
+                xlab("Ne:Nc ratio") +
+                theme_light() + theme(legend.position="none")
+
+boxplot_ratios
   
 ```
+
+#### Supplementary Figure S6: Hist and boxplot with different Ne_Nc ratios
+
+```{r}
+plot_grid(hist_ratios + ggtitle(""),
+          boxplot_ratios + ggtitle(""), ncol = 1, labels = c("A)", "B)"))
+
+ggsave("FigS6.pdf", width = 18, height = 22  , units = "cm")
+```
+
 
 Summary indicator values:
 ```{r}
