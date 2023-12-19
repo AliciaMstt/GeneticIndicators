@@ -3266,11 +3266,11 @@ sd(npops$n_pops)
 How many populations, counting only once populations from taxa assessed more than once:
 
 ```{r}
-# This looks for the id of the taxa already keeping only 1 for the multiassessed taxa, and keeps those int he ind1_data (where the pops data is)
-x<-ind1_data[ind1_data$X_uuid %in% indicators_averaged_one$X_uuid, ]
+# This looks for the id of the taxa keeping only 1 for the multiassessed taxa, and keeps those int he ind1_data (where the pops data is)
+ind1_data_without_altassesments<-ind1_data[ind1_data$X_uuid %in% indicators_averaged_one$X_uuid, ]
 
 # the number of rows is the number of pops counting only once multiassessed taxa
-nrow(x)
+nrow(ind1_data_without_altassesments)
 
 ```
 
@@ -3292,6 +3292,51 @@ How many taxa with multiassesments?
 ```{r}
 nrow(x)
 ```
+
+#### Fill gaps in Table S1 
+These numbers are not reported in the main text, but it is useful to have them in Table S1 to better understand the dataset.
+
+Number of **taxa** with No data on PM indicator in both of the alternative assesments. 
+```{r}
+sum(is.na(indicators_averaged_one$indicator2_mean))
+```
+
+Percentage out of `r nrow(indicators_averaged_one)`:
+```{r}
+sum(is.na(indicators_averaged_one$indicator2_mean))/nrow(indicators_averaged_one)
+```
+
+
+Number of **taxa** with data on Ne 500 indicator (for at least 1 pop) in both of the alternative assesments. 
+
+```{r}
+sum(!is.na(indicators_averaged_one$indicator1_mean))
+```
+
+
+Percentage out of `r nrow(indicators_averaged_one)`:
+```{r}
+sum(!is.na(indicators_averaged_one$indicator1_mean))/nrow(indicators_averaged_one)
+```
+
+**Number of populations data, considering only one of the alternative assessments**
+
+Number of pops:
+```{r}
+nrow(ind1_data_without_altassesments)
+```
+
+
+```{r}
+df<-ind1_data_without_altassesments %>%
+   mutate(Ne_calculated_from = replace_na(Ne_calculated_from, "no data available")) %>%
+   group_by(Ne_calculated_from) %>%
+   summarise(n=n(),
+             percentage = (n / nrow(ind1_data_without_altassesments)) * 100)
+
+kable(df, digits = 0)
+```
+
 
 
 ### Plain Histogram and stats for Ne > 500 indicator 
