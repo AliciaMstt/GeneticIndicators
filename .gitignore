@@ -15,3 +15,6 @@ International_Genetic_Indicator_testing_V_4.0*
 
 # ignore credentials
 credentials.txt
+
+# ignore Dryad repo
+Dryad/
