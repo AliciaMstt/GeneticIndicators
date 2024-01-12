@@ -10,7 +10,9 @@ In 2020, three genetic diversity indicators were proposed and discussed[1-4]:
 
 In December 2022, the United Nations Convention of Biological Diversity (CBD) Kunming-Montreal Global Biodiversity Framework (GBF) was adopted by the 196 Parties. The Ne 500 and PM indicators were adopted in the GBF (Annex 1 of CBD/COP/DEC/15/5), which means that parties will be using these indicators to report on their progress over the next decade. 
 
-To facilitate and standardize data collection across different groups and countries, we have created: 
+This repository holds the guideline materials and scripts used in the first multinational evaluation (Mastretta-Yanes, da Silva, et al, under review) of genetic diversity using the above mentioned indicators. We developed these materials to facilitate and standardize data collection across different groups and countries, and to perform the analyses for the first multinational evaluation published at:  Mastretta-Yanes\*, A., da Silva\*, J., Grueber, C. E., ... Laikre, L. & Hoban, S. (under review). **Multinational evaluation of genetic diversity indicators for the Kunming-Montreal Global Biodiversity Monitoring framework**. *EcoEvoRxiv* (Pre-Print). https://ecoevorxiv.org/repository/view/6104/. DOI: [https://doi.org/10.32942/X2WK6T](https://doi.org/10.32942/X2WK6T)
+
+Contents:
 
 **1)** Guidance documents to prepare the project and answer the form. 
 
@@ -18,7 +20,7 @@ To facilitate and standardize data collection across different groups and countr
 
 **3)** Processing scripts to estimate the indicators based on the Kobo form output. 
 
-**4)** A first multinational evaluation of genetic diversity indicators using the former guidelines, collection tool and informatics pipeline.
+**4)** Scripts and pipeline used to undertake the statistical analyses and plots of the multinational assessment.
 
 In this repository you can find the files, documentation and relevant links of each of the points mentioned above.
 
@@ -28,13 +30,7 @@ If you use any of the materials listed below, please cite:
 
 * Hoban, S., da Silva, J. M., Mastretta-Yanes, A., Grueber, C. E., Heuertz, M., Hunter, M. E., Mergeay, J., Paz-Vinas, I., Fukaya, K., Ishihama, F., Jordan, R., Köppä, V., Latorre-Cárdenas, M. C., MacDonald, A. J., Rincon-Parra, V., Sjögren-Gulve, P., Tani, N., Thurfjell, H., & Laikre, L. (2023). **Monitoring status and trends in genetic diversity for the Convention on Biological Diversity: An ongoing assessment of genetic indicators in nine countries**. *Conservation Letters*, 16(3), e12953. [https://doi.org/10.1111/conl.12953](https://doi.org/10.1111/conl.12953)
 
-* Mastretta-Yanes\*, A., da Silva\*, J., Grueber, C. E., ... Laikre, L. & Hoban, S. (2023). **Multinational evaluation of genetic diversity indicators for the Kunming-Montreal Global Biodiversity Monitoring framework**. *EcoEvoRxiv* (Pre-Print). https://ecoevorxiv.org/repository/view/6104/. DOI: [https://doi.org/10.32942/X2WK6T](https://doi.org/10.32942/X2WK6T)
-
-
-
-#### Get in touch and more help
-
-If you have a question that is not answered in the guidance documents available below, please post it on the [Genetic Indicators Google Group](https://groups.google.com/g/genetic-indicators-project), and a member will try to answer you as soon as posible.
+* Mastretta-Yanes\*, A., da Silva\*, J., Grueber, C. E., ... Laikre, L. & Hoban, S. (under review). **Multinational evaluation of genetic diversity indicators for the Kunming-Montreal Global Biodiversity Monitoring framework**. *EcoEvoRxiv* (Pre-Print). https://ecoevorxiv.org/repository/view/6104/. DOI: [https://doi.org/10.32942/X2WK6T](https://doi.org/10.32942/X2WK6T)
 
 
 ### 1. Guidance documents:
@@ -318,7 +314,7 @@ Functions were developed and tested using:
 
 
 ## 4. Pipeline used in the multinational assessment 
-In the multinational evaluation of genetic diversity indicators (Mastretta-Yanes, da Silva et al. 2023) the raw kobo output form the form "International Genetic Indicator testing" was downloaded from R as described in section [2.3. Downloading kobo data](https://aliciamstt.github.io/GeneticIndicators/#23-downloading-kobo-data). 
+In the multinational evaluation of genetic diversity indicators (Mastretta-Yanes, da Silva et al. under review) the raw kobo output form the form "International Genetic Indicator testing" was downloaded from R as described in section [2.3. Downloading kobo data](https://aliciamstt.github.io/GeneticIndicators/#23-downloading-kobo-data). 
 
 Then, the functions described above were used as part of a pipeline with the following R Markdown notebooks:
 
