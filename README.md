@@ -1,5 +1,7 @@
 # Resources for the Multinational evaluation of genetic diversity indicators for the Kunming-Montreal Global Biodiversity Monitoring framework
 
+[![DOI](https://zenodo.org/badge/554355520.svg)](https://zenodo.org/doi/10.5281/zenodo.10620306)
+
 In 2020, three genetic diversity indicators were proposed and discussed[1-4]:
 
 * **Ne 500 indicator:** the proportion of populations within species with an effective population size (Ne) greater than 500. 
