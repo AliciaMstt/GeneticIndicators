@@ -1,16 +1,8 @@
-# Resources for the Multinational evaluation of genetic diversity indicators for the Kunming-Montreal Global Biodiversity Monitoring framework
+# Resources for the paper Multinational evaluation of genetic diversity indicators for the Kunming-Montreal Global Biodiversity Monitoring framework
 
-In 2020, three genetic diversity indicators were proposed and discussed[1-4]:
+This repository holds the guideline materials and scripts used in the first pilot multinational evaluation (Mastretta-Yanes, da Silva, et al, under review) of genetic diversity using the genetic diversity indicators. We developed these materials to facilitate and standardize data collection across different groups and countries, and to perform the analyses for the first multinational evaluation published at:  Mastretta-Yanes\*, A., da Silva\*, J., Grueber, C. E., ... Laikre, L. & Hoban, S. (under review). **Multinational evaluation of genetic diversity indicators for the Kunming-Montreal Global Biodiversity Monitoring framework**. *EcoEvoRxiv* (Pre-Print). https://ecoevorxiv.org/repository/view/6104/. DOI: [https://doi.org/10.32942/X2WK6T](https://doi.org/10.32942/X2WK6T)
 
-* **Ne 500 indicator:** the proportion of populations within species with an effective population size (Ne) greater than 500. 
-
-* **PM indicator:** the proportion of maintained populations within species.
-
-* **genetic monitoring  indicator:** number of species in which genetic diversity has been or is being monitored using DNA-based methods
-
-In December 2022, the United Nations Convention of Biological Diversity (CBD) Kunming-Montreal Global Biodiversity Framework (GBF) was adopted by the 196 Parties. The Ne 500 and PM indicators were adopted in the GBF (Annex 1 of CBD/COP/DEC/15/5), which means that parties will be using these indicators to report on their progress over the next decade. 
-
-This repository holds the guideline materials and scripts used in the first multinational evaluation (Mastretta-Yanes, da Silva, et al, under review) of genetic diversity using the above mentioned indicators. We developed these materials to facilitate and standardize data collection across different groups and countries, and to perform the analyses for the first multinational evaluation published at:  Mastretta-Yanes\*, A., da Silva\*, J., Grueber, C. E., ... Laikre, L. & Hoban, S. (under review). **Multinational evaluation of genetic diversity indicators for the Kunming-Montreal Global Biodiversity Monitoring framework**. *EcoEvoRxiv* (Pre-Print). https://ecoevorxiv.org/repository/view/6104/. DOI: [https://doi.org/10.32942/X2WK6T](https://doi.org/10.32942/X2WK6T)
+The content of this repository holds the materials exactly as they were used to gather and analyse data in the above mentioned manuscript. Afterwards, the tools and resources developed were improved following the lessons learned from this study. **Please refer to https://ccgenetics.github.io/guidelines-genetic-diversity-indicators/ for the updated version of the guidance materials and koboform if you want to perform your own assessment of the genetic diversity indicators.**
 
 Contents:
 
