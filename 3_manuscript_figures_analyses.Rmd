@@ -1178,7 +1178,7 @@ p1<-indicators_averaged_one %>%
   ggplot(aes(x=myaxis, y=indicator1_mean , fill=species_range)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of populations within species with Ne>500") +
+      xlab("") + ylab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
       coord_flip() +
       scale_fill_manual(breaks=c("wide ranging", "restricted", "unknown"),
                        labels=c("wide ranging", "restricted", "unknown"),
@@ -1206,7 +1206,7 @@ df  %>%
 ggplot(aes(x=species_range, y=indicator1_mean , fill=species_range)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of populations within species with Ne>500") +
+      xlab("") + ylab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
       coord_flip() +
       scale_x_discrete(breaks=c("wide ranging", "restricted"),
                         labels=c("wide ranging", "restricted")) +
@@ -1242,7 +1242,7 @@ p2<-indicators_averaged_one %>%
   ggplot(aes(x=myaxis, y=indicator2_mean , fill=species_range)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of populations maintained within species") +
+      xlab("") + ylab("Proportion of populations maintained within species \n(PM indicator)") +
       coord_flip() +
       scale_fill_manual(breaks=c("wide ranging", "restricted", "unknown"),
                        labels=c("wide ranging", "restricted", "unknown"),
@@ -1270,7 +1270,7 @@ df  %>%
 ggplot(aes(x=species_range, y=indicator2_mean , fill=species_range)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of populations maintained within species") +
+      xlab("") + ylab("Proportion of populations maintained within species \n(PM indicator)") +
       coord_flip() +
       theme_light() +
       theme(panel.border = element_blank(), legend.position="none", text= element_text(size=15)) +
@@ -1559,7 +1559,7 @@ pb<- df %>%
   filter(n_extant_populations<500) %>%
   ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_nicenames,    
                                      fill=defined_populations_nicenames)) +
-          geom_boxplot() + xlab("") + ylab("Proportion of populations maintained within species") +
+          geom_boxplot() + xlab("") + ylab("Proportion of populations maintained within species \n(PM indicator)") +
           geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
   theme_light() +
@@ -1591,7 +1591,7 @@ psupA<- indicators_full %>%
     scale_color_manual(values=simplifiedmethods_colors,
                     breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
     theme(legend.position = "none") +
-    ylab("Proportion of populations maintained within species") +
+    ylab("Proportion of populations maintained within species \n(PM indicator)") +
     xlab("Number of maintained populations") +
     theme(text = element_text(size = 13))
 psupA
@@ -1608,7 +1608,7 @@ psupA.1<- indicators_full %>%
     geom_point() +
     theme_light() +
     theme(legend.position = "none") +
-    ylab("Proportion of populations maintained within species") +
+    ylab("Proportion of populations maintained within species \n(PM indicator)") +
     xlab("Number of maintained populations") +
     theme(text = element_text(size = 13))
 psupA.1
@@ -1835,7 +1835,7 @@ df<-indicators_full %>%
 pc<- df %>%
   ggplot(aes(x=myaxis, y=indicator1, color=defined_populations_nicenames,    
                                      fill=defined_populations_nicenames)) +
-          geom_boxplot() + xlab("") + ylab("Proportion of populations within species with Ne>500") +
+          geom_boxplot() + xlab("") + ylab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
           geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
   theme_light() +
@@ -1868,7 +1868,7 @@ psupB<- indicators_full %>%
     scale_color_manual(values=simplifiedmethods_colors,
                     breaks=levels(as.factor(indicators_full$defined_populations_nicenames))) +
     theme(legend.position = "none") +
-    ylab("Proportion of populations within species with Ne>500") +
+    ylab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
     xlab("Number of maintained populations") +
     theme(text = element_text(size = 13))
 psupB
@@ -1888,7 +1888,7 @@ psupB.1<- indicators_full %>%
     geom_point() +
     theme_light() +
     theme(legend.position = "none") +
-    ylab("Proportion of populations within species with Ne>500") +
+    ylab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
     xlab("Number of maintained populations") +
     theme(text = element_text(size = 13))
 psupB.1
@@ -2130,7 +2130,7 @@ pb.1<- df %>%
   filter(n_extant_populations<500) %>%
   ggplot(aes(x=myaxis, y=indicator2, color=defined_populations_nicenames,    
                                      fill=defined_populations_nicenames)) +
-          geom_boxplot() + xlab("") + ylab("Proportion of populations maintained within species") +
+          geom_boxplot() + xlab("") + ylab("Proportion of populations maintained within species \n(PM indicator)") +
           geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
   theme_light() +
@@ -2168,7 +2168,7 @@ df<-indicators_full %>%
 pc.1<- df %>%
   ggplot(aes(x=myaxis, y=indicator1, color=defined_populations_nicenames,    
              fill=defined_populations_nicenames)) +
-  geom_boxplot() + xlab("") + ylab("Proportion of populations within species with Ne>500") +
+  geom_boxplot() + xlab("") + ylab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
   geom_jitter(size=.4, width = 0.1, color="black") +
   coord_flip() +
   theme_light() +
@@ -2216,7 +2216,7 @@ pd<-indicators_averaged_one %>%
   # plot
   ggplot(aes(x=myaxis, y=indicator2_mean)) +
           geom_violin(width=1, linewidth = 0, fill="grey70")  +
-          xlab("") + ylab("Proportion of populations maintained within species") +
+          xlab("") + ylab("Proportion of populations maintained within species \n(PM indicator)") +
           coord_flip() +
         new_scale_color() + # to color points without confuisng ggplot
         geom_jitter(size=1.2, width = 0.1, aes(color = genetic_to_define_pops)) +
@@ -2253,7 +2253,7 @@ pe <- indicators_averaged_one %>%
   # plot
   ggplot(aes(x=myaxis, y=indicator1_mean)) +
       geom_violin(width=1, linewidth = 0, fill="grey70")  +
-      xlab("") + ylab("Proportion of populations within species with Ne>500") +
+      xlab("") + ylab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
       coord_flip() +
     new_scale_color() + # to color the points without confusing ggplot
     geom_jitter(size=1.2, width = 0.1, aes(color = genetic_to_define_pops)) +
@@ -2276,7 +2276,7 @@ Both top and bottom together:
 
 ```{r}
 plot_grid(p_top, p_bot, ncol = 1)
-ggsave("Fig2.pdf", width = 50, height = 30  , units = "cm")
+ggsave("Fig2.pdf", width = 52, height = 30  , units = "cm")
 ```
 
 
@@ -2349,7 +2349,7 @@ p1<-df %>%
     ggplot(aes(x=myaxis, y=indicator1_mean , fill=global_IUCN)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of populations within species with Ne>500") +
+      xlab("") + ylab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
       coord_flip() +
       scale_fill_manual(values= IUCNcolors, # iucn color codes
                         breaks=c(levels(df$global_IUCN))) +
@@ -2396,7 +2396,7 @@ indicators_averaged_one %>%
   ggplot(aes(x=global_IUCN, y=indicator1_mean, fill=global_IUCN)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of populations within species with Ne>500") +
+      xlab("") + ylab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
       coord_flip() +
       scale_fill_manual(values= IUCNcolors, # iucn color codes
                     breaks=c(levels(indicators_averaged_one$global_IUCN))) +
@@ -2453,7 +2453,7 @@ p2<-df %>%
     ggplot(aes(x=myaxis, y=indicator2 , fill=global_IUCN)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of populations maintained within species") +
+      xlab("") + ylab("Proportion of populations maintained within species \n(PM indicator)") +
       coord_flip() +
       scale_fill_manual(values= IUCNcolors, # iucn color codes
                         breaks=c(levels(df$global_IUCN))) +
@@ -2497,7 +2497,7 @@ indicators_averaged_one %>%
   ggplot(aes(x=global_IUCN, y=indicator2_mean, fill=global_IUCN)) +
       geom_violin(width=1, linewidth = 0)  +
       geom_jitter(size=.5, width = 0.1) +
-      xlab("") + ylab("Proportion of populations maintained within species") +
+      xlab("") + ylab("Proportion of populations maintained within species \n(PM indicator)") +
       coord_flip() +
       scale_fill_manual(values= IUCNcolors, # iucn color codes
                     breaks=c(levels(indicators_averaged_one$global_IUCN))) +
@@ -2615,7 +2615,7 @@ p1<-df %>%
     ggplot(aes(x=myaxis, y=indicator1_mean, fill=taxonomic_group_simplified, color=taxonomic_group_simplified)) +
       geom_violin(width=1.5, linewidth = 0.2)  +
       geom_jitter(size=.7, width = 0.1, color="black") +
-      xlab("") + ylab("Proportion of populations within species with Ne>500") +
+      xlab("") + ylab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
       coord_flip() +
       scale_x_discrete(limits=rev) +
       scale_fill_manual(values= c(rep(grouped_taxon_colors[1], 6), # for animals
@@ -2719,7 +2719,7 @@ p2<-df %>%
     ggplot(aes(x=myaxis, y=indicator2_mean, fill=taxonomic_group_simplified, color=taxonomic_group_simplified)) +
       geom_violin(width=1, linewidth = 0.2)  +
       geom_jitter(size=.7, width = 0.1, color="black") +
-      xlab("") + ylab("Proportion of populations maintained within species") +
+      xlab("") + ylab("Proportion of populations maintained within species \n(PM indicator)") +
       coord_flip() +
       scale_x_discrete(limits=rev) +
       scale_fill_manual(values= c(rep(grouped_taxon_colors[1], 6), # for animals
@@ -2791,7 +2791,7 @@ By animals, plants, others:
 hist_p1 <- indicators_averaged_one %>%
                   ggplot(aes(x = indicator1_mean, fill = taxonomic_group_3)) +
                   geom_histogram( bins = 25, color="white") + # Adjust the number of bins as needed
-                  labs(x = "Proportion of populations within species with Ne>500", y = "Frequency") +
+                  labs(x = "Proportion of populations within species with Ne>500 \n(Ne 500 indicator)", y = "Frequency") +
                   scale_fill_manual(
                     values = grouped_taxon_colors, # Custom colors for animals, plants, and others
                     breaks = c("animals", "plants", "others"),
@@ -2856,7 +2856,7 @@ PM  Histogram for animal, plants, others:
 hist_p2 <- indicators_averaged_one %>%
                   ggplot(aes(x = indicator2_mean, fill = taxonomic_group_3)) +
                   geom_histogram(bins = 25, color="white") + # Adjust the number of bins as needed
-                  labs(x = "Proportion of populations maintained within species", y = "Frequency") +
+                  labs(x = "Proportion of populations maintained within species \n(PM indicator)", y = "Frequency") +
                   scale_fill_manual(
                     values = grouped_taxon_colors, # Custom colors for animals, plants, and others
                     breaks = c("animals", "plants", "others"),
@@ -2941,7 +2941,7 @@ p1<-only_multi %>%
   ggplot(aes(x=taxon, y=indicator1)) +
           geom_line(colour="darkgrey") + 
           geom_point(aes(color=country_assessment)) +
-  xlab("") + ylab("Proportion of populations within species with Ne>500") +
+  xlab("") + ylab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
   labs(color="country") +
   ylim(0, 1)+
   coord_flip() +
@@ -2963,7 +2963,7 @@ p2<-only_multi %>%
           geom_line(colour="darkgrey") + 
           geom_point(aes(color=country_assessment)) +
     scale_color_manual(values= scales::hue_pal()(4)[2:4]) + # last 3 colors to make them the same than the other plot
-  xlab("") + ylab("Proportion of populations maintained within species") +
+  xlab("") + ylab("Proportion of populations maintained within species \n(PM indicator)") +
   labs(color="country") +
   coord_flip() +
   theme_light() + 
@@ -3348,7 +3348,7 @@ Plain histogram:
 hist_p <- indicators_averaged_one %>%
                   ggplot(aes(x = indicator1_mean)) +
                   geom_histogram( bins = 25, fill="grey30") + # Adjust the number of bins as needed
-                  labs(x = "Proportion of populations within species with Ne>500", y = "Frequency") +
+                  labs(x = "Proportion of populations within species with Ne>500 \n(Ne 500 indicator)", y = "Frequency") +
                   theme_light() +
                   theme(panel.border = element_blank(), text = element_text(size = 15)) +
                   guides(fill = guide_legend(title = NULL))
@@ -3409,7 +3409,7 @@ Plain histogram
 hist_p <- indicators_averaged_one %>%
                   ggplot(aes(x = indicator2_mean)) +
                   geom_histogram(bins = 25, fill="grey30") + # Adjust the number of bins as needed
-                  labs(x = "Proportion of populations maintained within species", y = "Frequency") +
+                  labs(x = "Proportion of populations maintained within species \n(PM indicator)", y = "Frequency") +
                   theme_light() +
                   theme(panel.border = element_blank(), text = element_text(size = 15)) +
                   guides(fill = guide_legend(title = NULL))
@@ -3689,7 +3689,7 @@ levels(ind1_alt_ratios_long$NeNc_ratio)<-c("0.1", "0.2", "0.3")
 hist_ratios <- ind1_alt_ratios_long %>% ggplot(aes(x=ind1_value, fill=NeNc_ratio)) +
                         geom_histogram(position = 'identity') + 
                         facet_wrap("NeNc_ratio") +
-                        theme_light() + xlab("Proportion of populations within species with Ne>500") +
+                        theme_light() + xlab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
                        theme(panel.border = element_blank(), legend.position="none")
 hist_ratios
 ```
@@ -3699,7 +3699,7 @@ Boxplots:
 boxplot_ratios<-ind1_alt_ratios_long %>% ggplot(aes(x=NeNc_ratio, y=ind1_value, fill=NeNc_ratio)) +
                 geom_boxplot() + 
                 geom_jitter(size=.5, width = 0.1) +
-                ylab("Proportion of populations within species with Ne>500") +
+                ylab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
                 xlab("Ne:Nc ratio") +
                 theme_light() + theme(legend.position="none")
 
@@ -3877,7 +3877,7 @@ ind1_tablesp_long %>%
   ggplot(aes(x=taxon, y=ind1_value)) +
           geom_line(colour="darkgrey") + 
           geom_point(aes(color=NeNc_ratio, shape=NeNc_ratio), alpha=0.6, size=2) +
-  xlab("") + ylab("Proportion of populations within species with Ne>500") +
+  xlab("") + ylab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
   ylim(0, 1)+
   coord_flip() +
   theme_light() + 
