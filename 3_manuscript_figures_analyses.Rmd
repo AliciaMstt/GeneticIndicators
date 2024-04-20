@@ -3582,14 +3582,14 @@ nrow(x)
 nrow(x) / nrow(indicators_averaged_one)
 ```
 
-## Exploring Ne 500 values if using a different Ne:Nc ratio
+## Exploring Ne 500 values if using a different Ne/Nc ratio
 
-Because the Ne:Nc does not necessarely needs to be 0.1, wenterested to know if the distribution of values shifts to the right (better indicator status) if we used other ratio, like 0.2 or 0.3, which is a better ratio for some taxa. This would show uncertainty and emphasize more work to be done on the Ne/Nc ratio. Lastly it may help address concerns that Nc 5000 is just infeasible, because there are outlier species which never had Nc>5000, e.g. some endimic birds, but these are cases where Ne might be >500 (because Ne/Nc is >0.25).
+Because the Ne/Nc does not necessarely needs to be 0.1, wenterested to know if the distribution of values shifts to the right (better indicator status) if we used other ratio, like 0.2 or 0.3, which is a better ratio for some taxa. This would show uncertainty and emphasize more work to be done on the Ne/Nc ratio. Lastly it may help address concerns that Nc 5000 is just infeasible, because there are outlier species which never had Nc>5000, e.g. some endimic birds, but these are cases where Ne might be >500 (because Ne/Nc is >0.25).
 
 To address this, we:
 
 1) Explore the NcPoint data converting it to Ne with a ratio of 0.2 and 0.3 and examine the indicator value
-2) Explore the differences in the indicator value of the taxa for which we have a different Ne:Nc ratio.
+2) Explore the differences in the indicator value of the taxa for which we have a different Ne/Nc ratio.
 
 ### Ne 500 indicator using 0.2 and 03 on all taxa with NcPoint data
 
@@ -3700,7 +3700,7 @@ boxplot_ratios<-ind1_alt_ratios_long %>% ggplot(aes(x=NeNc_ratio, y=ind1_value, 
                 geom_boxplot() + 
                 geom_jitter(size=.5, width = 0.1) +
                 ylab("Proportion of populations within species with Ne>500 \n(Ne 500 indicator)") +
-                xlab("Ne:Nc ratio") +
+                xlab("Ne/Nc ratio") +
                 theme_light() + theme(legend.position="none")
 
 boxplot_ratios
@@ -3739,7 +3739,7 @@ summary(m.ratios)
 
 
 
-### Table for the taxa for which we have a different Ne:Nc ratio.
+### Table for the taxa for which we have a different Ne/Nc ratio.
 
 Select taxa for which we have an alternative known NeNc ratio:
 
@@ -3793,7 +3793,7 @@ nrow(sp_known_ratios)
 table(sp_known_ratios$taxonomic_group)
 ```
 
-Of the taxa for which we have a known Ne:Nc ratio, which have NcPoint data? (ie are present in `data_for_alternative_ratio`). Keep only those.
+Of the taxa for which we have a known Ne/Nc ratio, which have NcPoint data? (ie are present in `data_for_alternative_ratio`). Keep only those.
 
 ```{r}
 #list taxa with known ratios
