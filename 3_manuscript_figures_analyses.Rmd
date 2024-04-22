@@ -1086,7 +1086,7 @@ ggsave("Fig1.pdf", width = 17, height = 33  , units = "cm")
 ```
 
 
-## Supplementary Figure S7: Method to define populations used by country and taxa (alluvial)
+## Main Figure 2: Method to define populations used by country and taxa (alluvial)
 
 Reformat data
 ```{r}
@@ -1118,7 +1118,7 @@ alluvial(foralluvial[,1:3], freq = foralluvial$n,
          alpha = .7)
 
 
-pdf("FigS7.pdf", width = 9, height = 7)
+pdf("Fig2.pdf", width = 9, height = 7)
 # plot
 alluvial(foralluvial[,1:3], freq = foralluvial$n,
          col=methodspop, 
@@ -1386,7 +1386,7 @@ kable(x)
 
 
 
-### Supplementary Figure S8: number of mantained populations by method to define populations and range type
+### Supplementary Figure S6: number of mantained populations by method to define populations and range type
 
 Facet by range type:
 ```{r}
@@ -1414,7 +1414,7 @@ p<-indicators_full %>%
 
 p
 
-ggsave("FigS8.pdf", width = 18, height = 19  , units = "cm")
+ggsave("FigS6.pdf", width = 18, height = 19  , units = "cm")
 ```
 
 
@@ -2103,7 +2103,7 @@ summary(m.c4)
 
 Note the previous model has high Str.Errors, so this model does not converge.
 
-### Main Figure (representing the models above): Single plot 5 panels. Boxplots plots for the effect of method on: number of populations, proportion of maintained populations (indicator 2) and Proportion of populations with Ne>500 (indicator 1), AND Violin plots for the distribution of the indicator values by range type.
+### Main Figure 3 (representing the models above): Single plot 5 panels. Boxplots plots for the effect of method on: number of populations, proportion of maintained populations (indicator 2) and Proportion of populations with Ne>500 (indicator 1), AND Violin plots for the distribution of the indicator values by range type.
 
 Top a,b,c panel boxplots:
 
@@ -2276,13 +2276,13 @@ Both top and bottom together:
 
 ```{r}
 plot_grid(p_top, p_bot, ncol = 1)
-ggsave("Fig2.pdf", width = 52, height = 30  , units = "cm")
+ggsave("Fig3.pdf", width = 52, height = 30  , units = "cm")
 ```
 
 
 
 
-### Supplementary Figure S9: Single figure 2 panels scatter plots number of populations vs indicators
+### Supplementary Figure S7: Single figure 2 panels scatter plots number of populations vs indicators
 
 ```{r, out.height= "800px", out.width="500px"}
 # plot
@@ -2290,7 +2290,7 @@ plot_grid(psupA + xlim(0,400) + xlab(""), # remove xlab from top plot and match 
           psupB+ xlim(0,400), 
           ncol=1, align = "v", labels=c("A)", "B)"))  
 
-ggsave("FigS9.pdf", width = 18, height = 28  , units = "cm")
+ggsave("FigS7.pdf", width = 18, height = 28  , units = "cm")
 
 ```
 
@@ -2511,14 +2511,14 @@ indicators_averaged_one %>%
       theme(panel.spacing = unit(1.5, "lines"))
 ```
 
-### Main Figure 4: Single plot 2 pannels IUCN redlist and indicator range values
+### Main Figure 5: Single plot 2 pannels IUCN redlist and indicator range values
 
 ```{r}
 plot_grid(p2,
           p1,
           ncol=1, align = "v", labels=c("A)", "B)"))  
 
-ggsave("Fig4.pdf", width = 20, height = 25  , units = "cm")
+ggsave("Fig5.pdf", width = 20, height = 25  , units = "cm")
 ```
 
 
@@ -2912,14 +2912,14 @@ kable(summary_table, digits=2)
 ```
 
 
-### Main Figure 3: Single figure 4 panels for violin plots and histograms for both indicators by taxonomic group
+### Main Figure 4: Single figure 4 panels for violin plots and histograms for both indicators by taxonomic group
 
 ```{r}
 plot_grid(p2, hist_p2, 
           p1, hist_p1,
           ncol=2, align = "v", labels=c("A)", "B)", "C)", "D)"))
 
-ggsave("Fig3.pdf", width = 37, height = 25  , units = "cm")
+ggsave("Fig4.pdf", width = 37, height = 25  , units = "cm")
 ```
 
 ## Supplementary Figure S2: Values of indicator 1 and indicator 2 for multiassessed taxa (alternative assessments)
@@ -3010,7 +3010,8 @@ ggplot(aes(x=country_assessment, fill=global_IUCN)) +
                     breaks=levels(as.factor(indicators_full$global_IUCN))) +
       theme_light()
 ```
-### Supplementary Figure S10: Sankey plot genetic data availability
+
+### Supplementary Figure S9: Sankey plot genetic data availability
 Relatively few taxa have genetic monitoring, but many have some sort of genetic study. Let’s check that with a Sankey Plot:
 
 ```{r}
@@ -3053,7 +3054,7 @@ ggplot(df, aes(x = x,
   
   xlab("")
 
-ggsave("FigS10.pdf", width = 20, height = 18  , units = "cm")
+ggsave("FigS9.pdf", width = 20, height = 18  , units = "cm")
 
 ```
 
@@ -3707,13 +3708,13 @@ boxplot_ratios
   
 ```
 
-#### Supplementary Figure S6: Hist and boxplot with different Ne_Nc ratios
+#### Supplementary Figure S8: Hist and boxplot with different Ne_Nc ratios
 
 ```{r}
 plot_grid(hist_ratios + ggtitle(""),
           boxplot_ratios + ggtitle(""), ncol = 1, labels = c("A)", "B)"))
 
-ggsave("FigS6.pdf", width = 18, height = 22  , units = "cm")
+ggsave("FigS8.pdf", width = 18, height = 22  , units = "cm")
 ```
 
 
